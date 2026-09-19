@@ -12,14 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  StatusBar,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowLeft,
   Clock,
-  CheckCircle2,
-  AlertCircle,
   ShieldCheck,
   User,
   Calendar,
@@ -28,9 +27,7 @@ import {
   X,
   Wallet,
   ArrowRight,
-  Info,
   Check,
-  RotateCw,
   Gift,
   History,
 } from "lucide-react-native";
@@ -130,7 +127,6 @@ function TaxDatePickerModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={datePickerStyles.backdrop}>
         <View style={datePickerStyles.container}>
-          {/* Header */}
           <View style={datePickerStyles.header}>
             <View>
               <Text style={datePickerStyles.title}>Select Date of Birth</Text>
@@ -141,7 +137,6 @@ function TaxDatePickerModal({
             </TouchableOpacity>
           </View>
 
-          {/* Column Switcher */}
           <View style={datePickerStyles.tabRow}>
             <TouchableOpacity
               style={[datePickerStyles.tabBtn, activeColumn === "year" && datePickerStyles.tabBtnActive]}
@@ -169,7 +164,6 @@ function TaxDatePickerModal({
             </TouchableOpacity>
           </View>
 
-          {/* List Area */}
           <View style={datePickerStyles.listContainer}>
             {activeColumn === "year" && (
               <ScrollView showsVerticalScrollIndicator style={datePickerStyles.scroll}>
@@ -241,7 +235,6 @@ function TaxDatePickerModal({
             )}
           </View>
 
-          {/* Confirm Button */}
           <TouchableOpacity style={datePickerStyles.confirmBtn} onPress={handleConfirm} activeOpacity={0.85}>
             <Check size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={datePickerStyles.confirmBtnText}>Confirm Date</Text>
@@ -318,6 +311,9 @@ export default function TaxIdScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
+  // Screen Initial Loading State (BrandLoader until prices are resolved)
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
   // Mode Selection
   const [reqType, setReqType] = useState<TaxIdType>("INDIVIDUAL");
 
@@ -327,7 +323,6 @@ export default function TaxIdScreen() {
     corporate: null,
   });
   const [discountDetails, setDiscountDetails] = useState<Record<string, any>>({});
-  const [isLoadingPrice, setIsLoadingPrice] = useState(true);
   const [freePassCount, setFreePassCount] = useState<number>(0);
   const [useRewardCredit, setUseRewardCredit] = useState<boolean>(true);
 
@@ -349,7 +344,7 @@ export default function TaxIdScreen() {
   const [isCategoryPickerVisible, setIsCategoryPickerVisible] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   // Inline Validation Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -370,7 +365,6 @@ export default function TaxIdScreen() {
 
   // Fetch dynamic pricing & wallet balance
   const loadPricingAndWallet = useCallback(async () => {
-    setIsLoadingPrice(true);
     try {
       const [priceRes, walletRes, taxRes] = await Promise.all([
         api.get<any>("/api/pricing").catch(() => null),
@@ -403,7 +397,7 @@ export default function TaxIdScreen() {
     } catch (e) {
       console.warn("Tax ID initial load error:", e);
     } finally {
-      setIsLoadingPrice(false);
+      setIsInitialLoading(false);
     }
   }, [user]);
 
@@ -481,11 +475,11 @@ export default function TaxIdScreen() {
       return;
     }
 
-    setShowConfirmModal(true);
+    setIsConfirmModalOpen(true);
   };
 
   const handleFinalSubmit = async () => {
-    setShowConfirmModal(false);
+    setIsConfirmModalOpen(false);
     setIsSubmitting(true);
 
     try {
@@ -540,8 +534,26 @@ export default function TaxIdScreen() {
     }
   };
 
+  if (isInitialLoading) {
+    return (
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ArrowLeft size={20} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.topBarTitle}>Generate Tax ID (TIN)</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <BrandLoader message="Loading Tax ID service..." />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
       {/* Top App Bar */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
         <TouchableOpacity
@@ -586,9 +598,9 @@ export default function TaxIdScreen() {
                 />
               </View>
               <View style={styles.heroTextCol}>
-                <Text style={styles.heroTitle}>Joint Tax Board (JTB / FIRS)</Text>
+                <Text style={styles.heroTitle}>Nigeria Revenue Service (NRS)</Text>
                 <Text style={styles.heroSubtitle}>
-                  Generate and verify your 13-digit Tax Identification Number.
+                  Generate your Tax Identification Number (TIN).
                 </Text>
               </View>
             </View>
@@ -668,12 +680,7 @@ export default function TaxIdScreen() {
             <View style={styles.feeLeft}>
               <Text style={styles.feeLabel}>Service Fee</Text>
               <View style={styles.feeRow}>
-                {isLoadingPrice ? (
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6 }} />
-                    <Text style={styles.feeLoadingText}>Fetching dynamic fee...</Text>
-                  </View>
-                ) : isPassApplied ? (
+                {isPassApplied ? (
                   <>
                     <Text style={styles.feeAmount}>₦0</Text>
                     <View style={styles.freePassPill}>
@@ -851,7 +858,7 @@ export default function TaxIdScreen() {
               {consentChecked && <Check size={14} color="#FFFFFF" />}
             </View>
             <Text style={styles.consentText}>
-              I confirm the details provided match registered identity records for Joint Tax Board (JTB / FIRS) verification.
+              I confirm the details provided match registered identity records for Nigeria Revenue Service (NRS) verification.
             </Text>
           </TouchableOpacity>
           {errors.consent ? <Text style={styles.errorText}>{errors.consent}</Text> : null}
@@ -860,10 +867,10 @@ export default function TaxIdScreen() {
           <TouchableOpacity
             style={[
               styles.submitBtn,
-              (isLoadingPrice || isSubmitting) && styles.submitBtnDisabled,
+              isSubmitting && styles.submitBtnDisabled,
             ]}
             onPress={handleOpenConfirmation}
-            disabled={isLoadingPrice || isSubmitting}
+            disabled={isSubmitting}
             activeOpacity={0.85}
           >
             {isSubmitting ? (
@@ -907,81 +914,122 @@ export default function TaxIdScreen() {
         }}
       />
 
-      {/* Order Confirmation Modal */}
-      <Modal visible={showConfirmModal} transparent animationType="fade" onRequestClose={() => setShowConfirmModal(false)}>
-        <View style={datePickerStyles.backdrop}>
-          <View style={datePickerStyles.container}>
-            <View style={datePickerStyles.header}>
-              <View>
-                <Text style={datePickerStyles.title}>Confirm Tax ID Request</Text>
-                <Text style={datePickerStyles.subtitle}>Review your submission details</Text>
+      {/* Order Review & Confirmation Modal (Sliding Bottom Sheet) */}
+      <Modal
+        visible={isConfirmModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => !isSubmitting && setIsConfirmModalOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 20) + 12 }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <ShieldCheck size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>Confirm Tax ID Request</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => setShowConfirmModal(false)}
-                style={datePickerStyles.closeBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <X size={20} color={colors.textMuted} />
-              </TouchableOpacity>
+              {!isSubmitting && (
+                <TouchableOpacity
+                  onPress={() => setIsConfirmModalOpen(false)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <X size={20} color={colors.text} />
+                </TouchableOpacity>
+              )}
             </View>
 
-            <View style={styles.confirmBox}>
-              <View style={styles.confirmRow}>
-                <Text style={styles.confirmLabel}>Registration Type</Text>
-                <Text style={styles.confirmValue}>{reqType === "INDIVIDUAL" ? "Individual (Personal)" : "Corporate (Business)"}</Text>
+            <View style={styles.summaryBox}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Registration Type:</Text>
+                <Text style={styles.summaryValue}>
+                  {reqType === "INDIVIDUAL" ? "Individual (Personal)" : "Corporate (Business)"}
+                </Text>
               </View>
-              <View style={styles.confirmDivider} />
+              <View style={styles.summaryDivider} />
 
               {reqType === "INDIVIDUAL" ? (
                 <>
-                  <View style={styles.confirmRow}>
-                    <Text style={styles.confirmLabel}>Applicant Name</Text>
-                    <Text style={[styles.confirmValue, { fontWeight: "700" }]}>{`${firstName} ${lastName}`}</Text>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Applicant Name:</Text>
+                    <Text style={[styles.summaryValue, { fontWeight: "700" }]}>{`${firstName} ${lastName}`}</Text>
                   </View>
-                  <View style={styles.confirmDivider} />
-                  <View style={styles.confirmRow}>
-                    <Text style={styles.confirmLabel}>Linked NIN</Text>
-                    <Text style={styles.confirmValue}>{nin}</Text>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Linked NIN:</Text>
+                    <Text style={styles.summaryValue}>{nin}</Text>
                   </View>
-                  <View style={styles.confirmDivider} />
-                  <View style={styles.confirmRow}>
-                    <Text style={styles.confirmLabel}>Date of Birth</Text>
-                    <Text style={styles.confirmValue}>{dob}</Text>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Date of Birth:</Text>
+                    <Text style={styles.summaryValue}>{dob}</Text>
                   </View>
                 </>
               ) : (
                 <>
-                  <View style={styles.confirmRow}>
-                    <Text style={styles.confirmLabel}>CAC Number</Text>
-                    <Text style={[styles.confirmValue, { fontWeight: "700" }]}>{cacNumber}</Text>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>CAC Number:</Text>
+                    <Text style={[styles.summaryValue, { fontWeight: "700" }]}>{cacNumber}</Text>
                   </View>
-                  <View style={styles.confirmDivider} />
-                  <View style={styles.confirmRow}>
-                    <Text style={styles.confirmLabel}>Entity Category</Text>
-                    <Text style={styles.confirmValue}>{corporateCategory}</Text>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Entity Category:</Text>
+                    <Text style={styles.summaryValue}>{corporateCategory}</Text>
                   </View>
                 </>
               )}
-              <View style={styles.confirmDivider} />
 
-              <View style={styles.confirmRow}>
-                <Text style={styles.confirmLabel}>Debit Amount</Text>
-                <Text style={[styles.confirmValue, { color: colors.primary, fontWeight: "800" }]}>
-                  {payablePrice > 0 ? `₦${payablePrice.toLocaleString()}` : "₦0 (Free Pass)"}
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Turnaround:</Text>
+                <Text style={[styles.summaryValue, { color: "#059669", fontWeight: "700" }]}>
+                  1 – 24 Working Hours
                 </Text>
               </View>
-              <View style={styles.confirmDivider} />
 
-              <View style={styles.confirmRow}>
-                <Text style={styles.confirmLabel}>Wallet Balance</Text>
-                <Text style={styles.confirmValue}>₦{(walletBalance || 0).toLocaleString()}</Text>
+              {isPassApplied && (
+                <>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Voucher Applied:</Text>
+                    <Text style={[styles.summaryValue, { color: "#059669", fontWeight: "800" }]}>
+                      1x Free Tax ID Pass
+                    </Text>
+                  </View>
+                </>
+              )}
+
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Total Amount:</Text>
+                <Text style={[styles.summaryValue, { color: colors.primary, fontSize: 16, fontWeight: "900" }]}>
+                  {payablePrice > 0 ? `₦${payablePrice.toLocaleString()}` : "₦0.00 Free"}
+                </Text>
               </View>
             </View>
 
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleFinalSubmit} activeOpacity={0.85}>
-              <CheckCircle2 size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.confirmBtnText}>Confirm & Pay</Text>
-            </TouchableOpacity>
+            <View style={styles.confirmModalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setIsConfirmModalOpen(false)}
+                disabled={isSubmitting}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, isSubmitting && styles.modalConfirmBtnDisabled]}
+                onPress={handleFinalSubmit}
+                disabled={isSubmitting}
+                activeOpacity={0.88}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalConfirmBtnText}>Confirm &amp; Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1258,11 +1306,6 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     marginRight: 6,
   },
-  feeLoadingText: {
-    fontSize: 13,
-    color: "#64748B",
-    fontWeight: "600",
-  },
   freePassPill: {
     backgroundColor: "#EA580C",
     paddingHorizontal: 6,
@@ -1435,44 +1478,94 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#FFFFFF",
   },
-  confirmBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 14,
-    marginVertical: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
+    justifyContent: "flex-end",
   },
-  confirmRow: {
+  modalCard: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    marginBottom: 16,
   },
-  confirmLabel: {
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  summaryBox: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 5,
+  },
+  summaryLabel: {
     fontSize: 12,
     color: "#64748B",
     fontWeight: "600",
   },
-  confirmValue: {
+  summaryValue: {
     fontSize: 12,
     color: "#0F172A",
     fontWeight: "600",
   },
-  confirmDivider: {
+  summaryDivider: {
     height: 1,
     backgroundColor: "#E2E8F0",
     marginVertical: 4,
   },
-  confirmBtn: {
-    height: 48,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
+  confirmModalActions: {
     flexDirection: "row",
+    gap: 12,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  modalCancelBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#475569",
+  },
+  modalConfirmBtn: {
+    flex: 2,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  confirmBtnText: {
+  modalConfirmBtnDisabled: {
+    opacity: 0.6,
+  },
+  modalConfirmBtnText: {
     fontSize: 14,
     fontWeight: "800",
     color: "#FFFFFF",

@@ -8,9 +8,8 @@ import {
   RefreshControl,
   TextInput,
   ActivityIndicator,
-  Modal,
   ScrollView,
-  Image,
+  StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -28,7 +27,6 @@ import {
   Download,
   Building,
   User,
-  Eye,
   FileText,
   ShieldAlert,
 } from "lucide-react-native";
@@ -71,7 +69,6 @@ export default function TaxIdHistoryScreen() {
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -123,7 +120,7 @@ export default function TaxIdHistoryScreen() {
       const result = await downloadAndSharePdf({
         source: item.taxIdImageUrl,
         filename,
-        dialogTitle: "Share Tax ID Certificate",
+        dialogTitle: "Save / Share Tax ID Certificate",
       });
 
       if (!result.success) {
@@ -170,8 +167,9 @@ export default function TaxIdHistoryScreen() {
 
   const stats = useMemo(() => {
     return {
-      total: history.length,
-      pending: history.filter((h) => h.status === "PENDING" || h.status === "PROCESSING").length,
+      all: history.length,
+      pending: history.filter((h) => h.status === "PENDING").length,
+      processing: history.filter((h) => h.status === "PROCESSING").length,
       completed: history.filter((h) => h.status === "COMPLETED").length,
       failed: history.filter((h) => h.status === "FAILED").length,
     };
@@ -305,34 +303,23 @@ export default function TaxIdHistoryScreen() {
               {item.taxIdNumber || "TIN Issued"}
             </Text>
 
-            {/* Action Buttons: Preview & Download Slip */}
+            {/* Direct Certificate Download Button */}
             {item.taxIdImageUrl ? (
-              <View style={styles.actionBtnRow}>
-                <TouchableOpacity
-                  style={styles.previewBtn}
-                  onPress={() => setPreviewImage(item.taxIdImageUrl || null)}
-                  activeOpacity={0.8}
-                >
-                  <Eye size={13} color={colors.primary} style={{ marginRight: 5 }} />
-                  <Text style={styles.previewBtnText}>View Slip</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.downloadBtn}
-                  onPress={() => handleDownload(item)}
-                  disabled={downloadingId === item.id}
-                  activeOpacity={0.8}
-                >
-                  {downloadingId === item.id ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Download size={13} color="#FFFFFF" style={{ marginRight: 5 }} />
-                      <Text style={styles.downloadBtnText}>Download</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.directDownloadBtn}
+                onPress={() => handleDownload(item)}
+                disabled={downloadingId === item.id}
+                activeOpacity={0.88}
+              >
+                {downloadingId === item.id ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Download size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.directDownloadBtnText}>Download Tax Certificate</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             ) : null}
           </View>
         )}
@@ -353,8 +340,26 @@ export default function TaxIdHistoryScreen() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ArrowLeft size={20} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.topBarTitle}>Tax ID (TIN) History</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <BrandLoader message="Loading Tax ID history..." />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
       {/* Top Header */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
         <TouchableOpacity
@@ -375,74 +380,80 @@ export default function TaxIdHistoryScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Summary Metrics Strip */}
-      <View style={styles.statsStrip}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNum}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+      {/* Main Container */}
+      <View style={{ flex: 1 }}>
+        {/* Branded Header Banner (Matching other services) */}
+        <View style={styles.bannerWrap}>
+          <View style={styles.bannerCard}>
+            <View style={styles.bannerHeader}>
+              <View style={styles.badgeAgency}>
+                <Text style={styles.badgeAgencyText}>NIGERIA REVENUE SERVICE</Text>
+              </View>
+              <View style={styles.turnaroundPill}>
+                <Clock size={11} color="#1E3A8A" style={{ marginRight: 4 }} />
+                <Text style={styles.turnaroundPillText}>1 – 24 Working Hours</Text>
+              </View>
+            </View>
+            <Text style={styles.bannerTitle}>Tax ID (TIN) Records</Text>
+            <Text style={styles.bannerSubtitle}>
+              Track submitted applications, copy generated Tax Identification Numbers, and download certificates.
+            </Text>
+          </View>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statNum, { color: "#D97706" }]}>{stats.pending}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statNum, { color: "#059669" }]}>{stats.completed}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statNum, { color: "#DC2626" }]}>{stats.failed}</Text>
-          <Text style={styles.statLabel}>Failed</Text>
-        </View>
-      </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchBar}>
-        <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name, CAC, or TIN..."
-          placeholderTextColor={colors.textMuted}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery ? (
-          <TouchableOpacity onPress={() => setSearchQuery("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <X size={16} color={colors.textMuted} />
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {(["ALL", "PENDING", "PROCESSING", "COMPLETED", "FAILED"] as FilterStatus[]).map((tab) => {
-            const isSelected = statusFilter === tab;
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[styles.filterChip, isSelected && styles.filterChipActive]}
-                onPress={() => setStatusFilter(tab)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
-                  {tab === "ALL" ? "All" : tab.charAt(0) + tab.slice(1).toLowerCase()}
-                </Text>
+        {/* Search Bar */}
+        <View style={styles.searchBarWrap}>
+          <View style={styles.searchBar}>
+            <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by name, CAC, or TIN..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery("")} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                <X size={15} color={colors.textMuted} />
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Main List */}
-      {isLoading ? (
-        <View style={styles.centerContainer}>
-          <BrandLoader size={44} />
-          <Text style={styles.loadingText}>Loading history...</Text>
+            ) : null}
+          </View>
         </View>
-      ) : (
+
+        {/* Filter Pills with Counts (No ugly metric boxes) */}
+        <View style={styles.filterPillsRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsScroll}>
+            {(["ALL", "PENDING", "PROCESSING", "COMPLETED", "FAILED"] as FilterStatus[]).map((tab) => {
+              const isActive = statusFilter === tab;
+              const count =
+                tab === "ALL"
+                  ? stats.all
+                  : tab === "PENDING"
+                  ? stats.pending
+                  : tab === "PROCESSING"
+                  ? stats.processing
+                  : tab === "COMPLETED"
+                  ? stats.completed
+                  : stats.failed;
+
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  style={[styles.filterPill, isActive && styles.filterPillActive]}
+                  onPress={() => setStatusFilter(tab)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>
+                    {tab === "ALL" ? "All Orders" : tab.charAt(0) + tab.slice(1).toLowerCase()}{" "}
+                    {count > 0 ? `(${count})` : ""}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Orders FlatList */}
         <FlatList
           data={filteredData}
           keyExtractor={(item) => item.id}
@@ -482,34 +493,7 @@ export default function TaxIdHistoryScreen() {
             </View>
           }
         />
-      )}
-
-      {/* Slip Image Preview Modal */}
-      <Modal visible={!!previewImage} transparent animationType="fade" onRequestClose={() => setPreviewImage(null)}>
-        <View style={styles.imageModalBackdrop}>
-          <View style={styles.imageModalCard}>
-            <View style={styles.imageModalHeader}>
-              <Text style={styles.imageModalTitle}>Tax ID Document Preview</Text>
-              <TouchableOpacity
-                onPress={() => setPreviewImage(null)}
-                style={styles.modalCloseBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <X size={18} color="#0F172A" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.imageContainer}>
-              {previewImage && (
-                <Image
-                  source={{ uri: previewImage }}
-                  style={styles.slipImage}
-                  resizeMode="contain"
-                />
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
+      </View>
 
       {/* Alert Modal */}
       <CustomAlertModal
@@ -569,44 +553,77 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#FFFFFF",
   },
-  statsStrip: {
+  bannerWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  bannerCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  bannerHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-  statItem: {
-    flex: 1,
+  badgeAgency: {
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  badgeAgencyText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#475569",
+    letterSpacing: 0.5,
+  },
+  turnaroundPill: {
+    flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
   },
-  statNum: {
+  turnaroundPillText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#1E3A8A",
+  },
+  bannerTitle: {
     fontSize: 15,
     fontWeight: "800",
     color: "#0F172A",
+    marginBottom: 2,
   },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: "700",
+  bannerSubtitle: {
+    fontSize: 12,
     color: "#64748B",
-    textTransform: "uppercase",
-    marginTop: 1,
+    lineHeight: 16,
   },
-  statDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: "#E2E8F0",
+  searchBarWrap: {
+    paddingHorizontal: 16,
+    marginTop: 10,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginTop: 12,
     paddingHorizontal: 12,
-    height: 44,
+    height: 42,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
@@ -617,31 +634,31 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#0F172A",
   },
-  filterRow: {
+  filterPillsRow: {
     marginVertical: 10,
   },
-  filterScroll: {
+  filterPillsScroll: {
     paddingHorizontal: 16,
     gap: 8,
   },
-  filterChip: {
-    paddingHorizontal: 14,
+  filterPill: {
+    paddingHorizontal: 13,
     paddingVertical: 6,
     borderRadius: 10,
     backgroundColor: "#F1F5F9",
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
-  filterChipActive: {
+  filterPillActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  filterChipText: {
+  filterPillText: {
     fontSize: 12,
     fontWeight: "700",
     color: "#64748B",
   },
-  filterChipTextActive: {
+  filterPillTextActive: {
     color: "#FFFFFF",
   },
   listContent: {
@@ -816,38 +833,17 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginVertical: 4,
   },
-  actionBtnRow: {
+  directDownloadBtn: {
+    height: 40,
+    backgroundColor: "#15803D",
+    borderRadius: 10,
     flexDirection: "row",
-    gap: 8,
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 8,
   },
-  previewBtn: {
-    flex: 1,
-    height: 34,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  previewBtnText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.primary,
-  },
-  downloadBtn: {
-    flex: 1,
-    height: 34,
-    backgroundColor: "#15803D",
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  downloadBtnText: {
-    fontSize: 11,
+  directDownloadBtnText: {
+    fontSize: 12,
     fontWeight: "800",
     color: "#FFFFFF",
   },
@@ -868,18 +864,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#991B1B",
     lineHeight: 15,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 60,
-  },
-  loadingText: {
-    fontSize: 13,
-    color: "#64748B",
-    fontWeight: "600",
-    marginTop: 10,
   },
   emptyContainer: {
     alignItems: "center",
@@ -920,51 +904,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: "#FFFFFF",
-  },
-  imageModalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  imageModalCard: {
-    width: "100%",
-    maxWidth: 420,
-    height: "75%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  imageModalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  imageModalTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  modalCloseBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  imageContainer: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    padding: 10,
-  },
-  slipImage: {
-    width: "100%",
-    height: "100%",
   },
 });
