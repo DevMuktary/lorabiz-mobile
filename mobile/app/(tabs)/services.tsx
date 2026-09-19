@@ -119,6 +119,7 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         id: "tax_id",
         title: "Tax ID (TIN)",
         logo: require("../../assets/nrs.png"),
+        route: "/services/tax-id",
       },
       {
         id: "scuml",
