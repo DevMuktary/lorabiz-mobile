@@ -43,13 +43,234 @@ import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 
 export const ENROLLING_BANKS = [
-  { id: "AGENCY_BVN", name: "Agency BVN", description: "POS Agent & Field Enrollment" },
-  { id: "ENTERPRISE", name: "Enterprise Bank", description: "Enterprise Commercial Banking" },
-  { id: "AGRICULTURAL_BANK", name: "Agricultural Bank", description: "Bank of Agriculture / Agribank" },
-  { id: "NIBSS_IMPORT", name: "NIBSS IMPORT", description: "Direct NIBSS Database Migration" },
-  { id: "HERITAGE_BANK", name: "Heritage Bank", description: "Heritage Commercial Banking" },
-  { id: "MICROFINANCE_BANK", name: "Microfinance Bank", description: "Microfinance Banking Institutions" },
+  { id: "AGENCY_BVN", name: "Agency BVN" },
+  { id: "ENTERPRISE", name: "Enterprise Bank" },
+  { id: "AGRICULTURAL_BANK", name: "Agricultural Bank" },
+  { id: "NIBSS_IMPORT", name: "NIBSS IMPORT" },
+  { id: "HERITAGE_BANK", name: "Heritage Bank" },
+  { id: "MICROFINANCE_BANK", name: "Microfinance Bank" },
 ];
+
+export const MONTHS = [
+  { value: 1, label: "January", short: "Jan" },
+  { value: 2, label: "February", short: "Feb" },
+  { value: 3, label: "March", short: "Mar" },
+  { value: 4, label: "April", short: "Apr" },
+  { value: 5, label: "May", short: "May" },
+  { value: 6, label: "June", short: "Jun" },
+  { value: 7, label: "July", short: "Jul" },
+  { value: 8, label: "August", short: "Aug" },
+  { value: 9, label: "September", short: "Sep" },
+  { value: 10, label: "October", short: "Oct" },
+  { value: 11, label: "November", short: "Nov" },
+  { value: 12, label: "December", short: "Dec" },
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: CURRENT_YEAR - 1939 }, (_, i) => CURRENT_YEAR - i);
+
+function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    const mObj = MONTHS.find((item) => item.value === m);
+    if (mObj) {
+      return `${d} ${mObj.label} ${y}`;
+    }
+  }
+  return dateStr;
+}
+
+interface DatePickerModalProps {
+  visible: boolean;
+  title: string;
+  initialDate?: string;
+  onClose: () => void;
+  onConfirm: (dateStr: string) => void;
+}
+
+function BvnDatePickerModal({
+  visible,
+  title,
+  initialDate,
+  onClose,
+  onConfirm,
+}: DatePickerModalProps) {
+  const [selectedYear, setSelectedYear] = useState<number>(1995);
+  const [selectedMonth, setSelectedMonth] = useState<number>(6);
+  const [selectedDay, setSelectedDay] = useState<number>(15);
+  const [activeTab, setActiveTab] = useState<"day" | "month" | "year">("year");
+
+  useEffect(() => {
+    if (visible) {
+      if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
+        const [y, m, d] = initialDate.split("-").map((v) => parseInt(v, 10));
+        setSelectedYear(y || 1995);
+        setSelectedMonth(m || 6);
+        setSelectedDay(d || 15);
+        setActiveTab("day");
+      } else {
+        setSelectedYear(1995);
+        setSelectedMonth(6);
+        setSelectedDay(15);
+        setActiveTab("year");
+      }
+    }
+  }, [visible, initialDate]);
+
+  const maxDays = getDaysInMonth(selectedYear, selectedMonth);
+  const currentDay = Math.min(selectedDay, maxDays);
+
+  const formattedDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-${String(currentDay).padStart(2, "0")}`;
+  const monthObj = MONTHS.find((m) => m.value === selectedMonth);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.datePickerBackdrop}>
+        <View style={styles.datePickerModalCard}>
+          {/* Header */}
+          <View style={styles.datePickerHeader}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Calendar size={18} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.datePickerModalTitle}>{title}</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <X size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Date Preview Banner */}
+          <View style={styles.datePreviewBox}>
+            <Text style={styles.datePreviewSub}>SELECTED DATE OF BIRTH</Text>
+            <Text style={styles.datePreviewMain}>
+              {currentDay} {monthObj?.label} {selectedYear}
+            </Text>
+            <Text style={styles.datePreviewIso}>{formattedDate}</Text>
+          </View>
+
+          {/* Segment Selector Tabs */}
+          <View style={styles.dateTabRow}>
+            <TouchableOpacity
+              style={[styles.dateTabBtn, activeTab === "year" && styles.dateTabBtnActive]}
+              onPress={() => setActiveTab("year")}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.dateTabBtnText, activeTab === "year" && styles.dateTabBtnTextActive]}>
+                Year: {selectedYear}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.dateTabBtn, activeTab === "month" && styles.dateTabBtnActive]}
+              onPress={() => setActiveTab("month")}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.dateTabBtnText, activeTab === "month" && styles.dateTabBtnTextActive]}>
+                Month: {monthObj?.short}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.dateTabBtn, activeTab === "day" && styles.dateTabBtnActive]}
+              onPress={() => setActiveTab("day")}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.dateTabBtnText, activeTab === "day" && styles.dateTabBtnTextActive]}>
+                Day: {currentDay}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tab Content */}
+          <View style={styles.dateTabBody}>
+            {activeTab === "year" && (
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.yearGrid}>
+                {YEARS.map((y) => {
+                  const isSel = y === selectedYear;
+                  return (
+                    <TouchableOpacity
+                      key={y}
+                      style={[styles.yearPill, isSel && styles.yearPillActive]}
+                      onPress={() => {
+                        setSelectedYear(y);
+                        setActiveTab("month");
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.yearPillText, isSel && styles.yearPillTextActive]}>{y}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            {activeTab === "month" && (
+              <View style={styles.monthGrid}>
+                {MONTHS.map((m) => {
+                  const isSel = m.value === selectedMonth;
+                  return (
+                    <TouchableOpacity
+                      key={m.value}
+                      style={[styles.monthPill, isSel && styles.monthPillActive]}
+                      onPress={() => {
+                        setSelectedMonth(m.value);
+                        const newMax = getDaysInMonth(selectedYear, m.value);
+                        if (selectedDay > newMax) setSelectedDay(newMax);
+                        setActiveTab("day");
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.monthPillText, isSel && styles.monthPillTextActive]}>
+                        {m.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
+            {activeTab === "day" && (
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.dayGrid}>
+                {Array.from({ length: maxDays }, (_, i) => i + 1).map((d) => {
+                  const isSel = d === currentDay;
+                  return (
+                    <TouchableOpacity
+                      key={d}
+                      style={[styles.dayPill, isSel && styles.dayPillActive]}
+                      onPress={() => setSelectedDay(d)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.dayPillText, isSel && styles.dayPillTextActive]}>{d}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+          </View>
+
+          {/* Confirm Button */}
+          <TouchableOpacity
+            style={styles.confirmDateBtn}
+            onPress={() => {
+              onConfirm(formattedDate);
+            }}
+            activeOpacity={0.88}
+          >
+            <Check size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.confirmDateBtnText}>Apply Date ({formattedDate})</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 export const MODIFICATION_OPTIONS = [
   {
@@ -159,8 +380,24 @@ export default function BvnModificationScreen() {
   const [walletBalance, setWalletBalance] = useState<number>(
     wallet?.balance ?? user?.wallet?.balance ?? 0
   );
-  const [dobOver5YearsAllowed, setDobOver5YearsAllowed] = useState<boolean>(false); // strictly false as instructed
+  const [dobOver5YearsAllowed, setDobOver5YearsAllowed] = useState<boolean>(false); // false by policy
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Date Picker Modal state
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [activeDateTarget, setActiveDateTarget] = useState<"oldDob" | "newDob" | null>(null);
+
+  // Input Refs for instant, direct focus without lag
+  const ninRef = useRef<TextInput>(null);
+  const bvnRef = useRef<TextInput>(null);
+  const oldFirstNameRef = useRef<TextInput>(null);
+  const oldLastNameRef = useRef<TextInput>(null);
+  const oldMiddleNameRef = useRef<TextInput>(null);
+  const newFirstNameRef = useRef<TextInput>(null);
+  const newLastNameRef = useRef<TextInput>(null);
+  const newMiddleNameRef = useRef<TextInput>(null);
+  const oldPhoneRef = useRef<TextInput>(null);
+  const newPhoneRef = useRef<TextInput>(null);
 
   // Modals
   const [isBankPickerOpen, setIsBankPickerOpen] = useState(false);
@@ -495,10 +732,8 @@ export default function BvnModificationScreen() {
 
   const filteredBanks = useMemo(() => {
     if (!bankSearchQuery.trim()) return ENROLLING_BANKS;
-    const q = bankSearchQuery.toLowerCase();
-    return ENROLLING_BANKS.filter(
-      (b) => b.name.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)
-    );
+    const q = bankSearchQuery.toLowerCase().trim();
+    return ENROLLING_BANKS.filter((b) => b.name.toLowerCase().includes(q));
   }, [bankSearchQuery]);
 
   if (isLoading) {
@@ -712,9 +947,6 @@ export default function BvnModificationScreen() {
                     <Text style={[styles.pickerValue, !selectedBank && { color: colors.textMuted }]}>
                       {activeBank ? activeBank.name : "Choose Enrolling Bank..."}
                     </Text>
-                    {activeBank ? (
-                      <Text style={styles.pickerSub}>{activeBank.description}</Text>
-                    ) : null}
                   </View>
                   <ChevronDown size={18} color={colors.textMuted} />
                 </TouchableOpacity>
@@ -749,8 +981,13 @@ export default function BvnModificationScreen() {
 
                 {/* 11-Digit NIN */}
                 <Text style={styles.inputLabel}>11-DIGIT NIN NUMBER</Text>
-                <View style={styles.inputWrap}>
+                <TouchableOpacity
+                  style={styles.inputWrap}
+                  activeOpacity={1}
+                  onPress={() => ninRef.current?.focus()}
+                >
                   <TextInput
+                    ref={ninRef}
                     style={styles.textInput}
                     value={nin}
                     onChangeText={(val) => {
@@ -761,14 +998,21 @@ export default function BvnModificationScreen() {
                     placeholderTextColor={colors.textMuted}
                     keyboardType="number-pad"
                     maxLength={11}
+                    returnKeyType="next"
+                    onSubmitEditing={() => bvnRef.current?.focus()}
                   />
                   {isValidNin && <CheckCircle2 size={18} color="#059669" />}
-                </View>
+                </TouchableOpacity>
 
                 {/* 11-Digit BVN */}
                 <Text style={[styles.inputLabel, { marginTop: 12 }]}>11-DIGIT BVN NUMBER</Text>
-                <View style={styles.inputWrap}>
+                <TouchableOpacity
+                  style={styles.inputWrap}
+                  activeOpacity={1}
+                  onPress={() => bvnRef.current?.focus()}
+                >
                   <TextInput
+                    ref={bvnRef}
                     style={styles.textInput}
                     value={bvn}
                     onChangeText={(val) => {
@@ -779,46 +1023,69 @@ export default function BvnModificationScreen() {
                     placeholderTextColor={colors.textMuted}
                     keyboardType="number-pad"
                     maxLength={11}
+                    returnKeyType="next"
+                    onSubmitEditing={() => oldFirstNameRef.current?.focus()}
                   />
                   {isValidBvn && <CheckCircle2 size={18} color="#059669" />}
-                </View>
+                </TouchableOpacity>
 
                 {/* Old Names on BVN */}
                 <Text style={[styles.inputLabel, { marginTop: 12 }]}>FIRST NAME (CURRENTLY ON BVN)</Text>
-                <View style={styles.inputWrap}>
+                <TouchableOpacity
+                  style={styles.inputWrap}
+                  activeOpacity={1}
+                  onPress={() => oldFirstNameRef.current?.focus()}
+                >
                   <TextInput
+                    ref={oldFirstNameRef}
                     style={styles.textInput}
                     value={oldFirstName}
                     onChangeText={setOldFirstName}
                     placeholder="e.g. John"
                     placeholderTextColor={colors.textMuted}
                     autoCapitalize="words"
+                    returnKeyType="next"
+                    onSubmitEditing={() => oldLastNameRef.current?.focus()}
                   />
-                </View>
+                </TouchableOpacity>
 
                 <Text style={[styles.inputLabel, { marginTop: 12 }]}>SURNAME (CURRENTLY ON BVN)</Text>
-                <View style={styles.inputWrap}>
+                <TouchableOpacity
+                  style={styles.inputWrap}
+                  activeOpacity={1}
+                  onPress={() => oldLastNameRef.current?.focus()}
+                >
                   <TextInput
+                    ref={oldLastNameRef}
                     style={styles.textInput}
                     value={oldLastName}
                     onChangeText={setOldLastName}
                     placeholder="e.g. Doe"
                     placeholderTextColor={colors.textMuted}
                     autoCapitalize="words"
+                    returnKeyType="next"
+                    onSubmitEditing={() => oldMiddleNameRef.current?.focus()}
                   />
-                </View>
+                </TouchableOpacity>
 
                 <Text style={[styles.inputLabel, { marginTop: 12 }]}>MIDDLE NAME (ON BVN - OPTIONAL)</Text>
-                <View style={styles.inputWrap}>
+                <TouchableOpacity
+                  style={styles.inputWrap}
+                  activeOpacity={1}
+                  onPress={() => oldMiddleNameRef.current?.focus()}
+                >
                   <TextInput
+                    ref={oldMiddleNameRef}
                     style={styles.textInput}
                     value={oldMiddleName}
                     onChangeText={setOldMiddleName}
                     placeholder="e.g. Chukwuemeka"
                     placeholderTextColor={colors.textMuted}
                     autoCapitalize="words"
+                    returnKeyType="done"
+                    onSubmitEditing={Keyboard.dismiss}
                   />
-                </View>
+                </TouchableOpacity>
               </View>
 
               {/* STEP 4: DYNAMIC FIELD SECTIONS */}
@@ -827,40 +1094,61 @@ export default function BvnModificationScreen() {
                   <Text style={styles.sectionLabel}>NEW NAME DETAILS</Text>
 
                   <Text style={styles.inputLabel}>NEW FIRST NAME</Text>
-                  <View style={styles.inputWrap}>
+                  <TouchableOpacity
+                    style={styles.inputWrap}
+                    activeOpacity={1}
+                    onPress={() => newFirstNameRef.current?.focus()}
+                  >
                     <TextInput
+                      ref={newFirstNameRef}
                       style={styles.textInput}
                       value={newFirstName}
                       onChangeText={setNewFirstName}
                       placeholder="Enter new first name"
                       placeholderTextColor={colors.textMuted}
                       autoCapitalize="words"
+                      returnKeyType="next"
+                      onSubmitEditing={() => newLastNameRef.current?.focus()}
                     />
-                  </View>
+                  </TouchableOpacity>
 
                   <Text style={[styles.inputLabel, { marginTop: 12 }]}>NEW SURNAME</Text>
-                  <View style={styles.inputWrap}>
+                  <TouchableOpacity
+                    style={styles.inputWrap}
+                    activeOpacity={1}
+                    onPress={() => newLastNameRef.current?.focus()}
+                  >
                     <TextInput
+                      ref={newLastNameRef}
                       style={styles.textInput}
                       value={newLastName}
                       onChangeText={setNewLastName}
                       placeholder="Enter new surname"
                       placeholderTextColor={colors.textMuted}
                       autoCapitalize="words"
+                      returnKeyType="next"
+                      onSubmitEditing={() => newMiddleNameRef.current?.focus()}
                     />
-                  </View>
+                  </TouchableOpacity>
 
                   <Text style={[styles.inputLabel, { marginTop: 12 }]}>NEW MIDDLE NAME (OPTIONAL)</Text>
-                  <View style={styles.inputWrap}>
+                  <TouchableOpacity
+                    style={styles.inputWrap}
+                    activeOpacity={1}
+                    onPress={() => newMiddleNameRef.current?.focus()}
+                  >
                     <TextInput
+                      ref={newMiddleNameRef}
                       style={styles.textInput}
                       value={newMiddleName}
                       onChangeText={setNewMiddleName}
                       placeholder="Enter new middle name"
                       placeholderTextColor={colors.textMuted}
                       autoCapitalize="words"
+                      returnKeyType="done"
+                      onSubmitEditing={Keyboard.dismiss}
                     />
-                  </View>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -868,29 +1156,43 @@ export default function BvnModificationScreen() {
                 <View style={styles.formSection}>
                   <Text style={styles.sectionLabel}>DATE OF BIRTH DETAILS</Text>
 
-                  <Text style={styles.inputLabel}>CURRENT DOB ON BVN (YYYY-MM-DD)</Text>
-                  <View style={styles.inputWrap}>
-                    <TextInput
-                      style={styles.textInput}
-                      value={oldDob}
-                      onChangeText={setOldDob}
-                      placeholder="e.g. 1995-06-15"
-                      placeholderTextColor={colors.textMuted}
-                    />
-                    <Calendar size={18} color={colors.textMuted} />
-                  </View>
+                  <Text style={styles.inputLabel}>CURRENT DOB ON BVN</Text>
+                  <TouchableOpacity
+                    style={[styles.dateSelectorBtn, oldDob ? styles.dateSelectorBtnActive : null]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setActiveDateTarget("oldDob");
+                      setIsDatePickerOpen(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.dateSelectorInner}>
+                      <Calendar size={18} color={oldDob ? colors.primary : colors.textMuted} style={{ marginRight: 10 }} />
+                      <Text style={[styles.dateSelectorText, !oldDob && styles.dateSelectorPlaceholder]}>
+                        {oldDob ? formatDisplayDate(oldDob) : "Tap to choose current date of birth"}
+                      </Text>
+                    </View>
+                    <ChevronDown size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
 
-                  <Text style={[styles.inputLabel, { marginTop: 12 }]}>NEW DOB TO REFLECT (YYYY-MM-DD)</Text>
-                  <View style={styles.inputWrap}>
-                    <TextInput
-                      style={styles.textInput}
-                      value={newDob}
-                      onChangeText={setNewDob}
-                      placeholder="e.g. 1998-06-15"
-                      placeholderTextColor={colors.textMuted}
-                    />
-                    <Calendar size={18} color={colors.textMuted} />
-                  </View>
+                  <Text style={[styles.inputLabel, { marginTop: 12 }]}>NEW DOB TO REFLECT</Text>
+                  <TouchableOpacity
+                    style={[styles.dateSelectorBtn, newDob ? styles.dateSelectorBtnActive : null]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setActiveDateTarget("newDob");
+                      setIsDatePickerOpen(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.dateSelectorInner}>
+                      <Calendar size={18} color={newDob ? colors.primary : colors.textMuted} style={{ marginRight: 10 }} />
+                      <Text style={[styles.dateSelectorText, !newDob && styles.dateSelectorPlaceholder]}>
+                        {newDob ? formatDisplayDate(newDob) : "Tap to choose new date of birth"}
+                      </Text>
+                    </View>
+                    <ChevronDown size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
 
                   {/* Real-time Year Difference & Policy Alert */}
                   {oldDob && newDob && (
@@ -920,8 +1222,13 @@ export default function BvnModificationScreen() {
                   <Text style={styles.sectionLabel}>PHONE NUMBER DETAILS</Text>
 
                   <Text style={styles.inputLabel}>OLD PHONE NUMBER ON BVN</Text>
-                  <View style={styles.inputWrap}>
+                  <TouchableOpacity
+                    style={styles.inputWrap}
+                    activeOpacity={1}
+                    onPress={() => oldPhoneRef.current?.focus()}
+                  >
                     <TextInput
+                      ref={oldPhoneRef}
                       style={styles.textInput}
                       value={oldPhone}
                       onChangeText={(val) => setOldPhone(val.replace(/\D/g, "").slice(0, 11))}
@@ -929,13 +1236,20 @@ export default function BvnModificationScreen() {
                       placeholderTextColor={colors.textMuted}
                       keyboardType="phone-pad"
                       maxLength={11}
+                      returnKeyType="next"
+                      onSubmitEditing={() => newPhoneRef.current?.focus()}
                     />
                     <Phone size={18} color={colors.textMuted} />
-                  </View>
+                  </TouchableOpacity>
 
                   <Text style={[styles.inputLabel, { marginTop: 12 }]}>NEW PHONE NUMBER TO LINK</Text>
-                  <View style={styles.inputWrap}>
+                  <TouchableOpacity
+                    style={styles.inputWrap}
+                    activeOpacity={1}
+                    onPress={() => newPhoneRef.current?.focus()}
+                  >
                     <TextInput
+                      ref={newPhoneRef}
                       style={styles.textInput}
                       value={newPhone}
                       onChangeText={(val) => setNewPhone(val.replace(/\D/g, "").slice(0, 11))}
@@ -943,9 +1257,11 @@ export default function BvnModificationScreen() {
                       placeholderTextColor={colors.textMuted}
                       keyboardType="phone-pad"
                       maxLength={11}
+                      returnKeyType="done"
+                      onSubmitEditing={Keyboard.dismiss}
                     />
                     {isValidNewPhone && <CheckCircle2 size={18} color="#059669" />}
-                  </View>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -1018,7 +1334,6 @@ export default function BvnModificationScreen() {
                       <Text style={[styles.bankOptionName, isSelected && { color: colors.primary }]}>
                         {b.name}
                       </Text>
-                      <Text style={styles.bankOptionDesc}>{b.description}</Text>
                     </View>
                     {isSelected && <CheckCircle2 size={20} color={colors.primary} />}
                   </TouchableOpacity>
@@ -1125,9 +1440,9 @@ export default function BvnModificationScreen() {
               </View>
 
               <View style={styles.policyItem}>
-                <Text style={styles.policyTitle}>4. Ownership & Strict Refund Policy</Text>
+                <Text style={styles.policyTitle}>4. Ownership & Refund Policy</Text>
                 <Text style={styles.policyDesc}>
-                  You must be the legitimate owner or authorized representative. Strictly no refunds for unlisted banks, unreflected details, or duplicate submissions.
+                  You must be the legitimate owner or authorized representative. No refunds for unlisted banks, unreflected details, or duplicate submissions.
                 </Text>
               </View>
             </View>
@@ -1216,7 +1531,7 @@ export default function BvnModificationScreen() {
                     {hasAgreed2 && <Check size={13} color="#FFFFFF" />}
                   </View>
                   <Text style={styles.affirmationText}>
-                    I have read and accepted the <Text style={styles.fontBold}>Strict No-Refund</Text> and <Text style={styles.fontBold}>VNIN Reflection</Text> conditions (Turnaround: 72 Hours – 7 Working Days).
+                    I have read and accepted the <Text style={styles.fontBold}>Refund Policy</Text> and <Text style={styles.fontBold}>VNIN Reflection</Text> conditions (Turnaround: 72 Hours – 7 Working Days).
                   </Text>
                 </TouchableOpacity>
 
@@ -1265,6 +1580,20 @@ export default function BvnModificationScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* MODAL 5: DATE OF BIRTH PICKER */}
+      <BvnDatePickerModal
+        visible={isDatePickerOpen}
+        title={activeDateTarget === "oldDob" ? "Current BVN Date of Birth" : "New Date of Birth to Reflect"}
+        initialDate={activeDateTarget === "oldDob" ? oldDob : newDob}
+        onClose={() => setIsDatePickerOpen(false)}
+        onConfirm={(chosenDate) => {
+          if (activeDateTarget === "oldDob") setOldDob(chosenDate);
+          else if (activeDateTarget === "newDob") setNewDob(chosenDate);
+          setIsDatePickerOpen(false);
+          if (formError) setFormError(null);
+        }}
+      />
 
       {/* Custom Branded Alert */}
       <CustomAlertModal {...alertConfig} />
@@ -1522,17 +1851,233 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderWidth: 1.5,
+    borderColor: "rgba(0, 0, 0, 0.08)",
     borderRadius: 12,
     paddingHorizontal: 12,
-    height: 44,
+    height: 48,
   },
   textInput: {
     flex: 1,
-    fontSize: 13,
+    height: "100%",
+    paddingVertical: 0,
+    fontSize: 14,
     fontWeight: "600",
     color: "#0F172A",
+  },
+
+  /* Date Selector Trigger on Form */
+  dateSelectorBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1.5,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  dateSelectorBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: "#FFFFFF",
+  },
+  dateSelectorInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  dateSelectorText: {
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  dateSelectorPlaceholder: {
+    fontWeight: "500",
+    color: colors.textMuted,
+  },
+
+  /* Date Picker Modal Styles */
+  datePickerBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  datePickerModalCard: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: Platform.OS === "ios" ? 36 : 24,
+    maxHeight: "85%",
+  },
+  datePickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  datePickerModalTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  datePreviewBox: {
+    backgroundColor: "#EFF6FF",
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    marginBottom: 14,
+  },
+  datePreviewSub: {
+    fontSize: 9.5,
+    fontWeight: "800",
+    color: "#3B82F6",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  datePreviewMain: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#1E3A8A",
+  },
+  datePreviewIso: {
+    fontSize: 11,
+    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    color: "#60A5FA",
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  dateTabRow: {
+    flexDirection: "row",
+    backgroundColor: "#F1F5F9",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 14,
+    gap: 6,
+  },
+  dateTabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateTabBtnActive: {
+    backgroundColor: colors.primary,
+  },
+  dateTabBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748B",
+  },
+  dateTabBtnTextActive: {
+    color: "#FFFFFF",
+  },
+  dateTabBody: {
+    height: 250,
+    marginBottom: 14,
+  },
+  yearGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingBottom: 10,
+  },
+  yearPill: {
+    width: "23%",
+    paddingVertical: 10,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  yearPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  yearPillText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  yearPillTextActive: {
+    color: "#FFFFFF",
+  },
+  monthGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    height: "100%",
+    alignContent: "flex-start",
+  },
+  monthPill: {
+    width: "31%",
+    paddingVertical: 14,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  monthPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  monthPillText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  monthPillTextActive: {
+    color: "#FFFFFF",
+  },
+  dayGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 7,
+    paddingBottom: 10,
+  },
+  dayPill: {
+    width: "12.5%",
+    aspectRatio: 1,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  dayPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  dayPillText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  dayPillTextActive: {
+    color: "#FFFFFF",
+  },
+  confirmDateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#059669",
+    paddingVertical: 13,
+    borderRadius: 12,
+  },
+  confirmDateBtnText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#FFFFFF",
   },
   dobPolicyWarning: {
     flexDirection: "row",

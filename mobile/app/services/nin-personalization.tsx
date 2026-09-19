@@ -611,7 +611,7 @@ export default function NinPersonalizationScreen() {
             </View>
 
             <View style={[styles.policySectionCard, { borderColor: "rgba(239, 68, 68, 0.25)", backgroundColor: "rgba(239, 68, 68, 0.04)" }]}>
-              <Text style={[styles.policySectionTitle, { color: colors.error }]}>⚠️ Strictly Non-Refundable Policy</Text>
+              <Text style={[styles.policySectionTitle, { color: colors.error }]}>⚠️ Non-Refundable Policy</Text>
               <Text style={styles.policySectionBody}>
                 Fulfillment fees are billed 100% upfront to the NIMC verification gateway upon transmission. Therefore, personalization requests cannot be reversed or refunded once submitted.
               </Text>
