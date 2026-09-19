@@ -184,6 +184,15 @@ export default function BvnModificationHistoryScreen() {
     return "N/A";
   };
 
+  const getOldNameOnBvn = (item: BvnModificationRecord): string => {
+    const oldParts = [item.oldFirstName, item.oldMiddleName, item.oldLastName].filter(Boolean);
+    if (oldParts.length > 0) return oldParts.join(" ");
+    if (item.currentFullName && item.currentFullName.trim()) {
+      return item.currentFullName.trim();
+    }
+    return "N/A";
+  };
+
   const getCategoryLabel = (item: BvnModificationRecord): string => {
     const key = item.modificationCategory || item.type;
     return CATEGORY_LABELS[key] || key.replace(/_/g, " ");
@@ -699,6 +708,26 @@ export default function BvnModificationHistoryScreen() {
 
                 <View style={styles.modalSummaryBox}>
                   <View style={styles.summaryItem}>
+                    <Text style={styles.summaryItemLabel}>Applicant Name (on BVN)</Text>
+                    <Text style={[styles.summaryItemValue, { fontWeight: "800", color: colors.text }]}>
+                      {getOldNameOnBvn(selectedRecord)}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryItemDivider} />
+
+                  {(selectedRecord.modifyName || selectedRecord.newFirstName || selectedRecord.newLastName) && (
+                    <>
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryItemLabel}>Requested New Name</Text>
+                        <Text style={[styles.summaryItemValue, { fontWeight: "800", color: "#059669" }]}>
+                          {[selectedRecord.newFirstName, selectedRecord.newMiddleName, selectedRecord.newLastName].filter(Boolean).join(" ")}
+                        </Text>
+                      </View>
+                      <View style={styles.summaryItemDivider} />
+                    </>
+                  )}
+
+                  <View style={styles.summaryItem}>
                     <Text style={styles.summaryItemLabel}>Service Category</Text>
                     <Text style={[styles.summaryItemValue, { fontWeight: "700" }]}>
                       {getCategoryLabel(selectedRecord)}
@@ -761,7 +790,7 @@ export default function BvnModificationHistoryScreen() {
                 </View>
 
                 <View style={styles.comparisonContainer}>
-                  {/* Name Changes */}
+                  {/* Name Changes if modified */}
                   {(selectedRecord.modifyName || selectedRecord.newFirstName || selectedRecord.newLastName) && (
                     <View style={styles.comparisonBlock}>
                       <View style={styles.comparisonBlockHeader}>
@@ -787,6 +816,25 @@ export default function BvnModificationHistoryScreen() {
                       </View>
                     </View>
                   )}
+
+                  {/* Name displayed when not modified */}
+                  {!selectedRecord.modifyName && !selectedRecord.newFirstName && !selectedRecord.newLastName && (
+                    <View style={styles.comparisonBlock}>
+                      <View style={styles.comparisonBlockHeader}>
+                        <User size={13} color={colors.primary} style={{ marginRight: 6 }} />
+                        <Text style={styles.comparisonBlockTitle}>Applicant Name on BVN</Text>
+                      </View>
+                      <View style={{ padding: 12 }}>
+                        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.text }}>
+                          {getOldNameOnBvn(selectedRecord)}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>
+                          Name on BVN record remains unchanged for this request.
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
 
                   {/* Phone Changes */}
                   {(selectedRecord.modifyPhone || selectedRecord.newPhone) && (
