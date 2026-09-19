@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "LoraBiz",
+    "slug": "lorabiz",
+    "scheme": "lorabiz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "splash": {
+      "image": "./assets/logo-white.png",
+      "backgroundColor": "#C82D75",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lorabiz.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "LoraBiz requires camera access to capture registration documents and passport photographs.",
+        "NSFaceIDUsageDescription": "LoraBiz uses Face ID for fast and secure authentication into your wallet and account.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.lorabiz.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#C82D75",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "softwareKeyboardLayoutMode": "resize",
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sharing",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow LoraBiz to use Face ID for fast and secure authentication."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "LoraBiz needs access to your gallery to upload document slips and certificates."
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9f476dfa-0dbc-442c-bf85-0067d3b8e4d8"
+      }
+    }
+  }
+}

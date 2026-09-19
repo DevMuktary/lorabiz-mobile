@@ -1,0 +1,205 @@
+name: Build Mobile Apps (iOS IPA)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-ios-ipa:
+    name: Build iOS IPA (Sideloadly Ready)
+    runs-on: macos-15
+    env:
+      CI: 1
+      EXPO_NON_INTERACTIVE: 1
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://lora.quadrox.dev' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: |
+          echo "=== Available Xcode versions ==="
+          ls -d /Applications/Xcode* || true
+          if [ -d "/Applications/Xcode_26.3.app" ]; then
+            sudo xcode-select -switch /Applications/Xcode_26.3.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_26.3.0.app" ]; then
+            sudo xcode-select -switch /Applications/Xcode_26.3.0.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_26.2.app" ]; then
+            sudo xcode-select -switch /Applications/Xcode_26.2.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_26.app" ]; then
+            sudo xcode-select -switch /Applications/Xcode_26.app/Contents/Developer
+          fi
+          xcodebuild -version
+          swift --version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Cache CocoaPods and React Native Artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cocoapods/repos
+            ~/Library/Caches/CocoaPods
+            ~/Library/Caches/ReactNative
+          key: ${{ runner.os }}-pods-${{ hashFiles('mobile/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install dependencies
+        working-directory: ./mobile
+        run: |
+          npm ci --legacy-peer-deps
+          echo "=== Patching Expo Modules for Xcode 26.3 Swift 6.2 Compatibility ==="
+          node scripts/patch-expo-modules.js
+          cp patches/RuntimeScheduler.h node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h
+
+      - name: Expo Prebuild (Generate Native iOS Project)
+        working-directory: ./mobile
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        working-directory: ./mobile
+        run: |
+          echo "=== CocoaPods Environment ==="
+          ruby -v
+          which pod || true
+          pod --version || true
+          echo "=== Installing Pods via npx pod-install ==="
+          npx pod-install --non-interactive || {
+            echo "npx pod-install had issues, retrying pod install with verbose logs directly in ios directory..."
+            cd ios
+            pod install --verbose
+          }
+
+      - name: Configure Xcode Project for Sideloadly and Dynamic Symbols
+        working-directory: ./mobile/ios
+        run: |
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' *.xcodeproj/project.pbxproj || true
+          sed -i '' 's/CODE_SIGN_IDENTITY = "iPhone Developer";/CODE_SIGN_IDENTITY = "";/g' *.xcodeproj/project.pbxproj || true
+          sed -i '' 's/DEVELOPMENT_TEAM = [A-Z0-9]*;/DEVELOPMENT_TEAM = "";/g' *.xcodeproj/project.pbxproj || true
+
+          # Export dynamic symbols from host app binary so dyld can resolve host-provided C++ / JSI / React symbols
+          sed -i '' 's/STRIP_STYLE = all;/STRIP_STYLE = "non-global";/g' *.xcodeproj/project.pbxproj || true
+          sed -i '' 's/DEAD_CODE_STRIPPING = YES;/DEAD_CODE_STRIPPING = NO;/g' *.xcodeproj/project.pbxproj || true
+
+          # Inject -Wl,-export_dynamic into Pods xcconfigs
+          for xcconfig in Pods/Target\ Support\ Files/Pods*/*.xcconfig; do
+            if [ -f "$xcconfig" ]; then
+              echo 'OTHER_LDFLAGS = $(inherited) -Wl,-export_dynamic' >> "$xcconfig"
+            fi
+          done
+
+      - name: Build Xcode Release (Unsigned for Sideloadly)
+        working-directory: ./mobile/ios
+        run: |
+          set -e -o pipefail
+          echo "=== Configuring Git for Swift Package Manager ==="
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://".insteadOf "git://"
+
+          WORKSPACE=$(ls -d *.xcworkspace 2>/dev/null | head -n 1)
+          SCHEME=$(echo "$WORKSPACE" | sed 's/\.xcworkspace$//')
+          echo "=== Using Workspace: $WORKSPACE | Scheme: $SCHEME ==="
+
+          echo "=== Resolving Swift Package Dependencies ==="
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -resolvePackageDependencies \
+            -scmProvider system || true
+
+          echo "=== Compiling Release Build ==="
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            -parallelizeTargets \
+            ARCHS="arm64" \
+            ONLY_ACTIVE_ARCH=YES \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE="Manual" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build 2>&1 | tee xcodebuild.log || {
+              echo "=== XCODEBUILD FAILED! ==="
+              grep -E "(error:|fatal error:|FAILED)" xcodebuild.log | head -n 30 || true
+              tail -n 60 xcodebuild.log
+              exit 1
+            }
+
+      - name: Package IPA for Sideloadly / AltStore
+        working-directory: ./mobile/ios
+        run: |
+          set -e
+          APP_PATH=$(find build -name "Lorabiz.app" -type d | grep Release-iphoneos | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH=$(find build -name "*.app" -type d | grep Release-iphoneos | head -n 1)
+          fi
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH=$(find build -name "*.app" -type d | head -n 1)
+          fi
+
+          if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
+            echo "Error: Could not find any compiled .app bundle in build directory!"
+            find build -maxdepth 5 || true
+            exit 1
+          fi
+
+          echo "Packaging app bundle at: $APP_PATH"
+          mkdir -p Payload
+          cp -a "$APP_PATH" Payload/
+          chmod -R 755 Payload/
+          zip -r -y Lorabiz.ipa Payload/
+          ls -lh Lorabiz.ipa
+
+          FILESIZE=$(wc -c < "Lorabiz.ipa")
+          echo "Generated IPA size: $FILESIZE bytes"
+          if [ "$FILESIZE" -lt 1000000 ]; then
+            echo "Error: Lorabiz.ipa is too small ($FILESIZE bytes). Bundle does not contain app payload."
+            exit 1
+          fi
+          echo "SUCCESS: Lorabiz.ipa created and verified."
+
+      - name: Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorabiz-iOS-Sideloadly-IPA
+          path: mobile/ios/Lorabiz.ipa
+          retention-days: 14
+
+      - name: Report Build Summary to GitHub
+        if: always()
+        working-directory: ./mobile/ios
+        run: |
+          if [ -f xcodebuild.log ]; then
+            echo "=== EXTRACTING ERRORS FOR ANNOTATIONS ==="
+            grep -i -E "(error:|fatal error:|package|resolve)" xcodebuild.log | head -n 25 | while IFS= read -r line; do
+              echo "::error title=XcodeBuildError::$line"
+            done
+            tail -n 25 xcodebuild.log | while IFS= read -r line; do
+              echo "::warning title=XcodeBuildLogTail::$line"
+            done
+          fi
+
+# Android build disabled per user request to save time and focus 100% on iOS IPA build.
+# - build-android-apk
+
+
+
+
