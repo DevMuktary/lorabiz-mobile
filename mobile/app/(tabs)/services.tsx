@@ -90,6 +90,7 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         id: "bvn_retrieval",
         title: "BVN Retrieval",
         logo: require("../../assets/nibss.png"),
+        route: "/services/bvn-retrieval",
       },
       {
         id: "bvn_modification",
