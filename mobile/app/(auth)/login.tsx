@@ -27,7 +27,7 @@ import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../constants/theme";
 import { BASE_URL } from "../../lib/api";
 
-// Official Multi-Color Google G Icon
+// Multi-Color Google G Icon
 function GoogleIcon({ size = 20 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -70,7 +70,7 @@ function EditPencilIcon({ size = 14, color = "#475569" }: { size?: number; color
   );
 }
 
-// Official Apple Face ID Biometric Glyph matching ALAT
+// Apple Face ID Biometric Glyph matching ALAT
 function AppleFaceIdIcon({ size = 28, color = "#0F172A" }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

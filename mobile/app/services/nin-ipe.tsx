@@ -755,7 +755,7 @@ export default function NinIpeScreen() {
               <View style={styles.policyItem}>
                 <Text style={styles.policyTitle}>3. What You Receive</Text>
                 <Text style={styles.policyDesc}>
-                  Upon completion, your official 11-digit NIN and a New Tracking ID will be generated and made available on your Clearance History page.
+                  Upon completion, your 11-digit NIN and new Tracking ID will be available on your Clearance History page.
                 </Text>
               </View>
             </View>

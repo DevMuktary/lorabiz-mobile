@@ -504,7 +504,7 @@ export default function NinModificationScreen() {
                   </View>
                   <Text style={styles.successTitle}>Modification Request Submitted</Text>
                   <Text style={styles.successSubtitle}>
-                    Your modification order has been received and queued for official NIMC identity processing.
+                    Your modification order has been received and queued for NIMC identity processing.
                   </Text>
 
                   <View style={styles.summaryBox}>
@@ -589,7 +589,7 @@ export default function NinModificationScreen() {
                     <View style={styles.policyPillLeft}>
                       <Clock size={15} color="#059669" />
                       <Text style={styles.policyPillText}>
-                        Turnaround: <Text style={styles.fontBold}>24 – 72 Working Hours</Text>
+                        Turnaround: <Text style={styles.fontBold}>1 – 48 Hours</Text>
                       </Text>
                     </View>
                     <View style={styles.policyPillRight}>
@@ -1268,23 +1268,23 @@ export default function NinModificationScreen() {
 
               <View style={{ gap: 12, marginTop: 6 }}>
                 <View style={styles.policyItem}>
-                  <Text style={styles.policyTitle}>1. Expected Turnaround (24 – 72 Working Hours)</Text>
+                  <Text style={styles.policyTitle}>1. Expected Turnaround (1 – 48 Hours)</Text>
                   <Text style={styles.policyDesc}>
-                    NIMC modification requests undergo identity database verification and administrative review. Updates are typically processed within 24 to 72 working hours (excluding weekends and public holidays).
+                    NIN modification requests are processed within 1 to 48 hours. You can track your status in Modification History.
                   </Text>
                 </View>
 
                 <View style={styles.policyItem}>
-                  <Text style={styles.policyTitle}>2. Automatic Refund on Failure</Text>
+                  <Text style={styles.policyTitle}>2. Service Fees & Refund Policy</Text>
                   <Text style={styles.policyDesc}>
-                    If your modification request is rejected by NIMC due to mismatched biometric records or conflicting documentation, your payment is 100% credited back to your LoraBiz wallet automatically.
+                    All service fees are non-refundable once work commences. If a request fails due to a verified administrative error, funds are credited back to your wallet.
                   </Text>
                 </View>
 
                 <View style={styles.policyItem}>
-                  <Text style={styles.policyTitle}>3. Tracking & Slip Issuance</Text>
+                  <Text style={styles.policyTitle}>3. Third-Party Propagation</Text>
                   <Text style={styles.policyDesc}>
-                    Once submitted, you will receive an official Enrollment Tracking ID to track progress on your Modification History page. Upon completion, your updated NIN details can be verified immediately.
+                    Downstream data synchronization across banks and telecom networks follows their respective system refresh intervals once updated on the identity database.
                   </Text>
                 </View>
               </View>

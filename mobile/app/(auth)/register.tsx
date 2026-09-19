@@ -42,7 +42,7 @@ import {
   getLgasForState,
 } from "../../constants/nigeria-states";
 
-// Official Multi-Color Google G Icon
+// Multi-Color Google G Icon
 function GoogleIcon({ size = 20 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -841,7 +841,7 @@ export default function RegisterScreen() {
                   <Text style={styles.stageSubtitle}>
                     {isSocialRegistration
                       ? "Confirm your legal name and gender to continue."
-                      : "Enter your legal name as on official documents."}
+                      : "Enter your legal name as registered on your identity documents."}
                   </Text>
                 </View>
 

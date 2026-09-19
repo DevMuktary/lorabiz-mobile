@@ -405,7 +405,7 @@ export default function NinPersonalizationScreen() {
                     <Text style={styles.agencyBadge}>NIMC ACCREDITED VERIFICATION</Text>
                     <Text style={styles.agencyTitle}>NIN Personalization</Text>
                     <Text style={styles.agencyDesc}>
-                      Submit your enrollment tracking ID to generate and release your official NIN and slip.
+                      Submit your enrollment tracking ID to generate and release your NIN slip.
                     </Text>
                   </View>
                 </View>
@@ -555,7 +555,7 @@ export default function NinPersonalizationScreen() {
                       {attestationsAccepted && <CheckCircle2 size={15} color="#FFFFFF" />}
                     </View>
                     <Text style={styles.attestationText}>
-                      I verify that this Tracking ID belongs to the applicant and authorize LoraBiz to submit this enrollment record for official personalization processing.
+                      I verify that this Tracking ID belongs to the applicant and authorize LoraBiz to submit this enrollment record for personalization processing.
                     </Text>
                   </TouchableOpacity>
                 </View>

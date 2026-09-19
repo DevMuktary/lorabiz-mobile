@@ -35,6 +35,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 
@@ -53,6 +54,7 @@ interface InitialRetrievalData {
 export default function BvnRetrievalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user, wallet, refreshWallet } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const nameInputRef = useRef<TextInput>(null);
   const phoneInputRef = useRef<TextInput>(null);
@@ -63,7 +65,9 @@ export default function BvnRetrievalScreen() {
   const [hasDiscount, setHasDiscount] = useState<boolean>(false);
   const [discountBadge, setDiscountBadge] = useState<string | undefined>(undefined);
   const [savedAmount, setSavedAmount] = useState<number | undefined>(undefined);
-  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [walletBalance, setWalletBalance] = useState<number>(
+    wallet?.balance ?? user?.wallet?.balance ?? 0
+  );
   const [isServiceActive, setIsServiceActive] = useState<boolean>(true);
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
   const [historyCount, setHistoryCount] = useState<number>(0);
@@ -105,12 +109,21 @@ export default function BvnRetrievalScreen() {
     message: "",
   });
 
+  // Synchronize wallet balance from AuthContext whenever it changes
+  useEffect(() => {
+    if (wallet && typeof wallet.balance === "number") {
+      setWalletBalance(wallet.balance);
+    } else if (user?.wallet && typeof user.wallet.balance === "number") {
+      setWalletBalance(user.wallet.balance);
+    }
+  }, [wallet?.balance, user?.wallet?.balance]);
+
   // Fetch Pricing, Wallet Balance, and Service Health
   const fetchServiceData = useCallback(async () => {
     try {
-      const [res, walletRes] = await Promise.all([
+      const [res, refreshedBal] = await Promise.all([
         api.get<InitialRetrievalData>("/api/bvn/retrieval"),
-        api.get<{ success: boolean; balance: number }>("/api/wallet").catch(() => null),
+        refreshWallet().catch(() => null),
       ]);
 
       if (res && res.success) {
@@ -125,20 +138,31 @@ export default function BvnRetrievalScreen() {
         }
       }
 
-      if (walletRes && typeof walletRes.balance === "number") {
-        setWalletBalance(walletRes.balance);
+      if (typeof refreshedBal === "number") {
+        setWalletBalance(refreshedBal);
+      } else {
+        const directWallet = await api.get<{
+          success?: boolean;
+          balance?: number;
+          wallet?: { balance: number };
+        }>("/api/user/wallet").catch(() => null);
+        const directBal = directWallet?.balance ?? directWallet?.wallet?.balance;
+        if (typeof directBal === "number") {
+          setWalletBalance(directBal);
+        }
       }
     } catch (err: any) {
       console.error("Failed to load BVN Retrieval service data:", err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refreshWallet]);
 
   useFocusEffect(
     useCallback(() => {
       fetchServiceData();
-    }, [fetchServiceData])
+      refreshWallet().catch(() => {});
+    }, [fetchServiceData, refreshWallet])
   );
 
   useEffect(() => {
@@ -453,7 +477,7 @@ export default function BvnRetrievalScreen() {
                 <View style={styles.policyPillLeft}>
                   <Clock size={15} color="#059669" />
                   <Text style={styles.policyPillText}>
-                    Turnaround: <Text style={{ fontWeight: "700" }}>30 Mins – 3 Working Hours</Text>
+                    Turnaround: <Text style={{ fontWeight: "700" }}>1 – 24 Working Hours</Text>
                   </Text>
                 </View>
                 <View style={styles.policyPillRight}>
@@ -759,23 +783,23 @@ export default function BvnRetrievalScreen() {
 
             <View style={{ gap: 12, marginTop: 6 }}>
               <View style={styles.policyItem}>
-                <Text style={styles.policyTitle}>1. Expected Turnaround (30 Mins – 3 Working Hours)</Text>
+                <Text style={styles.policyTitle}>1. Expected Turnaround (1 – 24 Working Hours)</Text>
                 <Text style={styles.policyDesc}>
-                  BVN retrieval requests are matched against the NIBSS central banking database. Most retrievals complete within 30 minutes to 3 working hours during standard business times.
+                  Standard fulfillment is between 1 to 24 working hours. You will receive an automated notification once completed.
                 </Text>
               </View>
 
               <View style={styles.policyItem}>
-                <Text style={styles.policyTitle}>2. Automatic Refund on Failure</Text>
+                <Text style={styles.policyTitle}>2. Refund Policy</Text>
                 <Text style={styles.policyDesc}>
-                  If no BVN record is linked to the provided name and phone number, or if NIBSS returns a record not found error, the full fee is automatically credited back to your LoraBiz wallet.
+                  If no BVN record is linked to the provided name and phone number, the fee is credited back to your wallet.
                 </Text>
               </View>
 
               <View style={styles.policyItem}>
                 <Text style={styles.policyTitle}>3. What You Receive</Text>
                 <Text style={styles.policyDesc}>
-                  Upon completion, your verified 11-digit BVN and an optional digital verification slip will be made available for 1-tap copying and download in your Retrieval History.
+                  Your verified 11-digit BVN and verification slip will be available for 1-tap copying and download in Retrieval History.
                 </Text>
               </View>
             </View>

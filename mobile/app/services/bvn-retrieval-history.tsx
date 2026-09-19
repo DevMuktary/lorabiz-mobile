@@ -496,7 +496,7 @@ export default function BvnRetrievalHistoryScreen() {
                 {/* Resolved BVN Highlight Card (When COMPLETED) */}
                 {activeModalRecord.status === "COMPLETED" && activeModalRecord.retrievedBvn && (
                   <View style={styles.bvnHighlightBox}>
-                    <Text style={styles.bvnHighlightLabel}>OFFICIAL 11-DIGIT BVN</Text>
+                    <Text style={styles.bvnHighlightLabel}>VERIFIED 11-DIGIT BVN</Text>
                     <Text style={styles.bvnHighlightNumber}>{activeModalRecord.retrievedBvn}</Text>
 
                     <TouchableOpacity
@@ -522,7 +522,7 @@ export default function BvnRetrievalHistoryScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.slipDownloadTitle}>Digital BVN Verification Slip</Text>
                       <Text style={styles.slipDownloadSub}>
-                        Official PDF slip / snapshot available for download.
+                        PDF slip / snapshot available for download.
                       </Text>
                     </View>
 

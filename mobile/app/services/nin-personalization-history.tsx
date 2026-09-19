@@ -690,7 +690,7 @@ export default function NinPersonalizationHistoryScreen() {
                       </View>
                       <View style={{ marginLeft: 12, flex: 1 }}>
                         <Text style={styles.slipCardTitle}>Verified NIN Slip Ready</Text>
-                        <Text style={styles.slipCardSub}>Official NIMC identity slip</Text>
+                        <Text style={styles.slipCardSub}>NIMC identity slip</Text>
                       </View>
                     </View>
                     <TouchableOpacity

@@ -459,7 +459,7 @@ export default function NinModificationHistoryScreen() {
                       activeOpacity={0.8}
                     >
                       <Download size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
-                      <Text style={styles.downloadSlipBtnText}>Download Official Slip</Text>
+                      <Text style={styles.downloadSlipBtnText}>Download Slip</Text>
                     </TouchableOpacity>
                   ) : null}
                 </TouchableOpacity>
