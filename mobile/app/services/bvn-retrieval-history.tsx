@@ -16,7 +16,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Clipboard from "expo-clipboard";
 import {
   ArrowLeft,
   Search,
@@ -118,8 +117,7 @@ export default function BvnRetrievalHistoryScreen() {
     fetchHistory();
   }, [fetchHistory]);
 
-  const handleCopy = async (text: string, id: string) => {
-    await Clipboard.setStringAsync(text);
+  const handleCopy = (text: string, id: string) => {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
