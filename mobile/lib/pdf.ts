@@ -26,6 +26,7 @@ export interface DownloadAndShareOptions {
   source: string; // Base64 data URI or HTTP/HTTPS URL
   filename: string;
   dialogTitle?: string;
+  mimeType?: string;
 }
 
 export interface DownloadAndShareResult {
@@ -35,12 +36,13 @@ export interface DownloadAndShareResult {
 }
 
 /**
- * Saves a base64 or remote URL PDF to local device cache and triggers the native share/save sheet.
+ * Saves a base64 or remote URL PDF or image snapshot to local device cache and triggers the native share/save sheet.
  */
 export async function downloadAndSharePdf({
   source,
   filename,
   dialogTitle = "Download Document",
+  mimeType,
 }: DownloadAndShareOptions): Promise<DownloadAndShareResult> {
   try {
     if (!source || typeof source !== "string") {
@@ -82,14 +84,26 @@ export async function downloadAndSharePdf({
     }
 
     if (await Sharing.isAvailableAsync()) {
+      const lowerName = safeFilename.toLowerCase();
+      const isPng = lowerName.endsWith(".png");
+      const isJpg = lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg");
+      const effectiveMimeType =
+        mimeType || (isPng ? "image/png" : isJpg ? "image/jpeg" : "application/pdf");
+
       const shareOptions: Sharing.SharingOptions = {
-        mimeType: "application/pdf",
+        mimeType: effectiveMimeType,
         dialogTitle,
       };
 
       // UTI is an iOS-only Uniform Type Identifier; do NOT send on Android
       if (Platform.OS === "ios") {
-        shareOptions.UTI = "com.adobe.pdf";
+        if (effectiveMimeType === "application/pdf") {
+          shareOptions.UTI = "com.adobe.pdf";
+        } else if (effectiveMimeType === "image/png") {
+          shareOptions.UTI = "public.png";
+        } else if (effectiveMimeType === "image/jpeg") {
+          shareOptions.UTI = "public.jpeg";
+        }
       }
 
       await Sharing.shareAsync(fileUri, shareOptions);

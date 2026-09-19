@@ -589,7 +589,7 @@ export default function NinModificationScreen() {
                     <View style={styles.policyPillLeft}>
                       <Clock size={15} color="#059669" />
                       <Text style={styles.policyPillText}>
-                        Turnaround: <Text style={styles.fontBold}>1 – 48 Hours</Text>
+                        Turnaround: <Text style={styles.fontBold}>1 – 48 Working Hours</Text>
                       </Text>
                     </View>
                     <View style={styles.policyPillRight}>
@@ -1268,9 +1268,9 @@ export default function NinModificationScreen() {
 
               <View style={{ gap: 12, marginTop: 6 }}>
                 <View style={styles.policyItem}>
-                  <Text style={styles.policyTitle}>1. Expected Turnaround (1 – 48 Hours)</Text>
+                  <Text style={styles.policyTitle}>1. Expected Turnaround (1 – 48 Working Hours)</Text>
                   <Text style={styles.policyDesc}>
-                    NIN modification requests are processed within 1 to 48 hours. You can track your status in Modification History.
+                    NIN modification requests are processed within 1 to 48 working hours (excluding weekends and public holidays). You can track your status in Modification History.
                   </Text>
                 </View>
 
