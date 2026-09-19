@@ -11,6 +11,7 @@ import {
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -30,6 +31,7 @@ import {
   WifiOff,
   Wallet,
   X,
+  Info,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -125,6 +127,9 @@ export default function NinModificationScreen() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [statutoryConsent, setStatutoryConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Policy Modal
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
 
   // Error Banner
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -559,6 +564,39 @@ export default function NinModificationScreen() {
                 </View>
               ) : (
                 <>
+                  {/* Agency Banner */}
+                  <View style={styles.agencyBanner}>
+                    <Image
+                      source={require("../../assets/nimc.png")}
+                      style={styles.agencyLogo}
+                      resizeMode="contain"
+                    />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.agencyBadge}>NIMC MODIFICATION SERVICE</Text>
+                      <Text style={styles.agencyTitle}>NIN Modification</Text>
+                      <Text style={styles.agencyDesc}>
+                        Update your name, phone number, or address on the national identity database.
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Policy & Timeline Pill */}
+                  <TouchableOpacity
+                    style={styles.policyPill}
+                    onPress={() => setIsPolicyModalOpen(true)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.policyPillLeft}>
+                      <Clock size={15} color="#059669" />
+                      <Text style={styles.policyPillText}>
+                        Turnaround: <Text style={styles.fontBold}>24 – 72 Working Hours</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.policyPillRight}>
+                      <Text style={styles.policyPillAction}>Policy ⓘ</Text>
+                    </View>
+                  </TouchableOpacity>
+
                   {/* Error Banner */}
                   {errorMessage ? (
                     <View style={styles.errorBox}>
@@ -1204,6 +1242,63 @@ export default function NinModificationScreen() {
           </View>
         </Modal>
 
+        {/* Policy Bottom Sheet Modal */}
+        <Modal
+          visible={isPolicyModalOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsPolicyModalOpen(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 20) + 12 }]}>
+              <View style={styles.modalHeader}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={styles.modalHeaderIconWrap}>
+                    <Info size={20} color={colors.primary} />
+                  </View>
+                  <View style={{ marginLeft: 10 }}>
+                    <Text style={styles.modalTitle}>NIMC Modification Policy</Text>
+                    <Text style={styles.modalSub}>Turnaround and processing guidelines</Text>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={() => setIsPolicyModalOpen(false)}>
+                  <X size={20} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ gap: 12, marginTop: 6 }}>
+                <View style={styles.policyItem}>
+                  <Text style={styles.policyTitle}>1. Expected Turnaround (24 – 72 Working Hours)</Text>
+                  <Text style={styles.policyDesc}>
+                    NIMC modification requests undergo identity database verification and administrative review. Updates are typically processed within 24 to 72 working hours (excluding weekends and public holidays).
+                  </Text>
+                </View>
+
+                <View style={styles.policyItem}>
+                  <Text style={styles.policyTitle}>2. Automatic Refund on Failure</Text>
+                  <Text style={styles.policyDesc}>
+                    If your modification request is rejected by NIMC due to mismatched biometric records or conflicting documentation, your payment is 100% credited back to your LoraBiz wallet automatically.
+                  </Text>
+                </View>
+
+                <View style={styles.policyItem}>
+                  <Text style={styles.policyTitle}>3. Tracking & Slip Issuance</Text>
+                  <Text style={styles.policyDesc}>
+                    Once submitted, you will receive an official Enrollment Tracking ID to track progress on your Modification History page. Upon completion, your updated NIN details can be verified immediately.
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryActionBtn, { marginTop: 18 }]}
+                onPress={() => setIsPolicyModalOpen(false)}
+              >
+                <Text style={styles.primaryActionText}>I Understand</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
         {/* Custom Branded Alert Modal */}
         <CustomAlertModal {...alertConfig} />
       </View>
@@ -1211,6 +1306,123 @@ export default function NinModificationScreen() {
 }
 
 const styles = StyleSheet.create({
+  agencyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginBottom: 10,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  agencyLogo: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+  },
+  agencyBadge: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.primary,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  agencyTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginTop: 1,
+  },
+  agencyDesc: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  policyPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#ECFDF5",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginBottom: 14,
+  },
+  policyPillLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  policyPillText: {
+    fontSize: 12,
+    color: "#065F46",
+  },
+  policyPillRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  policyPillAction: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#059669",
+  },
+  fontBold: {
+    fontWeight: "700",
+  },
+  modalHeaderIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalSub: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 1,
+  },
+  policyItem: {
+    backgroundColor: "#F8FAFC",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  policyTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 4,
+  },
+  policyDesc: {
+    fontSize: 11,
+    color: "#64748B",
+    lineHeight: 16,
+  },
+  primaryActionBtn: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  primaryActionText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
   screen: {
     flex: 1,
     backgroundColor: colors.background,

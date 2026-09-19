@@ -28,7 +28,7 @@ import {
   X,
   Plus,
   ShieldCheck,
-  DownloadSimple,
+  Download,
   Fingerprint,
   FileText,
   User,
@@ -412,7 +412,7 @@ export default function NinPersonalizationHistoryScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <>
-                    <DownloadSimple size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                    <Download size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
                     <Text style={styles.quickSlipBtnText}>Slip</Text>
                   </>
                 )}
@@ -703,7 +703,7 @@ export default function NinPersonalizationHistoryScreen() {
                         <ActivityIndicator size="small" color="#FFFFFF" />
                       ) : (
                         <>
-                          <DownloadSimple size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
+                          <Download size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
                           <Text style={styles.slipDownloadBtnText}>Download</Text>
                         </>
                       )}
