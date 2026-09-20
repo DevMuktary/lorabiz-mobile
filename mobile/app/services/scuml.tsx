@@ -313,6 +313,22 @@ export default function ScumlScreen() {
 
   // Submission & Wallet Checkout
   const handleConfirmAndPay = async () => {
+    if (isInsufficient) {
+      setIsConfirmModalOpen(false);
+      setAlertConfig({
+        visible: true,
+        type: "insufficient_balance",
+        title: "Insufficient Wallet Balance",
+        message: `This service costs ₦${price.toLocaleString()}, but your current wallet balance is ₦${walletBalance.toLocaleString()}. Please fund your wallet to continue.`,
+        confirmText: "Fund Wallet",
+        onConfirm: () => {
+          setAlertConfig((prev) => ({ ...prev, visible: false }));
+          router.push("/(tabs)/wallet" as any);
+        },
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -499,8 +515,8 @@ export default function ScumlScreen() {
 
             <View style={styles.heroBadgeRow}>
               <View style={styles.turnaroundPill}>
-                <Clock size={13} color="#D97706" style={{ marginRight: 5 }} />
-                <Text style={styles.turnaroundText}>24 – 72 Working Hours</Text>
+                <Clock size={12} color="#475569" style={{ marginRight: 6 }} />
+                <Text style={styles.turnaroundText}>Turnaround Time: 24 – 72 Working Hours</Text>
               </View>
               <View style={styles.pricePill}>
                 <Text style={styles.pricePillText}>Fee: ₦{price.toLocaleString()}</Text>
@@ -837,15 +853,10 @@ export default function ScumlScreen() {
           >
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : isInsufficient ? (
-              <>
-                <Wallet size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                <Text style={styles.submitBtnText}>Insufficient Balance · Fund Wallet</Text>
-              </>
             ) : (
               <>
                 <Text style={styles.submitBtnText}>
-                  Continue to Review (₦{price.toLocaleString()})
+                  Continue to Submission (₦{price.toLocaleString()})
                 </Text>
                 <ArrowRight size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
               </>
@@ -903,7 +914,7 @@ export default function ScumlScreen() {
 
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Turnaround Time:</Text>
-                <Text style={[styles.summaryValue, { color: "#D97706" }]}>
+                <Text style={[styles.summaryValue, { color: "#334155", fontWeight: "700" }]}>
                   24 – 72 Working Hours
                 </Text>
               </View>
@@ -1092,15 +1103,17 @@ const styles = StyleSheet.create({
   turnaroundPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "#F1F5F9",
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   turnaroundText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#B45309",
+    color: "#334155",
   },
   pricePill: {
     backgroundColor: "#EEF2FF",

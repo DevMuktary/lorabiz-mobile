@@ -460,10 +460,15 @@ export default function TaxIdScreen() {
     Keyboard.dismiss();
     if (!validateForm()) return;
 
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleFinalSubmit = async () => {
     if (isInsufficient) {
+      setIsConfirmModalOpen(false);
       setAlertConfig({
         visible: true,
-        type: "warning",
+        type: "insufficient_balance",
         title: "Insufficient Wallet Balance",
         message: `This service costs ₦${payablePrice.toLocaleString()}, but your current wallet balance is ₦${(walletBalance || 0).toLocaleString()}. Please fund your wallet to continue.`,
         confirmText: "Fund Wallet",
@@ -475,10 +480,6 @@ export default function TaxIdScreen() {
       return;
     }
 
-    setIsConfirmModalOpen(true);
-  };
-
-  const handleFinalSubmit = async () => {
     setIsConfirmModalOpen(false);
     setIsSubmitting(true);
 
@@ -607,8 +608,8 @@ export default function TaxIdScreen() {
 
             {/* Turnaround Pill (Strictly Working Hours) */}
             <View style={styles.turnaroundPill}>
-              <Clock size={12} color="#047857" style={{ marginRight: 6 }} />
-              <Text style={styles.turnaroundText}>Turnaround: 1 – 24 Working Hours</Text>
+              <Clock size={12} color="#475569" style={{ marginRight: 6 }} />
+              <Text style={styles.turnaroundText}>Turnaround Time: 1 – 24 Working Hours</Text>
             </View>
           </View>
 
@@ -858,7 +859,7 @@ export default function TaxIdScreen() {
               {consentChecked && <Check size={14} color="#FFFFFF" />}
             </View>
             <Text style={styles.consentText}>
-              I confirm the details provided match registered identity records for Nigeria Revenue Service (NRS) verification.
+              I confirm that the information provided is accurate and authorize this Tax ID application.
             </Text>
           </TouchableOpacity>
           {errors.consent ? <Text style={styles.errorText}>{errors.consent}</Text> : null}
@@ -875,15 +876,10 @@ export default function TaxIdScreen() {
           >
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : isInsufficient ? (
-              <>
-                <Wallet size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                <Text style={styles.submitBtnText}>Insufficient Balance · Fund Wallet</Text>
-              </>
             ) : (
               <>
                 <Text style={styles.submitBtnText}>
-                  Continue to Verification {payablePrice > 0 ? `(₦${payablePrice.toLocaleString()})` : "(₦0 Free)"}
+                  Continue to Submission {payablePrice > 0 ? `(₦${payablePrice.toLocaleString()})` : "(₦0 Free)"}
                 </Text>
                 <ArrowRight size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
               </>
@@ -926,7 +922,7 @@ export default function TaxIdScreen() {
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <ShieldCheck size={20} color={colors.primary} style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Confirm Tax ID Request</Text>
+                <Text style={styles.modalTitle}>Confirm Tax ID Application</Text>
               </View>
               {!isSubmitting && (
                 <TouchableOpacity
@@ -980,8 +976,8 @@ export default function TaxIdScreen() {
 
               <View style={styles.summaryDivider} />
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Turnaround:</Text>
-                <Text style={[styles.summaryValue, { color: "#059669", fontWeight: "700" }]}>
+                <Text style={styles.summaryLabel}>Turnaround Time:</Text>
+                <Text style={[styles.summaryValue, { color: "#334155", fontWeight: "700" }]}>
                   1 – 24 Working Hours
                 </Text>
               </View>
@@ -1151,16 +1147,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "flex-start",
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: "#ECFDF5",
+    backgroundColor: "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: "#E2E8F0",
   },
   turnaroundText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#047857",
+    color: "#334155",
   },
   passCard: {
     flexDirection: "row",

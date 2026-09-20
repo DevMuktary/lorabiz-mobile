@@ -370,14 +370,7 @@ export default function TaxIdHistoryScreen() {
           <ArrowLeft size={20} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Tax ID (TIN) History</Text>
-        <TouchableOpacity
-          onPress={() => router.push("/services/tax-id" as any)}
-          style={styles.newBtn}
-          activeOpacity={0.8}
-        >
-          <Plus size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-          <Text style={styles.newBtnText}>New</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
       </View>
 
       {/* Main Container */}
@@ -390,8 +383,8 @@ export default function TaxIdHistoryScreen() {
                 <Text style={styles.badgeAgencyText}>NIGERIA REVENUE SERVICE</Text>
               </View>
               <View style={styles.turnaroundPill}>
-                <Clock size={11} color="#1E3A8A" style={{ marginRight: 4 }} />
-                <Text style={styles.turnaroundPillText}>1 – 24 Working Hours</Text>
+                <Clock size={11} color="#475569" style={{ marginRight: 4 }} />
+                <Text style={styles.turnaroundPillText}>Turnaround Time: 1 – 24 Working Hours</Text>
               </View>
             </View>
             <Text style={styles.bannerTitle}>Tax ID (TIN) Records</Text>
@@ -591,17 +584,17 @@ const styles = StyleSheet.create({
   turnaroundPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#F1F5F9",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "#E2E8F0",
   },
   turnaroundPillText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#1E3A8A",
+    color: "#334155",
   },
   bannerTitle: {
     fontSize: 15,
