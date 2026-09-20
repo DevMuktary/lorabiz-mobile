@@ -125,6 +125,7 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         id: "scuml",
         title: "SCUML",
         logo: require("../../assets/scuml.png"),
+        route: "/services/scuml",
       },
       {
         id: "post_incorp",
