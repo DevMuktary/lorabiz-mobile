@@ -128,6 +128,12 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         route: "/services/scuml",
       },
       {
+        id: "annual_returns",
+        title: "Annual Returns",
+        logo: require("../../assets/cac.png"),
+        route: "/services/annual-returns",
+      },
+      {
         id: "post_incorp",
         title: "Post Incorp",
         logo: require("../../assets/cac.png"),
