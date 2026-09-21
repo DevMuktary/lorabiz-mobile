@@ -277,13 +277,13 @@ export default function HomeScreen() {
       id: "tax_id",
       title: "Tax ID",
       logo: require("../../assets/nrs.png"),
-      route: "/(tabs)/services",
+      route: "/services/tax-id",
     },
     {
       id: "scuml",
       title: "SCUML",
       logo: require("../../assets/scuml.png"),
-      route: "/(tabs)/services",
+      route: "/services/scuml",
     },
     {
       id: "affidavit",

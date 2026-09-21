@@ -587,7 +587,7 @@ export default function BvnModificationHistoryScreen() {
                         disabled={isItemDownloading}
                       >
                         {isItemDownloading ? (
-                          <BrandLoader inline visible message="" size={13} />
+                          <BrandLoader inline visible message="" />
                         ) : (
                           <>
                             <Download size={13} color="#FFFFFF" style={{ marginRight: 5 }} />
@@ -923,7 +923,7 @@ export default function BvnModificationHistoryScreen() {
                       disabled={downloadingId === selectedRecord.trackingId}
                     >
                       {downloadingId === selectedRecord.trackingId ? (
-                        <BrandLoader inline visible message="Downloading..." size={16} />
+                        <BrandLoader inline visible message="Downloading..." />
                       ) : (
                         <>
                           <Download size={16} color="#FFFFFF" style={{ marginRight: 8 }} />

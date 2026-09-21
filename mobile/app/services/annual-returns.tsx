@@ -888,8 +888,8 @@ export default function AnnualReturnsScreen() {
         title={alertConfig.title}
         message={alertConfig.message}
         confirmText={alertConfig.confirmText}
-        onClose={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
         onConfirm={alertConfig.onConfirm}
+        onCancel={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
       />
     </View>
   );

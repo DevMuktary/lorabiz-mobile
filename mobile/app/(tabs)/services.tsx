@@ -116,6 +116,12 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         logo: require("../../assets/cac.png"),
       },
       {
+        id: "annual_returns",
+        title: "Annual Returns",
+        logo: require("../../assets/cac.png"),
+        route: "/services/annual-returns",
+      },
+      {
         id: "tax_id",
         title: "Tax ID (TIN)",
         logo: require("../../assets/nrs.png"),
@@ -126,17 +132,6 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         title: "SCUML",
         logo: require("../../assets/scuml.png"),
         route: "/services/scuml",
-      },
-      {
-        id: "annual_returns",
-        title: "Annual Returns",
-        logo: require("../../assets/cac.png"),
-        route: "/services/annual-returns",
-      },
-      {
-        id: "post_incorp",
-        title: "Post Incorp",
-        logo: require("../../assets/cac.png"),
       },
     ],
   },
@@ -187,9 +182,13 @@ export default function ServicesScreen() {
     if (!q) return SERVICE_SECTIONS;
 
     return SERVICE_SECTIONS.map((section) => {
-      const matched = section.items.filter((item) =>
-        item.title.toLowerCase().includes(q)
-      );
+      const matched = section.items.filter((item) => {
+        const titleMatch = item.title.toLowerCase().includes(q);
+        const postIncorpMatch =
+          item.id === "annual_returns" &&
+          (q.includes("post") || q.includes("incorp") || q.includes("cac"));
+        return titleMatch || postIncorpMatch;
+      });
       return {
         ...section,
         items: matched,
@@ -198,8 +197,8 @@ export default function ServicesScreen() {
   }, [searchQuery]);
 
   const handleServicePress = (svc: ServiceItem) => {
-    if (svc.route) {
-      router.push(svc.route as any);
+    if (svc.id === "post_incorp" || svc.id === "annual_returns" || svc.route) {
+      router.push((svc.route || "/services/annual-returns") as any);
     } else {
       setAlertConfig({
         visible: true,
