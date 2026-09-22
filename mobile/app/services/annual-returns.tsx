@@ -38,6 +38,7 @@ import {
 } from "lucide-react-native";
 import { api, BASE_URL } from "../../lib/api";
 import { getAuthToken } from "../../lib/storage";
+import { uploadFileToServer } from "../../lib/upload";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
@@ -217,38 +218,17 @@ export default function AnnualReturnsScreen() {
       else setIsUploadingSig(true);
       setErrors((prev) => ({ ...prev, [target]: "" }));
 
-      const formData = new FormData();
-      formData.append("file", {
+      const uploadedUrl = await uploadFileToServer({
         uri: asset.uri,
-        name: asset.name || "document.pdf",
-        type: asset.mimeType || "application/pdf",
-      } as any);
-
-      const token = await getAuthToken();
-      const uploadRes = await fetch(`${BASE_URL}/api/upload`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-                Cookie: `next-auth.session-token=${token}; __Secure-next-auth.session-token=${token}`,
-              }
-            : {}),
-        },
-        body: formData,
+        name: asset.name,
+        mimeType: asset.mimeType,
       });
 
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok || !uploadJson.success) {
-        throw new Error(uploadJson.error || "Failed to upload file.");
-      }
-
       if (target === "document") {
-        setDocumentUrl(uploadJson.url);
+        setDocumentUrl(uploadedUrl);
         setDocumentName(asset.name || "Uploaded Document");
       } else {
-        setSignatureUrl(uploadJson.url);
+        setSignatureUrl(uploadedUrl);
         setSignatureName(asset.name || "Uploaded Signature");
       }
     } catch (err: any) {

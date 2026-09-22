@@ -36,6 +36,7 @@ import {
 } from "lucide-react-native";
 import { api, BASE_URL } from "../../lib/api";
 import { getAuthToken } from "../../lib/storage";
+import { uploadFileToServer } from "../../lib/upload";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
@@ -193,32 +194,11 @@ export default function ScumlScreen() {
       setUploading((prev) => ({ ...prev, [docKey]: true }));
       setErrors((prev) => ({ ...prev, [docKey]: "" }));
 
-      const formData = new FormData();
-      formData.append("file", {
+      const uploadedUrl = await uploadFileToServer({
         uri: asset.uri,
         name: asset.name || (isPdfOnly ? "document.pdf" : "document.jpg"),
-        type: asset.mimeType || (isPdfOnly ? "application/pdf" : "image/jpeg"),
-      } as any);
-
-      const token = await getAuthToken();
-      const uploadRes = await fetch(`${BASE_URL}/api/upload`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-                Cookie: `next-auth.session-token=${token}; __Secure-next-auth.session-token=${token}`,
-              }
-            : {}),
-        },
-        body: formData,
+        mimeType: asset.mimeType || (isPdfOnly ? "application/pdf" : "image/jpeg"),
       });
-
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok || !uploadJson.success) {
-        throw new Error(uploadJson.error || "Failed to upload file to storage.");
-      }
 
       setDocuments((prev) => ({
         ...prev,
@@ -228,7 +208,7 @@ export default function ScumlScreen() {
           ? "statusReportUrl"
           : docKey === "memorandum"
           ? "memorandumUrl"
-          : "constitutionUrl"]: uploadJson.url,
+          : "constitutionUrl"]: uploadedUrl,
         [docKey === "certificate"
           ? "certificateName"
           : docKey === "statusReport"
