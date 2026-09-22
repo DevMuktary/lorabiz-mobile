@@ -33,6 +33,7 @@ import {
   X,
   Check,
   Calendar,
+  ChevronDown,
   PenTool,
 } from "lucide-react-native";
 import { api, BASE_URL } from "../../lib/api";
@@ -65,13 +66,10 @@ const TYPE_OPTIONS: TypeOption[] = [
   },
 ];
 
-const DESIGNEE_ROLES = [
-  "Proprietor",
-  "Director",
-  "Secretary",
-  "Managing Director",
-  "Partner",
-];
+const DESIGNEE_ROLES: Record<CompanyType, string[]> = {
+  BUSINESS_NAME: ["Proprietor"],
+  LLC: ["Director", "Secretary"],
+};
 
 export default function AnnualReturnsScreen() {
   const router = useRouter();
@@ -80,7 +78,10 @@ export default function AnnualReturnsScreen() {
   // Loading & service status
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [pricing, setPricing] = useState<Record<string, any>>({});
-  const [penaltyPerYear, setPenaltyPerYear] = useState<number>(5000);
+  const [penalties, setPenalties] = useState<{ BUSINESS_NAME: number; LLC: number }>({
+    BUSINESS_NAME: 5000,
+    LLC: 10000,
+  });
   const [walletBalance, setWalletBalance] = useState<number>(0);
 
   // Form State
@@ -88,13 +89,14 @@ export default function AnnualReturnsScreen() {
   const [companyName, setCompanyName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
 
-  // Multi-Year Selection
+  // Multi-Year Selection & Modal
   const currentYear = new Date().getFullYear();
   const availableYears = Array.from({ length: 11 }, (_, i) => currentYear - i);
   const [selectedYears, setSelectedYears] = useState<number[]>([currentYear]);
+  const [isYearModalOpen, setIsYearModalOpen] = useState(false);
 
-  // Document Upload
-  const [documentType, setDocumentType] = useState<"CERTIFICATE" | "STATUS_REPORT">("CERTIFICATE");
+  // Document Upload (Single CAC Verification Document)
+  const [documentType] = useState<"CERTIFICATE" | "STATUS_REPORT">("CERTIFICATE");
   const [documentUrl, setDocumentUrl] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
@@ -139,8 +141,17 @@ export default function AnnualReturnsScreen() {
         if (annualReturnsRes.pricing) {
           setPricing(annualReturnsRes.pricing);
         }
-        if (annualReturnsRes.penaltyPerYear !== undefined) {
-          setPenaltyPerYear(Number(annualReturnsRes.penaltyPerYear));
+        if (annualReturnsRes.penalties) {
+          setPenalties({
+            BUSINESS_NAME: Number(annualReturnsRes.penalties.BUSINESS_NAME) || 5000,
+            LLC: Number(annualReturnsRes.penalties.LLC) || 10000,
+          });
+        } else if (annualReturnsRes.penaltyPerYear !== undefined) {
+          const val = Number(annualReturnsRes.penaltyPerYear);
+          setPenalties({
+            BUSINESS_NAME: val,
+            LLC: val,
+          });
         }
       }
 
@@ -162,12 +173,14 @@ export default function AnnualReturnsScreen() {
     }, [loadData])
   );
 
-  // Price calculation
-  const basePrice = pricing[companyType]?.price ||
+  // Dynamic Price calculation
+  const penaltyPerYear = penalties[companyType] || (companyType === "LLC" ? 10000 : 5000);
+  const basePricePerYear = pricing[companyType]?.price ||
     (companyType === "LLC" ? 18000 : 12000);
+  const totalBasePrice = basePricePerYear * selectedYears.length;
   const overdueYears = selectedYears.filter((y) => y < currentYear);
   const totalPenalty = overdueYears.length * penaltyPerYear;
-  const totalCost = basePrice + totalPenalty;
+  const totalCost = totalBasePrice + totalPenalty;
   const isInsufficient = walletBalance < totalCost;
 
   // Toggle year selection
@@ -424,7 +437,7 @@ export default function AnnualReturnsScreen() {
                 <Text style={styles.turnaroundText}>Turnaround: 1 – 48 Working Hours</Text>
               </View>
               <View style={styles.pricePill}>
-                <Text style={styles.pricePillText}>From ₦{basePrice.toLocaleString()}</Text>
+                <Text style={styles.pricePillText}>From ₦{basePricePerYear.toLocaleString()}</Text>
               </View>
             </View>
           </View>
@@ -446,6 +459,7 @@ export default function AnnualReturnsScreen() {
                     style={[styles.typeOptionCard, isSelected && styles.typeOptionCardActive]}
                     onPress={() => {
                       setCompanyType(opt.id);
+                      setDesigneeRole(opt.id === "LLC" ? "Director" : "Proprietor");
                       if (errors.companyName) setErrors((p) => ({ ...p, companyName: "" }));
                     }}
                     activeOpacity={0.8}
@@ -516,39 +530,68 @@ export default function AnnualReturnsScreen() {
           <View style={styles.card}>
             <Text style={styles.sectionHeader}>3. Filing Year(s)</Text>
             <Text style={styles.sectionSub}>
-              Select one or more years to file. Overdue years attract a penalty of ₦{penaltyPerYear.toLocaleString()} per year.
+              Select one or more years to file. Base fee applies per year; overdue prior years attract applicable statutory late penalty.
             </Text>
 
-            <View style={styles.yearGrid}>
-              {availableYears.map((year) => {
-                const isSelected = selectedYears.includes(year);
-                const isOverdue = year < currentYear;
+            {/* Dropdown / Bottom Sheet Selector Card */}
+            <TouchableOpacity
+              style={[styles.yearSelectorCard, errors.years ? styles.inputContainerError : null]}
+              onPress={() => setIsYearModalOpen(true)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.yearSelectorLeft}>
+                <View style={styles.yearIconContainer}>
+                  <Calendar size={18} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.yearSelectorTitle}>
+                    {selectedYears.length === 1
+                      ? `Filing Year ${selectedYears[0]} (${selectedYears[0] === currentYear ? "Current" : "Overdue"})`
+                      : `${selectedYears.join(", ")} (${selectedYears.length} Years Selected)`}
+                  </Text>
+                  <Text style={styles.yearSelectorSub}>
+                    Tap to select or change filing years
+                  </Text>
+                </View>
+              </View>
+              <ChevronDown size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+
+            {/* Selected Years Chips */}
+            <View style={styles.selectedYearsChipsRow}>
+              {selectedYears.map((yr) => {
+                const isOverdue = yr < currentYear;
                 return (
-                  <TouchableOpacity
-                    key={year}
+                  <View
+                    key={yr}
                     style={[
-                      styles.yearChip,
-                      isSelected && styles.yearChipActive,
-                      isSelected && isOverdue && styles.yearChipOverdue,
+                      styles.selectedYearPill,
+                      isOverdue && styles.selectedYearPillOverdue,
                     ]}
-                    onPress={() => toggleYear(year)}
-                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
-                        styles.yearChipText,
-                        isSelected && styles.yearChipTextActive,
+                        styles.selectedYearPillText,
+                        isOverdue && styles.selectedYearPillTextOverdue,
                       ]}
                     >
-                      {year}
+                      {yr}
                     </Text>
-                    {isSelected && isOverdue && (
-                      <Text style={styles.yearPenaltyTag}>+₦{penaltyPerYear.toLocaleString()}</Text>
+                    {isOverdue && (
+                      <Text style={styles.selectedYearPillPenalty}>
+                        +₦{penaltyPerYear.toLocaleString()}
+                      </Text>
                     )}
-                    {isSelected && !isOverdue && (
-                      <Text style={styles.yearCurrentTag}>Current</Text>
+                    {selectedYears.length > 1 && (
+                      <TouchableOpacity
+                        onPress={() => toggleYear(yr)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={styles.removeYearPillBtn}
+                      >
+                        <X size={12} color={isOverdue ? "#D97706" : colors.textSecondary} />
+                      </TouchableOpacity>
                     )}
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>
@@ -558,12 +601,12 @@ export default function AnnualReturnsScreen() {
             <View style={styles.costBreakdownBox}>
               <View style={styles.costRow}>
                 <Text style={styles.costLabel}>Base Filing Fee ({selectedYears.length} year{selectedYears.length > 1 ? "s" : ""})</Text>
-                <Text style={styles.costValue}>₦{basePrice.toLocaleString()}</Text>
+                <Text style={styles.costValue}>₦{totalBasePrice.toLocaleString()}</Text>
               </View>
               {totalPenalty > 0 && (
                 <View style={styles.costRow}>
                   <Text style={[styles.costLabel, { color: "#D97706" }]}>
-                    Late Filing Penalty ({overdueYears.length} overdue)
+                    Late Filing Penalty ({overdueYears.length} overdue year{overdueYears.length > 1 ? "s" : ""})
                   </Text>
                   <Text style={[styles.costValue, { color: "#D97706" }]}>
                     ₦{totalPenalty.toLocaleString()}
@@ -584,28 +627,6 @@ export default function AnnualReturnsScreen() {
               Upload your CAC Certificate of Registration or Status Report.
             </Text>
 
-            {/* Document Type Toggle */}
-            <View style={styles.docTypeRow}>
-              <TouchableOpacity
-                style={[styles.docTypeBtn, documentType === "CERTIFICATE" && styles.docTypeBtnActive]}
-                onPress={() => setDocumentType("CERTIFICATE")}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.docTypeBtnText, documentType === "CERTIFICATE" && styles.docTypeBtnTextActive]}>
-                  CAC Certificate
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.docTypeBtn, documentType === "STATUS_REPORT" && styles.docTypeBtnActive]}
-                onPress={() => setDocumentType("STATUS_REPORT")}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.docTypeBtnText, documentType === "STATUS_REPORT" && styles.docTypeBtnTextActive]}>
-                  Status Report
-                </Text>
-              </TouchableOpacity>
-            </View>
-
             {!documentUrl ? (
               <TouchableOpacity
                 style={[styles.uploadZone, errors.document && styles.uploadZoneError]}
@@ -618,7 +639,7 @@ export default function AnnualReturnsScreen() {
                 ) : (
                   <>
                     <UploadCloud size={28} color={colors.textMuted} />
-                    <Text style={styles.uploadZoneText}>Tap to upload document</Text>
+                    <Text style={styles.uploadZoneText}>Tap to upload CAC Certificate or Status Report</Text>
                     <Text style={styles.uploadZoneHint}>PDF, JPEG or PNG • Max 5MB</Text>
                   </>
                 )}
@@ -667,7 +688,7 @@ export default function AnnualReturnsScreen() {
 
             <Text style={[styles.fieldLabel, { marginTop: 14 }]}>Designation</Text>
             <View style={styles.roleChipsRow}>
-              {DESIGNEE_ROLES.map((role) => (
+              {(DESIGNEE_ROLES[companyType] || ["Proprietor"]).map((role) => (
                 <TouchableOpacity
                   key={role}
                   style={[styles.roleChip, designeeRole === role && styles.roleChipActive]}
@@ -747,6 +768,146 @@ export default function AnnualReturnsScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* Slide-from-down Year Picker Modal */}
+      <Modal
+        visible={isYearModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsYearModalOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setIsYearModalOpen(false)}
+        >
+          <View style={styles.yearPickerModalCard} onStartShouldSetResponder={() => true}>
+            {/* Modal Handle */}
+            <View style={styles.modalHandle} />
+
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Select Filing Year(s)</Text>
+                <Text style={styles.modalSubtitle}>
+                  Choose one or multiple years to file.
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsYearModalOpen(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Quick Helper Actions */}
+            <View style={styles.quickActionRow}>
+              <TouchableOpacity
+                style={styles.quickActionBtn}
+                onPress={() => setSelectedYears([currentYear])}
+              >
+                <Text style={styles.quickActionBtnText}>Current Year Only</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickActionBtn}
+                onPress={() => {
+                  const past = availableYears.filter((y) => y < currentYear);
+                  setSelectedYears(past.length > 0 ? past : [currentYear]);
+                }}
+              >
+                <Text style={styles.quickActionBtnText}>All Overdue Years</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickActionBtn}
+                onPress={() => setSelectedYears([...availableYears].sort((a, b) => a - b))}
+              >
+                <Text style={styles.quickActionBtnText}>Select All ({availableYears.length})</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Scrollable Year Items */}
+            <ScrollView
+              style={{ maxHeight: 340 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {availableYears.map((year) => {
+                const isSelected = selectedYears.includes(year);
+                const isOverdue = year < currentYear;
+
+                return (
+                  <TouchableOpacity
+                    key={year}
+                    style={[
+                      styles.yearModalItem,
+                      isSelected && styles.yearModalItemActive,
+                    ]}
+                    onPress={() => toggleYear(year)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.yearModalItemLeft}>
+                      <View
+                        style={[
+                          styles.checkboxBox,
+                          isSelected && styles.checkboxBoxActive,
+                        ]}
+                      >
+                        {isSelected && <Check size={14} color="#FFFFFF" />}
+                      </View>
+                      <View style={{ marginLeft: 12 }}>
+                        <Text
+                          style={[
+                            styles.yearModalItemYear,
+                            isSelected && styles.yearModalItemYearActive,
+                          ]}
+                        >
+                          Year {year}
+                        </Text>
+                        <Text style={styles.yearModalItemBase}>
+                          Base: ₦{basePricePerYear.toLocaleString()}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View>
+                      {isOverdue ? (
+                        <View style={styles.overdueBadge}>
+                          <Text style={styles.overdueBadgeText}>
+                            Overdue (+₦{penaltyPerYear.toLocaleString()})
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={styles.currentYearBadge}>
+                          <Text style={styles.currentYearBadgeText}>Current (No Penalty)</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Modal Bottom Summary & Confirm Button */}
+            <View style={styles.yearModalFooter}>
+              <View style={styles.yearModalFooterSummary}>
+                <Text style={styles.yearModalFooterCount}>
+                  {selectedYears.length} Year{selectedYears.length > 1 ? "s" : ""} Selected
+                </Text>
+                <Text style={styles.yearModalFooterTotal}>
+                  Total: ₦{totalCost.toLocaleString()}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.yearModalConfirmBtn}
+                onPress={() => setIsYearModalOpen(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.yearModalConfirmBtnText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {/* Confirmation Bottom Sheet Modal */}
       <Modal visible={isConfirmModalOpen} transparent animationType="slide">
         <TouchableOpacity
@@ -799,8 +960,8 @@ export default function AnnualReturnsScreen() {
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Base Fee:</Text>
-                  <Text style={styles.summaryValue}>₦{basePrice.toLocaleString()}</Text>
+                  <Text style={styles.summaryLabel}>Base Fee ({selectedYears.length} yr{selectedYears.length > 1 ? "s" : ""}):</Text>
+                  <Text style={styles.summaryValue}>₦{totalBasePrice.toLocaleString()}</Text>
                 </View>
                 {totalPenalty > 0 && (
                   <>
@@ -1123,49 +1284,223 @@ const styles = StyleSheet.create({
     color: colors.error,
     marginTop: 4,
   },
-  yearGrid: {
+  yearSelectorCard: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 14,
-  },
-  yearChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#F8FAFC",
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  yearSelectorLeft: {
+    flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    marginRight: 8,
   },
-  yearChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: "rgba(200, 45, 117, 0.06)",
+  yearIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  yearChipOverdue: {
-    borderColor: "#D97706",
-    backgroundColor: "rgba(217, 119, 6, 0.06)",
-  },
-  yearChipText: {
+  yearSelectorTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: colors.textSecondary,
-  },
-  yearChipTextActive: {
     color: colors.text,
-    fontWeight: "800",
   },
-  yearPenaltyTag: {
+  yearSelectorSub: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  selectedYearsChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 12,
+  },
+  selectedYearPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    borderColor: colors.primary,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  selectedYearPillOverdue: {
+    backgroundColor: "rgba(217, 119, 6, 0.08)",
+    borderColor: "#D97706",
+  },
+  selectedYearPillText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  selectedYearPillTextOverdue: {
+    color: "#D97706",
+  },
+  selectedYearPillPenalty: {
     fontSize: 9,
     fontWeight: "700",
     color: "#D97706",
+    marginLeft: 4,
+  },
+  removeYearPillBtn: {
+    marginLeft: 6,
+    padding: 2,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#CBD5E1",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+  yearPickerModalCard: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
+    maxHeight: "85%",
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: colors.textMuted,
     marginTop: 2,
   },
-  yearCurrentTag: {
-    fontSize: 9,
+  quickActionRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginVertical: 12,
+  },
+  quickActionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  quickActionBtnText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textSecondary,
+  },
+  yearModalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#F1F5F9",
+    backgroundColor: "#FAFAFA",
+    marginBottom: 8,
+  },
+  yearModalItemActive: {
+    borderColor: colors.primary,
+    backgroundColor: "rgba(200, 45, 117, 0.04)",
+  },
+  yearModalItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  checkboxBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#CBD5E1",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  checkboxBoxActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  yearModalItemYear: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  yearModalItemYearActive: {
+    color: colors.primary,
+    fontWeight: "800",
+  },
+  yearModalItemBase: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  overdueBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "rgba(217, 119, 6, 0.12)",
+  },
+  overdueBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#D97706",
+  },
+  currentYearBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+  },
+  currentYearBadgeText: {
+    fontSize: 10,
     fontWeight: "700",
     color: colors.success,
+  },
+  yearModalFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    paddingTop: 14,
+    marginTop: 8,
+  },
+  yearModalFooterSummary: {
+    flex: 1,
+  },
+  yearModalFooterCount: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textSecondary,
+  },
+  yearModalFooterTotal: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.primary,
     marginTop: 2,
+  },
+  yearModalConfirmBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+  },
+  yearModalConfirmBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   costBreakdownBox: {
     backgroundColor: "#F8FAFC",
