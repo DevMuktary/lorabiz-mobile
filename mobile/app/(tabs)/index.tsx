@@ -343,7 +343,7 @@ export default function HomeScreen() {
   ];
 
   const isInteractingRef = useRef(false);
-  const autoSlideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSlideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Real-time drag handler for instant indicator dot tracking
   const handleBannerScroll = (e: any) => {

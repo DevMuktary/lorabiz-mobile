@@ -109,6 +109,7 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         id: "biz_name",
         title: "Business Name",
         logo: require("../../assets/cac.png"),
+        route: "/services/business-name",
       },
       {
         id: "llc",
