@@ -119,7 +119,7 @@ export default function BillsScreen() {
           styles.contentContainer,
           {
             paddingTop: Math.max(insets.top, 16) + 12,
-            paddingBottom: Math.max(insets.bottom, 16) + 72,
+            paddingBottom: 24,
           },
         ]}
         showsVerticalScrollIndicator={false}
