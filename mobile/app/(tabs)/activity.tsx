@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ import {
   Copy,
   Check,
   X,
-  Layers,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
@@ -35,14 +35,39 @@ import {
   ArrowUpRight,
   Receipt,
   Clock,
+  Filter,
 } from "lucide-react-native";
 import { colors } from "../../constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 
-type TxTypeFilter = "ALL" | "PAYMENT" | "DEPOSIT";
+export type SpecificServiceKey =
+  | "ALL"
+  | "NIN_SLIP"
+  | "NIN_VALIDATION"
+  | "NIN_IPE"
+  | "NIN_MODIFICATION"
+  | "NIN_PERSONALIZATION"
+  | "BVN_SLIP"
+  | "BVN_RETRIEVAL"
+  | "BVN_MODIFICATION"
+  | "BUSINESS_NAME"
+  | "LLC"
+  | "ANNUAL_RETURNS"
+  | "TAX_ID"
+  | "SCUML"
+  | "AIRTIME"
+  | "MOBILE_DATA"
+  | "WALLET_FUNDING";
 
-type CategoryFilter = "ALL" | "SLIPS" | "CORPORATE" | "UTILITIES" | "WALLET";
+interface DisputeInfo {
+  id: string;
+  status: "PENDING" | "RESOLVED" | "REJECTED";
+  issueType: string;
+  notes?: string;
+  adminResponse?: string | null;
+  createdAt: string;
+}
 
 interface Transaction {
   id: string;
@@ -55,14 +80,27 @@ interface Transaction {
   balanceAfter?: number;
   balanceBefore?: number;
   createdAt: string;
+  dispute?: DisputeInfo | null;
 }
 
-const CATEGORY_OPTIONS: { id: CategoryFilter; label: string }[] = [
+const INDIVIDUAL_SERVICES: { id: SpecificServiceKey; label: string }[] = [
   { id: "ALL", label: "All Services" },
-  { id: "SLIPS", label: "Slips & Identity (NIN & BVN)" },
-  { id: "CORPORATE", label: "Corporate & Tax (CAC, TIN, SCUML)" },
-  { id: "UTILITIES", label: "Utilities (Airtime, Data, Bills)" },
-  { id: "WALLET", label: "Wallet Deposits & Funding" },
+  { id: "NIN_SLIP", label: "NIN Slip" },
+  { id: "NIN_VALIDATION", label: "NIN Validation" },
+  { id: "NIN_IPE", label: "NIN IPE Clearance" },
+  { id: "NIN_MODIFICATION", label: "NIN Modification" },
+  { id: "NIN_PERSONALIZATION", label: "NIN Personalization" },
+  { id: "BVN_SLIP", label: "BVN Slip" },
+  { id: "BVN_RETRIEVAL", label: "BVN Retrieval" },
+  { id: "BVN_MODIFICATION", label: "BVN Modification" },
+  { id: "BUSINESS_NAME", label: "Business Name (CAC)" },
+  { id: "LLC", label: "Company (LLC)" },
+  { id: "ANNUAL_RETURNS", label: "Annual Returns" },
+  { id: "TAX_ID", label: "Tax ID (TIN)" },
+  { id: "SCUML", label: "SCUML" },
+  { id: "AIRTIME", label: "Airtime" },
+  { id: "MOBILE_DATA", label: "Mobile Data" },
+  { id: "WALLET_FUNDING", label: "Wallet Funding" },
 ];
 
 const DISPUTE_REASONS = [
@@ -77,16 +115,17 @@ export default function ActivityScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [typeFilter, setTypeFilter] = useState<TxTypeFilter>("ALL");
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("ALL");
+  const [selectedService, setSelectedService] = useState<SpecificServiceKey>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const limit = 15;
 
   // Modals state
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [activeTx, setActiveTx] = useState<Transaction | null>(null);
+  const [modalView, setModalView] = useState<"RECEIPT" | "DISPUTE_FORM">("RECEIPT");
+
+  // Dispute form state
   const [disputeReason, setDisputeReason] = useState(DISPUTE_REASONS[0]);
   const [disputeNotes, setDisputeNotes] = useState("");
   const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
@@ -104,14 +143,13 @@ export default function ActivityScreen() {
     refetch: refetchTx,
     isFetching: isTxFetching,
   } = useQuery({
-    queryKey: ["mobileAllTransactions", page, typeFilter, categoryFilter, searchQuery],
+    queryKey: ["mobileAllTransactions", page, selectedService, searchQuery],
     queryFn: async () => {
       try {
         const queryParams = new URLSearchParams({
           page: String(page),
           limit: String(limit),
-          type: typeFilter,
-          category: categoryFilter,
+          category: selectedService,
           search: searchQuery,
         });
         return await api.get(`/api/user/transactions?${queryParams.toString()}`);
@@ -142,22 +180,29 @@ export default function ActivityScreen() {
     setTimeout(() => setCopiedRef(false), 2000);
   };
 
-  const handleOpenDispute = (tx: Transaction) => {
+  const openTxModal = (tx: Transaction) => {
+    setActiveTx(tx);
+    setModalView("RECEIPT");
     setDisputeFeedback(null);
     setDisputeNotes("");
     setDisputeReason(DISPUTE_REASONS[0]);
-    setShowDisputeModal(true);
+  };
+
+  const closeTxModal = () => {
+    setActiveTx(null);
+    setModalView("RECEIPT");
+    setDisputeFeedback(null);
   };
 
   const handleSubmitDispute = async () => {
-    if (!selectedTx) return;
+    if (!activeTx) return;
 
     setIsSubmittingDispute(true);
     setDisputeFeedback(null);
 
     try {
       const res: any = await api.post("/api/user/transactions/dispute", {
-        transactionId: selectedTx.id,
+        transactionId: activeTx.id,
         issueType: disputeReason,
         notes: disputeNotes.trim(),
       });
@@ -167,6 +212,23 @@ export default function ActivityScreen() {
           type: "success",
           message: res.message || "Dispute submitted. Our review team will investigate within 1 – 24 working hours.",
         });
+
+        // Update local active transaction with pending dispute
+        setActiveTx((prev) =>
+          prev
+            ? {
+                ...prev,
+                dispute: {
+                  id: "temp-" + Date.now(),
+                  status: "PENDING",
+                  issueType: disputeReason,
+                  notes: disputeNotes.trim(),
+                  createdAt: new Date().toISOString(),
+                },
+              }
+            : null
+        );
+
         refetchTx();
       } else {
         setDisputeFeedback({
@@ -184,11 +246,14 @@ export default function ActivityScreen() {
     }
   };
 
+  const selectedServiceObj = INDIVIDUAL_SERVICES.find((s) => s.id === selectedService);
+
   const renderTransactionItem = ({ item }: { item: Transaction }) => {
     const isCredit = item.type === "CREDIT" || item.type === "DEPOSIT";
     const isSuccess = item.status === "SUCCESS";
     const isPending = item.status === "PENDING";
     const isReversed = item.status === "REVERSED";
+    const hasDispute = !!item.dispute;
 
     const formattedDate = item.createdAt
       ? new Date(item.createdAt).toLocaleDateString("en-NG", {
@@ -208,7 +273,7 @@ export default function ActivityScreen() {
     return (
       <TouchableOpacity
         style={styles.txCard}
-        onPress={() => setSelectedTx(item)}
+        onPress={() => openTxModal(item)}
         activeOpacity={0.7}
       >
         <View style={styles.txCardLeft}>
@@ -230,7 +295,7 @@ export default function ActivityScreen() {
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.txDesc} numberOfLines={1}>
-              {item.description || (isCredit ? "Wallet Deposit" : "Service Order")}
+              {item.description || (isCredit ? "Wallet Funding" : "Service Order")}
             </Text>
             <View style={styles.txMetaRow}>
               <Text style={styles.txDate}>
@@ -241,6 +306,13 @@ export default function ActivityScreen() {
                   <Text style={styles.categoryBadgeText}>{item.serviceCategory}</Text>
                 </View>
               ) : null}
+              {hasDispute && (
+                <View style={styles.disputePillBadge}>
+                  <Text style={styles.disputePillBadgeText}>
+                    {item.dispute?.status === "RESOLVED" ? "DISPUTE RESOLVED" : "UNDER DISPUTE"}
+                  </Text>
+                </View>
+              )}
             </View>
             <Text style={styles.txRef}>Ref: {item.reference}</Text>
           </View>
@@ -291,10 +363,6 @@ export default function ActivityScreen() {
     );
   };
 
-  const currentCategoryLabel =
-    CATEGORY_OPTIONS.find((c) => c.id === categoryFilter)?.label.split(" (")[0] ||
-    "All Services";
-
   return (
     <View style={styles.screen}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -331,9 +399,9 @@ export default function ActivityScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 2. Search & Filter Controls */}
+      {/* 2. Search & Specific Individual Service Dropdown */}
       <View style={styles.filterSection}>
-        {/* Search Bar */}
+        {/* Search Input */}
         <View style={styles.searchBar}>
           <Search size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <TextInput
@@ -353,54 +421,27 @@ export default function ActivityScreen() {
           ) : null}
         </View>
 
-        {/* Filter Controls Row */}
-        <View style={styles.controlsRow}>
-          {/* Type Filter Pills */}
-          <View style={styles.typeFilterGroup}>
-            {(["ALL", "PAYMENT", "DEPOSIT"] as TxTypeFilter[]).map((type) => {
-              const label =
-                type === "ALL"
-                  ? "All"
-                  : type === "PAYMENT"
-                  ? "Payments"
-                  : "Deposits";
-              const isActive = typeFilter === type;
-              return (
-                <TouchableOpacity
-                  key={type}
-                  style={[styles.typePill, isActive && styles.typePillActive]}
-                  onPress={() => {
-                    setTypeFilter(type);
-                    setPage(1);
-                  }}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.typePillText, isActive && styles.typePillTextActive]}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Category Dropdown Pill */}
-          <TouchableOpacity
-            style={styles.categoryDropdownBtn}
-            onPress={() => setShowCategoryModal(true)}
-            activeOpacity={0.8}
-          >
-            <Layers size={13} color={categoryFilter !== "ALL" ? colors.primary : colors.textSecondary} style={{ marginRight: 4 }} />
+        {/* Individual Service Dropdown Trigger */}
+        <TouchableOpacity
+          style={styles.serviceDropdownTrigger}
+          onPress={() => setShowServiceDropdown(true)}
+          activeOpacity={0.8}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <Filter size={14} color={selectedService !== "ALL" ? colors.primary : colors.textSecondary} style={{ marginRight: 8 }} />
+            <Text style={styles.dropdownTriggerLabel}>Service: </Text>
             <Text
               style={[
-                styles.categoryDropdownText,
-                categoryFilter !== "ALL" && { color: colors.primary, fontWeight: "700" },
+                styles.dropdownTriggerValue,
+                selectedService !== "ALL" && { color: colors.primary, fontWeight: "800" },
               ]}
               numberOfLines={1}
             >
-              {currentCategoryLabel}
+              {selectedServiceObj?.label || "All Services"}
             </Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+          <ChevronDown size={15} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       {/* 3. Paginated Transactions List with Calibrated Bottom Space */}
@@ -456,8 +497,8 @@ export default function ActivityScreen() {
               </View>
               <Text style={styles.emptyTitle}>No Transactions Found</Text>
               <Text style={styles.emptySubtitle}>
-                {searchQuery || categoryFilter !== "ALL" || typeFilter !== "ALL"
-                  ? "No records matched your selected search or filter criteria."
+                {searchQuery || selectedService !== "ALL"
+                  ? "No records matched your search or selected service filter."
                   : "Your wallet transactions and service payments will appear here."}
               </Text>
             </View>
@@ -470,277 +511,301 @@ export default function ActivityScreen() {
       />
 
       {/* =================================================================== */}
-      {/* 4. CATEGORY SELECTOR MODAL                                          */}
+      {/* 4. INDIVIDUAL SERVICE DROPDOWN MODAL                                */}
       {/* =================================================================== */}
       <Modal
-        visible={showCategoryModal}
+        visible={showServiceDropdown}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowCategoryModal(false)}
+        onRequestClose={() => setShowServiceDropdown(false)}
       >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => setShowCategoryModal(false)}
+          onPress={() => setShowServiceDropdown(false)}
         >
-          <View style={styles.categoryModalCard}>
+          <View style={styles.dropdownModalCard}>
             <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Filter by Service</Text>
-              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+              <Text style={styles.modalTitle}>Select Service</Text>
+              <TouchableOpacity onPress={() => setShowServiceDropdown(false)}>
                 <X size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            {CATEGORY_OPTIONS.map((opt) => {
-              const isSelected = categoryFilter === opt.id;
-              return (
-                <TouchableOpacity
-                  key={opt.id}
-                  style={[styles.categoryOptionItem, isSelected && styles.categoryOptionItemActive]}
-                  onPress={() => {
-                    setCategoryFilter(opt.id);
-                    setPage(1);
-                    setShowCategoryModal(false);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.categoryOptionText, isSelected && styles.categoryOptionTextActive]}>
-                    {opt.label}
-                  </Text>
-                  {isSelected && <Check size={16} color={colors.primary} />}
-                </TouchableOpacity>
-              );
-            })}
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+              {INDIVIDUAL_SERVICES.map((opt) => {
+                const isSelected = selectedService === opt.id;
+                return (
+                  <TouchableOpacity
+                    key={opt.id}
+                    style={[styles.serviceOptionItem, isSelected && styles.serviceOptionItemActive]}
+                    onPress={() => {
+                      setSelectedService(opt.id);
+                      setPage(1);
+                      setShowServiceDropdown(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.serviceOptionText, isSelected && styles.serviceOptionTextActive]}>
+                      {opt.label}
+                    </Text>
+                    {isSelected && <Check size={16} color={colors.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
 
       {/* =================================================================== */}
-      {/* 5. FULL TRANSACTION DETAILS MODAL                                   */}
+      {/* 5. SINGLE UNIFIED TRANSACTION & DISPUTE MODAL (Zero UI Hang)        */}
       {/* =================================================================== */}
       <Modal
-        visible={!!selectedTx}
+        visible={!!activeTx}
         transparent
         animationType="slide"
-        onRequestClose={() => setSelectedTx(null)}
+        onRequestClose={closeTxModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.detailsModalCard}>
-            {selectedTx && (
+            {activeTx && (
               <>
+                {/* Modal Top Bar */}
                 <View style={styles.modalHeaderRow}>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Receipt size={18} color={colors.primary} style={{ marginRight: 8 }} />
-                    <Text style={styles.modalTitle}>Transaction Details</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => setSelectedTx(null)}>
+                  {modalView === "DISPUTE_FORM" ? (
+                    <TouchableOpacity
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                      onPress={() => setModalView("RECEIPT")}
+                    >
+                      <ArrowLeft size={18} color={colors.text} style={{ marginRight: 6 }} />
+                      <Text style={styles.modalTitle}>Report Dispute</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Receipt size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                      <Text style={styles.modalTitle}>Transaction Details</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity onPress={closeTxModal}>
                     <X size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
-                  {/* Big Amount Card */}
-                  <View style={styles.amountBanner}>
-                    <Text
-                      style={[
-                        styles.bannerAmount,
-                        {
-                          color:
-                            selectedTx.type === "CREDIT" || selectedTx.type === "DEPOSIT"
-                              ? colors.success
-                              : colors.text,
-                        },
-                      ]}
-                    >
-                      {selectedTx.type === "CREDIT" || selectedTx.type === "DEPOSIT" ? "+" : "-"}₦
-                      {Number(selectedTx.amount || 0).toLocaleString("en-NG", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </Text>
-                    <View style={styles.statusPill}>
-                      <Text style={styles.statusPillText}>{selectedTx.status}</Text>
+                {/* VIEW 1: TRANSACTION RECEIPT & DISPUTE STATUS */}
+                {modalView === "RECEIPT" ? (
+                  <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
+                    {/* Amount Banner */}
+                    <View style={styles.amountBanner}>
+                      <Text
+                        style={[
+                          styles.bannerAmount,
+                          {
+                            color:
+                              activeTx.type === "CREDIT" || activeTx.type === "DEPOSIT"
+                                ? colors.success
+                                : colors.text,
+                          },
+                        ]}
+                      >
+                        {activeTx.type === "CREDIT" || activeTx.type === "DEPOSIT" ? "+" : "-"}₦
+                        {Number(activeTx.amount || 0).toLocaleString("en-NG", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </Text>
+                      <View style={styles.statusPill}>
+                        <Text style={styles.statusPillText}>{activeTx.status}</Text>
+                      </View>
                     </View>
-                  </View>
 
-                  {/* Detail Rows */}
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Description</Text>
-                    <Text style={styles.detailValue}>{selectedTx.description}</Text>
-                  </View>
+                    {/* Active Dispute Banner (If already reported) */}
+                    {activeTx.dispute && (
+                      <View style={styles.activeDisputeCard}>
+                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                          <ShieldAlert size={16} color="#D97706" style={{ marginRight: 6 }} />
+                          <Text style={styles.disputeCardHeader}>
+                            Dispute Status:{" "}
+                            <Text style={{ fontWeight: "900", color: activeTx.dispute.status === "RESOLVED" ? colors.success : "#D97706" }}>
+                              {activeTx.dispute.status === "RESOLVED" ? "RESOLVED" : "UNDER INVESTIGATION"}
+                            </Text>
+                          </Text>
+                        </View>
+                        <Text style={styles.disputeCardText}>
+                          Reason: <Text style={{ color: colors.text, fontWeight: "600" }}>{activeTx.dispute.issueType}</Text>
+                        </Text>
+                        {activeTx.dispute.notes ? (
+                          <Text style={[styles.disputeCardText, { marginTop: 2 }]}>
+                            Notes: <Text style={{ color: colors.text }}>{activeTx.dispute.notes}</Text>
+                          </Text>
+                        ) : null}
+                        <Text style={styles.disputeCardDate}>
+                          Filed on {new Date(activeTx.dispute.createdAt).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })} • Investigation window: 1 – 24 working hours.
+                        </Text>
+                      </View>
+                    )}
 
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Service</Text>
-                    <Text style={styles.detailValue}>{selectedTx.serviceCategory || "General Wallet"}</Text>
-                  </View>
+                    {/* Detail Rows */}
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Description</Text>
+                      <Text style={styles.detailValue}>{activeTx.description}</Text>
+                    </View>
 
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Date & Time</Text>
-                    <Text style={styles.detailValue}>
-                      {new Date(selectedTx.createdAt).toLocaleString("en-NG", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Service</Text>
+                      <Text style={styles.detailValue}>{activeTx.serviceCategory || "General Wallet"}</Text>
+                    </View>
 
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Reference</Text>
-                    <TouchableOpacity
-                      style={styles.refCopyRow}
-                      onPress={() => handleCopyRef(selectedTx.reference)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.refText}>{selectedTx.reference}</Text>
-                      {copiedRef ? (
-                        <Check size={14} color={colors.success} style={{ marginLeft: 6 }} />
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Date & Time</Text>
+                      <Text style={styles.detailValue}>
+                        {new Date(activeTx.createdAt).toLocaleString("en-NG", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Reference</Text>
+                      <TouchableOpacity
+                        style={styles.refCopyRow}
+                        onPress={() => handleCopyRef(activeTx.reference)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.refText}>{activeTx.reference}</Text>
+                        {copiedRef ? (
+                          <Check size={14} color={colors.success} style={{ marginLeft: 6 }} />
+                        ) : (
+                          <Copy size={14} color={colors.textMuted} style={{ marginLeft: 6 }} />
+                        )}
+                      </TouchableOpacity>
+                    </View>
+
+                    {activeTx.balanceBefore !== undefined && activeTx.balanceAfter !== undefined && (
+                      <View style={styles.balanceSummaryBox}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.balanceSubText}>Balance Before</Text>
+                          <Text style={styles.balanceValText}>
+                            ₦{Number(activeTx.balanceBefore).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1, alignItems: "flex-end" }}>
+                          <Text style={styles.balanceSubText}>Balance After</Text>
+                          <Text style={styles.balanceValText}>
+                            ₦{Number(activeTx.balanceAfter).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Dispute Action Button or Disabled Indicator */}
+                    <View style={styles.modalActions}>
+                      {activeTx.dispute && activeTx.dispute.status === "PENDING" ? (
+                        <View style={styles.disputePendingNoticeBox}>
+                          <ShieldAlert size={15} color="#D97706" style={{ marginRight: 6 }} />
+                          <Text style={styles.disputePendingNoticeText}>
+                            Dispute active. A second dispute cannot be submitted until this is resolved.
+                          </Text>
+                        </View>
                       ) : (
-                        <Copy size={14} color={colors.textMuted} style={{ marginLeft: 6 }} />
+                        <TouchableOpacity
+                          style={styles.disputeTriggerBtn}
+                          onPress={() => setModalView("DISPUTE_FORM")}
+                          activeOpacity={0.8}
+                        >
+                          <ShieldAlert size={16} color="#DC2626" style={{ marginRight: 6 }} />
+                          <Text style={styles.disputeTriggerText}>Report a Dispute</Text>
+                        </TouchableOpacity>
                       )}
-                    </TouchableOpacity>
-                  </View>
-
-                  {selectedTx.balanceBefore !== undefined && selectedTx.balanceAfter !== undefined && (
-                    <View style={styles.balanceSummaryBox}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.balanceSubText}>Balance Before</Text>
-                        <Text style={styles.balanceValText}>
-                          ₦{Number(selectedTx.balanceBefore).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
-                        </Text>
-                      </View>
-                      <View style={{ flex: 1, alignItems: "flex-end" }}>
-                        <Text style={styles.balanceSubText}>Balance After</Text>
-                        <Text style={styles.balanceValText}>
-                          ₦{Number(selectedTx.balanceAfter).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
-                        </Text>
-                      </View>
                     </View>
-                  )}
-                </ScrollView>
+                  </ScrollView>
+                ) : (
+                  /* VIEW 2: DISPUTE SUBMISSION FORM (Inside same modal - NO HANGING) */
+                  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
+                      {disputeFeedback ? (
+                        <View style={styles.disputeFeedbackBox}>
+                          {disputeFeedback.type === "success" ? (
+                            <CheckCircle2 size={36} color={colors.success} style={{ marginBottom: 12 }} />
+                          ) : (
+                            <AlertCircle size={36} color={colors.error} style={{ marginBottom: 12 }} />
+                          )}
+                          <Text style={styles.disputeFeedbackTitle}>
+                            {disputeFeedback.type === "success" ? "Dispute Submitted" : "Submission Failed"}
+                          </Text>
+                          <Text style={styles.disputeFeedbackMsg}>{disputeFeedback.message}</Text>
+                          <TouchableOpacity
+                            style={styles.feedbackCloseBtn}
+                            onPress={() => setModalView("RECEIPT")}
+                          >
+                            <Text style={styles.feedbackCloseBtnText}>Return to Details</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <>
+                          <Text style={styles.disputeSubtext}>
+                            Transaction: <Text style={{ fontWeight: "700", color: colors.text }}>{activeTx.reference}</Text>
+                          </Text>
 
-                {/* Dispute Action Button */}
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={styles.disputeTriggerBtn}
-                    onPress={() => handleOpenDispute(selectedTx)}
-                    activeOpacity={0.8}
-                  >
-                    <ShieldAlert size={16} color="#DC2626" style={{ marginRight: 6 }} />
-                    <Text style={styles.disputeTriggerText}>Report a Dispute</Text>
-                  </TouchableOpacity>
-                </View>
+                          <Text style={styles.fieldLabel}>Select Issue Type</Text>
+                          {DISPUTE_REASONS.map((reason) => {
+                            const isSelected = disputeReason === reason;
+                            return (
+                              <TouchableOpacity
+                                key={reason}
+                                style={[styles.reasonOption, isSelected && styles.reasonOptionActive]}
+                                onPress={() => setDisputeReason(reason)}
+                                activeOpacity={0.7}
+                              >
+                                <View style={[styles.radioDotOuter, isSelected && styles.radioDotOuterActive]}>
+                                  {isSelected && <View style={styles.radioDotInner} />}
+                                </View>
+                                <Text style={[styles.reasonText, isSelected && styles.reasonTextActive]}>
+                                  {reason}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+
+                          <Text style={[styles.fieldLabel, { marginTop: 14 }]}>Additional Notes (Optional)</Text>
+                          <TextInput
+                            style={styles.notesInput}
+                            placeholder="Provide any additional details to help our team..."
+                            placeholderTextColor={colors.textMuted}
+                            value={disputeNotes}
+                            onChangeText={setDisputeNotes}
+                            multiline
+                            numberOfLines={3}
+                          />
+
+                          <Text style={styles.disputeTurnaroundNotice}>
+                            Our review team will investigate and update you within 1 – 24 working hours.
+                          </Text>
+
+                          <TouchableOpacity
+                            style={[styles.submitDisputeBtn, isSubmittingDispute && styles.submitDisputeBtnDisabled]}
+                            onPress={handleSubmitDispute}
+                            disabled={isSubmittingDispute}
+                            activeOpacity={0.8}
+                          >
+                            {isSubmittingDispute ? (
+                              <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                              <Text style={styles.submitDisputeBtnText}>Submit Dispute</Text>
+                            )}
+                          </TouchableOpacity>
+                        </>
+                      )}
+                    </ScrollView>
+                  </TouchableWithoutFeedback>
+                )}
               </>
             )}
           </View>
         </View>
-      </Modal>
-
-      {/* =================================================================== */}
-      {/* 6. DISPUTE REPORTING MODAL                                          */}
-      {/* =================================================================== */}
-      <Modal
-        visible={showDisputeModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDisputeModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.disputeModalCard}>
-              <View style={styles.modalHeaderRow}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <ShieldAlert size={18} color="#DC2626" style={{ marginRight: 8 }} />
-                  <Text style={styles.modalTitle}>Report Transaction Dispute</Text>
-                </View>
-                <TouchableOpacity onPress={() => setShowDisputeModal(false)}>
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              {disputeFeedback ? (
-                <View style={styles.disputeFeedbackBox}>
-                  {disputeFeedback.type === "success" ? (
-                    <CheckCircle2 size={36} color={colors.success} style={{ marginBottom: 12 }} />
-                  ) : (
-                    <AlertCircle size={36} color={colors.error} style={{ marginBottom: 12 }} />
-                  )}
-                  <Text style={styles.disputeFeedbackTitle}>
-                    {disputeFeedback.type === "success" ? "Dispute Submitted" : "Submission Failed"}
-                  </Text>
-                  <Text style={styles.disputeFeedbackMsg}>{disputeFeedback.message}</Text>
-                  <TouchableOpacity
-                    style={styles.feedbackCloseBtn}
-                    onPress={() => {
-                      setShowDisputeModal(false);
-                      setDisputeFeedback(null);
-                    }}
-                  >
-                    <Text style={styles.feedbackCloseBtnText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                  <Text style={styles.disputeSubtext}>
-                    Reference:{" "}
-                    <Text style={{ fontWeight: "700", color: colors.text }}>
-                      {selectedTx?.reference}
-                    </Text>
-                  </Text>
-
-                  <Text style={styles.fieldLabel}>Select Issue Type</Text>
-                  {DISPUTE_REASONS.map((reason) => {
-                    const isSelected = disputeReason === reason;
-                    return (
-                      <TouchableOpacity
-                        key={reason}
-                        style={[styles.reasonOption, isSelected && styles.reasonOptionActive]}
-                        onPress={() => setDisputeReason(reason)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.radioDotOuter, isSelected && styles.radioDotOuterActive]}>
-                          {isSelected && <View style={styles.radioDotInner} />}
-                        </View>
-                        <Text style={[styles.reasonText, isSelected && styles.reasonTextActive]}>
-                          {reason}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-
-                  <Text style={[styles.fieldLabel, { marginTop: 14 }]}>Additional Notes (Optional)</Text>
-                  <TextInput
-                    style={styles.notesInput}
-                    placeholder="Provide any additional details..."
-                    placeholderTextColor={colors.textMuted}
-                    value={disputeNotes}
-                    onChangeText={setDisputeNotes}
-                    multiline
-                    numberOfLines={3}
-                  />
-
-                  <Text style={styles.disputeTurnaroundNotice}>
-                    Our review team will investigate and follow up within 1 – 24 working hours.
-                  </Text>
-
-                  <TouchableOpacity
-                    style={[styles.submitDisputeBtn, isSubmittingDispute && styles.submitDisputeBtnDisabled]}
-                    onPress={handleSubmitDispute}
-                    disabled={isSubmittingDispute}
-                    activeOpacity={0.8}
-                  >
-                    {isSubmittingDispute ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.submitDisputeBtnText}>Submit Dispute</Text>
-                    )}
-                  </TouchableOpacity>
-                </ScrollView>
-              )}
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -802,6 +867,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.surfaceBorder,
+    gap: 8,
   },
   searchBar: {
     flexDirection: "row",
@@ -812,7 +878,6 @@ const styles = StyleSheet.create({
     borderColor: colors.surfaceBorder,
     paddingHorizontal: 12,
     height: 40,
-    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
@@ -820,51 +885,27 @@ const styles = StyleSheet.create({
     color: colors.text,
     paddingVertical: 0,
   },
-  controlsRow: {
+  serviceDropdownTrigger: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
-  },
-  typeFilterGroup: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  typePill: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    paddingVertical: 9,
+    borderRadius: 10,
   },
-  typePillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  typePillText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textSecondary,
-  },
-  typePillTextActive: {
-    color: "#FFFFFF",
-  },
-  categoryDropdownBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    maxWidth: 140,
-  },
-  categoryDropdownText: {
-    fontSize: 11,
+  dropdownTriggerLabel: {
+    fontSize: 12,
     color: colors.textSecondary,
     fontWeight: "600",
+  },
+  dropdownTriggerValue: {
+    fontSize: 12,
+    color: colors.text,
+    fontWeight: "700",
+    flex: 1,
   },
 
   /* List & Cards */
@@ -909,6 +950,7 @@ const styles = StyleSheet.create({
   txMetaRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 6,
     marginTop: 3,
   },
@@ -926,6 +968,17 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "800",
     color: colors.primary,
+  },
+  disputePillBadge: {
+    backgroundColor: "rgba(217, 119, 6, 0.12)",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  disputePillBadgeText: {
+    fontSize: 8,
+    fontWeight: "900",
+    color: "#D97706",
   },
   txRef: {
     fontSize: 10,
@@ -1031,7 +1084,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 20,
   },
-  categoryModalCard: {
+  dropdownModalCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 20,
@@ -1055,7 +1108,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.text,
   },
-  categoryOptionItem: {
+  serviceOptionItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1064,15 +1117,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 4,
   },
-  categoryOptionItemActive: {
+  serviceOptionItemActive: {
     backgroundColor: "rgba(200, 45, 117, 0.06)",
   },
-  categoryOptionText: {
+  serviceOptionText: {
     fontSize: 13,
     color: colors.textSecondary,
     fontWeight: "600",
   },
-  categoryOptionTextActive: {
+  serviceOptionTextActive: {
     color: colors.primary,
     fontWeight: "800",
   },
@@ -1110,6 +1163,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     color: colors.textSecondary,
+  },
+  activeDisputeCard: {
+    backgroundColor: "rgba(217, 119, 6, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(217, 119, 6, 0.25)",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+  },
+  disputeCardHeader: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#92400E",
+  },
+  disputeCardText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  disputeCardDate: {
+    fontSize: 10,
+    color: "#B45309",
+    marginTop: 6,
+    fontWeight: "600",
   },
   detailRow: {
     flexDirection: "row",
@@ -1161,6 +1237,22 @@ const styles = StyleSheet.create({
   modalActions: {
     marginTop: 18,
   },
+  disputePendingNoticeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(217, 119, 6, 0.08)",
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(217, 119, 6, 0.2)",
+  },
+  disputePendingNoticeText: {
+    fontSize: 11,
+    color: "#92400E",
+    fontWeight: "600",
+    flex: 1,
+    lineHeight: 16,
+  },
   disputeTriggerBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -1177,13 +1269,7 @@ const styles = StyleSheet.create({
     color: "#DC2626",
   },
 
-  /* Dispute Modal */
-  disputeModalCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 20,
-    maxHeight: "85%",
-  },
+  /* Dispute Sub-View */
   disputeSubtext: {
     fontSize: 12,
     color: colors.textSecondary,
