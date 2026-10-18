@@ -314,6 +314,30 @@ export default function ProfileScreen() {
     }
   }
 
+  // Handle Legal Name Tap (Uneditable Notice)
+  function handleLegalNamePress() {
+    setAlertConfig({
+      visible: true,
+      type: "info",
+      title: "Name Uneditable",
+      message: "Verified legal names cannot be modified directly. Please reach out to customer support if you need to request a name update.",
+      confirmText: "Understood",
+      onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+    });
+  }
+
+  // Handle Email Tap (Verified Identity Notice)
+  function handleEmailPress() {
+    setAlertConfig({
+      visible: true,
+      type: "info",
+      title: "Registered Email",
+      message: "Your email address is verified and securely tied to your Lorabiz account.",
+      confirmText: "Understood",
+      onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+    });
+  }
+
   // =========================================================================
   // Phone Change Logic (30-day security lock)
   // =========================================================================
@@ -780,35 +804,48 @@ export default function ProfileScreen() {
         <View style={styles.legalFieldsRow}>
           <View style={styles.legalFieldCol}>
             <Text style={styles.legalFieldLabel}>First Name</Text>
-            <View style={styles.legalFieldBox}>
+            <TouchableOpacity
+              style={styles.legalFieldBox}
+              onPress={handleLegalNamePress}
+              activeOpacity={0.7}
+            >
               <Text style={styles.legalFieldValue} numberOfLines={1}>
                 {userFirstName}
               </Text>
-            </View>
+              <Lock size={12} color="#94A3B8" />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.legalFieldCol}>
             <Text style={styles.legalFieldLabel}>Last Name</Text>
-            <View style={styles.legalFieldBox}>
+            <TouchableOpacity
+              style={styles.legalFieldBox}
+              onPress={handleLegalNamePress}
+              activeOpacity={0.7}
+            >
               <Text style={styles.legalFieldValue} numberOfLines={1}>
                 {userLastName || "—"}
               </Text>
-            </View>
+              <Lock size={12} color="#94A3B8" />
+            </TouchableOpacity>
           </View>
         </View>
 
-        <Text style={styles.legalComplianceNotice}>
-          Legal names are locked to maintain compliance with CAC/NIN verification standards and loyalty tier status.
-        </Text>
-
         <View style={styles.legalEmailRow}>
           <Text style={styles.legalFieldLabel}>Registered Email</Text>
-          <View style={styles.legalEmailBox}>
-            <Mail size={16} color="#64748B" style={{ marginRight: 8 }} />
-            <Text style={styles.legalEmailText} numberOfLines={1}>
-              {user?.email}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.legalEmailBox}
+            onPress={handleEmailPress}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
+              <Mail size={16} color="#64748B" style={{ marginRight: 8 }} />
+              <Text style={styles.legalEmailText} numberOfLines={1}>
+                {user?.email}
+              </Text>
+            </View>
+            <Lock size={12} color="#94A3B8" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -2048,19 +2085,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     paddingHorizontal: 12,
-    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   legalFieldValue: {
     fontSize: 14,
     fontWeight: "700",
     color: "#0F172A",
-  },
-  legalComplianceNotice: {
-    fontSize: 11,
-    color: "#64748B",
-    lineHeight: 16,
-    marginTop: 2,
-    marginBottom: 12,
+    flex: 1,
+    marginRight: 6,
   },
   legalEmailRow: {
     marginTop: 2,
@@ -2074,6 +2108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   legalEmailText: {
     fontSize: 13,
