@@ -164,6 +164,23 @@ export default function HomeScreen() {
     },
   });
 
+  // 5. Dynamic Dashboard Promotional Banners Query
+  const { data: dynamicBannersData, refetch: refetchBanners } = useQuery({
+    queryKey: ["mobileDashboardBanners"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/api/banners?target=MOBILE");
+        if (res?.banners && Array.isArray(res.banners) && res.banners.length > 0) {
+          return res.banners;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   // Unified Refresh Handler - immediately updates timestamp to now
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -175,6 +192,7 @@ export default function HomeScreen() {
         refetchWallet(),
         refetchTx(),
         refetchLoyalty(),
+        refetchBanners(),
       ]);
       setIsOffline(false);
       const walletRes: any = results[2];
@@ -299,12 +317,12 @@ export default function HomeScreen() {
   ];
 
   // Promotional Announcements & Ads Carousel Data (Strictly NO emojis)
-  const PROMO_ADS = [
+  const DEFAULT_PROMO_ADS = [
     {
       id: "cac_promo",
       tag: "FAST-TRACK",
-      title: "Register Your Business in 24h",
-      desc: "Accredited CAC Certificate, Status Report and Tax ID delivered seamlessly.",
+      title: "Register Your Business",
+      desc: "Accredited CAC Certificate, Status Report and Tax ID delivered seamlessly in 1 – 48 Working Hours.",
       cta: "Register Now",
       route: "/services/business-name",
       color: "#831843",
@@ -315,7 +333,7 @@ export default function HomeScreen() {
       id: "scuml_promo",
       tag: "COMPLIANCE",
       title: "Instant SCUML Processing",
-      desc: "Open corporate bank accounts fast with certified AML compliance.",
+      desc: "Open corporate bank accounts fast with certified AML compliance in 1 – 48 Working Hours.",
       cta: "Apply for SCUML",
       route: "/services/scuml",
       color: "#1E1B4B",
@@ -326,7 +344,7 @@ export default function HomeScreen() {
       id: "data_promo",
       tag: "INSTANT UTILITIES",
       title: "Nationwide Data & Airtime",
-      desc: "Instant high-speed data bundles across MTN, Airtel, Glo and 9mobile.",
+      desc: "Instant high-speed data bundles across MTN, Airtel, Glo and 9mobile at agent rates.",
       cta: "Buy Data",
       route: "/(tabs)/bills",
       color: "#064E3B",
@@ -334,6 +352,32 @@ export default function HomeScreen() {
       btnTextColor: "#064E3B",
     },
   ];
+
+  const PROMO_ADS = useMemo(() => {
+    if (dynamicBannersData && Array.isArray(dynamicBannersData) && dynamicBannersData.length > 0) {
+      return dynamicBannersData;
+    }
+    return DEFAULT_PROMO_ADS;
+  }, [dynamicBannersData]);
+
+  // Clean HTML parser for mobile Text
+  const renderBannerDesc = (desc: string) => {
+    if (!desc) return null;
+    if (!desc.includes("<")) return desc;
+    const parts = desc.split(/(<b>.*?<\/b>|<strong>.*?<\/strong>)/gi);
+    return parts.map((part, idx) => {
+      if (/^<(b|strong)>/i.test(part) && /<\/(b|strong)>$/i.test(part)) {
+        const clean = part.replace(/<\/?(b|strong)>/gi, "");
+        return (
+          <Text key={idx} style={{ fontWeight: "800", color: "#FFFFFF" }}>
+            {clean}
+          </Text>
+        );
+      }
+      const cleanPlain = part.replace(/<[^>]+>/g, "");
+      return <React.Fragment key={idx}>{cleanPlain}</React.Fragment>;
+    });
+  };
 
   const isInteractingRef = useRef(false);
   const autoSlideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -597,7 +641,7 @@ export default function HomeScreen() {
 
                   <Text style={styles.adTitle}>{ad.title}</Text>
                   <Text style={styles.adDesc} numberOfLines={2}>
-                    {ad.desc}
+                    {renderBannerDesc(ad.desc)}
                   </Text>
 
                   {/* Real Native Solid Pill Button */}

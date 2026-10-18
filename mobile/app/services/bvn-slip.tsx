@@ -36,6 +36,7 @@ import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { downloadAndSharePdf } from "../../lib/pdf";
 import { parseDemographics, NormalizedDemographics } from "../../lib/demographics";
 
@@ -359,6 +360,13 @@ export default function BvnSlipScreen() {
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
+
+        {/* Dynamic Service Guidance TV Ticker */}
+        <ServiceTvTicker
+          serviceKey="BVN_SLIP"
+          defaultBadge="BVN NOTICE"
+          fallbackText="BVN Verification: Requires registered phone number or 11-digit BVN. Instant verified slip generation available 24/7."
+        />
 
         {/* Input Card */}
         <View style={styles.inputCard}>

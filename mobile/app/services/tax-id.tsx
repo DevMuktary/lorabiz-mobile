@@ -36,6 +36,7 @@ import { colors } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 export type TaxIdType = "INDIVIDUAL" | "CORPORATE";
 
@@ -612,6 +613,13 @@ export default function TaxIdScreen() {
               <Text style={styles.turnaroundText}>Turnaround Time: 1 – 24 Working Hours</Text>
             </View>
           </View>
+
+          {/* Dynamic Service Guidance TV Ticker */}
+          <ServiceTvTicker
+            serviceKey="TAX_ID"
+            defaultBadge="TAX NOTICE"
+            fallbackText="Tax ID Notice: Provide registered business RC or proprietor NIN. JTB validation processed within 1 – 24 Working Hours."
+          />
 
           {/* Reward Voucher Pass Card (If Available) */}
           {freePassCount > 0 && (

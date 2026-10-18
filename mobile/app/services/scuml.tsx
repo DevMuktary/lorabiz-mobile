@@ -40,6 +40,7 @@ import { uploadFileToServer } from "../../lib/upload";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 export type ScumlType = "BUSINESS_NAME" | "LLC" | "NGO";
 
@@ -503,6 +504,13 @@ export default function ScumlScreen() {
               </View>
             </View>
           </View>
+
+          {/* Dynamic Service Guidance TV Ticker */}
+          <ServiceTvTicker
+            serviceKey="SCUML"
+            defaultBadge="AML COMPLIANCE"
+            fallbackText="SCUML Requirements: Ensure CAC Certificate, Status Report, and Bank Statement/Utility bill are uploaded in high resolution. Turnaround: 1 – 72 Working Hours."
+          />
 
           {/* Section 1: Registration Type Selection */}
           <View style={styles.card}>

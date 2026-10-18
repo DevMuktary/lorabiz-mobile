@@ -39,6 +39,7 @@ import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { parseDemographics, NormalizedDemographics } from "../../lib/demographics";
 import { downloadAndSharePdf } from "../../lib/pdf";
 
@@ -512,6 +513,13 @@ export default function NinSlipScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Dynamic Service Guidance TV Ticker */}
+            <ServiceTvTicker
+              serviceKey="NIN_SLIP"
+              defaultBadge="NIN NOTICE"
+              fallbackText="NIN Slip Notice: High-resolution Standard and Premium slips generated instantly. Ensure 11-digit NIN is correct before submitting."
+            />
 
             {/* Error Banner */}
             {errorMessage ? (

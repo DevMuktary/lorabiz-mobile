@@ -46,6 +46,7 @@ import { uploadFileToServer } from "../../lib/upload";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { NIGERIA_DATA } from "../../constants/nigeria-data";
 import { CAC_CATEGORIES } from "../../constants/cac-categories";
 import { COUNTRY_CODES } from "../../constants/country-codes";
@@ -1233,6 +1234,12 @@ export default function BusinessNameScreen() {
           {/* ========================================================================= */}
           {currentStep === 2 && (
             <View style={styles.stepContainer}>
+              <ServiceTvTicker
+                serviceKey="CAC_BUSINESS_NAME"
+                defaultBadge="STEP 2 NOTICE"
+                fallbackText="Step 2 Guideline: Ensure all proprietor names match your NIN / BVN records exactly. Upload clear passport photos with plain background. Turnaround is 1 – 48 Working Hours."
+              />
+
               <View style={styles.sectionHeaderBetween}>
                 <View>
                   <Text style={styles.sectionTitle}>Proprietor Information</Text>
