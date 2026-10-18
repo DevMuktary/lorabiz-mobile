@@ -22,6 +22,7 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
+  Lock,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../constants/theme";
@@ -107,6 +108,9 @@ export default function LoginScreen() {
   // Mode: returning user quick-unlock (Screenshot 1) vs standard 1-step login (Screenshot 2)
   const [isReturningUser, setIsReturningUser] = useState<boolean>(Boolean(savedProfile));
 
+  // Provider override for returning user (allows switching between Password and Google without losing account)
+  const [overrideProvider, setOverrideProvider] = useState<"credentials" | "google" | null>(null);
+
   // Form inputs (Both Email and Password together in 1 step)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -132,6 +136,7 @@ export default function LoginScreen() {
     if (savedProfile) {
       setIsReturningUser(true);
       setEmail(savedProfile.email);
+      setOverrideProvider(null);
     }
   }, [savedProfile]);
 
@@ -272,6 +277,7 @@ export default function LoginScreen() {
     try {
       await clearSavedProfile();
     } catch {}
+    setOverrideProvider(null);
     setIsReturningUser(false);
     setPassword("");
     setEmail("");
@@ -492,7 +498,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Auth Section based on provider */}
-            {savedProfile.authProvider === "google" ? (
+            {(overrideProvider || savedProfile.authProvider || "credentials") === "google" ? (
               <View style={styles.fieldGroup}>
                 <TouchableOpacity
                   style={[styles.googleButton, { marginTop: 16 }]}
@@ -504,7 +510,20 @@ export default function LoginScreen() {
                   <Text style={styles.googleButtonText}>Continue with Google</Text>
                 </TouchableOpacity>
 
-                <View style={{ marginTop: 24, alignItems: "center" }}>
+                {/* Inline Toggle: Switch to Password */}
+                <TouchableOpacity
+                  style={styles.switchProviderBtn}
+                  onPress={() => {
+                    setOverrideProvider("credentials");
+                    if (errorMsg) setErrorMsg(null);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Lock size={15} color={colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={styles.switchProviderText}>Sign in with password instead</Text>
+                </TouchableOpacity>
+
+                <View style={{ marginTop: 20, alignItems: "center" }}>
                   <TouchableOpacity onPress={handleSwitchAccount} activeOpacity={0.7}>
                     <Text style={styles.resetPasswordText}>Use a different account</Text>
                   </TouchableOpacity>
@@ -579,11 +598,30 @@ export default function LoginScreen() {
                   )}
                 </TouchableOpacity>
 
+                {/* Inline Toggle: Continue with Google */}
+                <TouchableOpacity
+                  style={styles.switchProviderBtn}
+                  onPress={() => {
+                    setOverrideProvider("google");
+                    if (errorMsg) setErrorMsg(null);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <GoogleIcon size={16} />
+                  <Text style={[styles.switchProviderText, { marginLeft: 8 }]}>Sign in with Google instead</Text>
+                </TouchableOpacity>
+
                 {/* Footer: Don't have an account? Sign up */}
                 <View style={styles.footerRow}>
                   <Text style={styles.footerMuted}>Don't have an account? </Text>
                   <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
                     <Text style={styles.footerLinkPink}>Sign up</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ marginTop: 14, alignItems: "center" }}>
+                  <TouchableOpacity onPress={handleSwitchAccount} activeOpacity={0.7}>
+                    <Text style={styles.resetPasswordText}>Use a different account</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1056,6 +1094,23 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     marginLeft: 12,
     letterSpacing: 0.1,
+  },
+  switchProviderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "rgba(200, 45, 117, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(200, 45, 117, 0.15)",
+  },
+  switchProviderText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.primary,
   },
 
   // ----------------------------------------------------

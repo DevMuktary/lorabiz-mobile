@@ -46,6 +46,20 @@ export default function RootLayout() {
                 animation: "slide_from_bottom",
               }}
             />
+            <Stack.Screen
+              name="wallet/transaction/[id]"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+              }}
+            />
+            <Stack.Screen
+              name="wallet/transaction/dispute/[id]"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+              }}
+            />
             <Stack.Screen name="services/nin-validation" options={{ headerShown: false, animation: "none" }} />
             <Stack.Screen name="services/nin-validation-history" options={{ headerShown: false, animation: "none" }} />
             <Stack.Screen name="services/nin-modification" options={{ headerShown: false, animation: "none" }} />
