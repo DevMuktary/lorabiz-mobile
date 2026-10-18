@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import {
   getAuthToken,
   saveAuthToken,
@@ -18,6 +19,8 @@ import {
   SavedProfile,
   getCachedWallet,
   saveCachedWallet,
+  getAutoLockTimeout,
+  setAutoLockTimeout,
 } from "../lib/storage";
 import { api, BASE_URL } from "../lib/api";
 import { promptBiometricAuth, getBiometricCapabilities } from "../lib/biometrics";
@@ -55,6 +58,8 @@ interface AuthContextType {
   isLoading: boolean;
   biometricAvailable: boolean;
   biometricEnabled: boolean;
+  autoLockTimeout: string;
+  setAutoLockSetting: (timeout: string) => Promise<void>;
   login: (email: string, password: string, otpCode?: string, isBackupCode?: boolean) => Promise<LoginResult>;
   logout: () => Promise<void>;
   clearSavedProfile: () => Promise<void>;
@@ -98,10 +103,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
+  const [autoLockTimeout, setAutoLockTimeoutState] = useState<string>("never");
+
+  const lastActiveRef = useRef<number>(Date.now());
+  const isLockingRef = useRef<boolean>(false);
 
   useEffect(() => {
     initAuth();
   }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", async (nextState: AppStateStatus) => {
+      if (nextState === "background" || nextState === "inactive") {
+        lastActiveRef.current = Date.now();
+      } else if (nextState === "active") {
+        const timeoutSetting = await getAutoLockTimeout();
+        if (timeoutSetting === "never" || !token || isLockingRef.current) {
+          lastActiveRef.current = Date.now();
+          return;
+        }
+
+        const elapsedMs = Date.now() - lastActiveRef.current;
+        let thresholdMs = Infinity;
+        if (timeoutSetting === "immediately") thresholdMs = 1500;
+        else if (timeoutSetting === "1m") thresholdMs = 60 * 1000;
+        else if (timeoutSetting === "5m") thresholdMs = 5 * 60 * 1000;
+        else if (timeoutSetting === "15m") thresholdMs = 15 * 60 * 1000;
+        else if (timeoutSetting === "1h") thresholdMs = 60 * 60 * 1000;
+        else if (timeoutSetting === "2h") thresholdMs = 2 * 60 * 60 * 1000;
+
+        if (elapsedMs >= thresholdMs) {
+          isLockingRef.current = true;
+          if (biometricAvailable && biometricEnabled) {
+            const unlocked = await promptBiometricAuth("Confirm your biometrics to resume Lorabiz");
+            if (unlocked) {
+              isLockingRef.current = false;
+              lastActiveRef.current = Date.now();
+              return;
+            }
+          }
+          await logout();
+          isLockingRef.current = false;
+        } else {
+          lastActiveRef.current = Date.now();
+        }
+      }
+    });
+
+    return () => sub.remove();
+  }, [token, biometricAvailable, biometricEnabled]);
+
+  async function setAutoLockSetting(timeout: string) {
+    await setAutoLockTimeout(timeout);
+    setAutoLockTimeoutState(timeout);
+  }
 
   async function initAuth() {
     try {
@@ -713,6 +768,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         biometricAvailable,
         biometricEnabled,
+        autoLockTimeout,
+        setAutoLockSetting,
         login,
         logout,
         clearSavedProfile,

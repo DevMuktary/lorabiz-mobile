@@ -239,3 +239,37 @@ export async function clearAllAuth(): Promise<void> {
   await removeAuthUser();
 }
 
+const BIO_PROMPT_DISMISSED_KEY = "lorabiz_bio_prompt_dismissed";
+const AUTOLOCK_TIMEOUT_KEY = "lorabiz_autolock_timeout";
+
+export async function setBioPromptDismissed(dismissed: boolean): Promise<void> {
+  try {
+    await setItem(BIO_PROMPT_DISMISSED_KEY, dismissed ? "true" : "false");
+  } catch {}
+}
+
+export async function getBioPromptDismissed(): Promise<boolean> {
+  try {
+    const val = await getItem(BIO_PROMPT_DISMISSED_KEY);
+    return val === "true";
+  } catch {
+    return false;
+  }
+}
+
+export async function setAutoLockTimeout(timeout: string): Promise<void> {
+  try {
+    await setItem(AUTOLOCK_TIMEOUT_KEY, timeout);
+  } catch {}
+}
+
+export async function getAutoLockTimeout(): Promise<string> {
+  try {
+    const val = await getItem(AUTOLOCK_TIMEOUT_KEY);
+    return val || "never";
+  } catch {
+    return "never";
+  }
+}
+
+
