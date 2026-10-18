@@ -23,7 +23,6 @@ import {
   EyeOff,
   ShieldCheck,
   Lock,
-  Clock,
   X,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
@@ -172,6 +171,10 @@ export default function LoginScreen() {
   // Auto-prompt Face ID if returning user AND this account is verified configured
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
+    // If redirected due to inactivity timeout, do not auto-prompt Face ID without user gesture
+    if (params.reason === "timeout") {
+      return;
+    }
     if (isReturningUser && savedProfile && biometricAvailable) {
       isAccountBiometricsConfigured(savedProfile.id || savedProfile.email).then((configured) => {
         if (configured) {
@@ -184,7 +187,7 @@ export default function LoginScreen() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isReturningUser, savedProfile, biometricAvailable]);
+  }, [isReturningUser, savedProfile, biometricAvailable, params.reason]);
 
   // Listen for deep-link returns from Google OAuth (lorabiz://auth/google-success)
   useEffect(() => {
@@ -528,10 +531,10 @@ export default function LoginScreen() {
           <View style={styles.contentWrapper}>
             {timeoutNotice ? (
               <View style={styles.timeoutBanner}>
-                <Clock size={16} color="#B45309" style={{ marginRight: 8 }} />
+                <Lock size={16} color={colors.primary} style={{ marginRight: 8 }} />
                 <Text style={styles.timeoutBannerText}>{timeoutNotice}</Text>
                 <TouchableOpacity onPress={() => setTimeoutNotice(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <X size={15} color="#B45309" />
+                  <X size={15} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -717,10 +720,10 @@ export default function LoginScreen() {
           <View style={styles.contentWrapper}>
             {timeoutNotice ? (
               <View style={styles.timeoutBanner}>
-                <Clock size={16} color="#B45309" style={{ marginRight: 8 }} />
+                <Lock size={16} color={colors.primary} style={{ marginRight: 8 }} />
                 <Text style={styles.timeoutBannerText}>{timeoutNotice}</Text>
                 <TouchableOpacity onPress={() => setTimeoutNotice(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <X size={15} color="#B45309" />
+                  <X size={15} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -1285,19 +1288,19 @@ const styles = StyleSheet.create({
   timeoutBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF3C7",
-    borderRadius: 12,
+    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    borderRadius: 14,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#FDE68A",
+    borderColor: "rgba(200, 45, 117, 0.22)",
   },
   timeoutBannerText: {
     flex: 1,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#92400E",
-    lineHeight: 16,
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: colors.primary,
+    lineHeight: 17,
   },
 });

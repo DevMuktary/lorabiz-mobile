@@ -118,6 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hideBalance, setHideBalanceState] = useState<boolean>(false);
 
   const lastActiveRef = useRef<number>(Date.now());
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const authGracePeriodRef = useRef<number>(0);
 
   useEffect(() => {
     initAuth();
@@ -125,22 +127,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", async (nextState: AppStateStatus) => {
-      if (nextState === "background" || nextState === "inactive") {
+      const prevState = appStateRef.current;
+      appStateRef.current = nextState;
+
+      if (nextState === "background") {
         const now = Date.now();
         lastActiveRef.current = now;
         await setLastActiveTime(now);
       } else if (nextState === "active") {
+        const now = Date.now();
+
+        // 1. If within active post-authentication grace period, never lock
+        if (now < authGracePeriodRef.current) {
+          lastActiveRef.current = now;
+          await setLastActiveTime(now);
+          return;
+        }
+
+        // 2. Only check auto-lock if coming back from actual BACKGROUND
+        // (Prevents in-app Face ID prompts, notification tray swipes, or permission modals from locking)
+        if (prevState !== "background") {
+          lastActiveRef.current = now;
+          return;
+        }
+
         const timeoutSetting = await getAutoLockTimeout();
         if (timeoutSetting === "never" || !token) {
-          lastActiveRef.current = Date.now();
+          lastActiveRef.current = now;
           return;
         }
 
         const lastActive = lastActiveRef.current || (await getLastActiveTime());
-        const elapsedMs = Date.now() - lastActive;
-        let thresholdMs = 0;
-        if (timeoutSetting === "immediately") thresholdMs = 0;
-        else if (timeoutSetting === "1m") thresholdMs = 60 * 1000;
+        const elapsedMs = now - lastActive;
+
+        // For "immediately", require that user was actually in the background for at least 2.5 seconds
+        // to prevent accidental multitasking gestures or fast switcher taps from kicking them out
+        let thresholdMs = 2500;
+        if (timeoutSetting === "1m") thresholdMs = 60 * 1000;
         else if (timeoutSetting === "5m") thresholdMs = 5 * 60 * 1000;
         else if (timeoutSetting === "15m") thresholdMs = 15 * 60 * 1000;
         else if (timeoutSetting === "1h") thresholdMs = 60 * 60 * 1000;
@@ -153,7 +176,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           router.replace("/(auth)/login?reason=timeout" as any);
         } else {
-          lastActiveRef.current = Date.now();
+          lastActiveRef.current = now;
+          await setLastActiveTime(now);
         }
       }
     });
@@ -210,8 +234,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Enforce auto-lock timeout on app cold start (e.g. killed/swiped away)
         const lastActive = await getLastActiveTime();
         let isTimedOut = false;
+        const now = Date.now();
+
         if (savedAutoLock === "immediately") {
-          isTimedOut = true;
+          // If auto-lock is immediately and app was killed/swiped away:
+          // Check that lastActive was recorded and at least 2.5 seconds have elapsed
+          if (lastActive > 0 && now - lastActive > 2500) {
+            isTimedOut = true;
+          }
         } else if (savedAutoLock !== "never" && lastActive > 0) {
           let thresholdMs = Infinity;
           if (savedAutoLock === "1m") thresholdMs = 60 * 1000;
@@ -220,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           else if (savedAutoLock === "1h") thresholdMs = 60 * 60 * 1000;
           else if (savedAutoLock === "2h") thresholdMs = 2 * 60 * 60 * 1000;
 
-          if (Date.now() - lastActive >= thresholdMs) {
+          if (now - lastActive >= thresholdMs) {
             isTimedOut = true;
           }
         }
@@ -235,6 +265,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }, 50);
           return;
         }
+
+        // Session valid on cold start: update active timestamps and grace period
+        lastActiveRef.current = now;
+        authGracePeriodRef.current = now + 15000;
+        await setLastActiveTime(now);
 
         setToken(storedToken);
         if (storedUser.wallet) {
@@ -444,6 +479,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await saveAuthUser(userProfile);
         setToken(activeToken);
         setUser(userProfile);
+
+        const now = Date.now();
+        lastActiveRef.current = now;
+        authGracePeriodRef.current = now + 15000;
+        await setLastActiveTime(now);
 
         // Save persistent profile for returning user quick-unlock
         const profileToSave: SavedProfile = {
@@ -680,6 +720,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(updatedUser);
         await saveAuthUser(updatedUser);
 
+        const now = Date.now();
+        lastActiveRef.current = now;
+        authGracePeriodRef.current = now + 15000;
+        await setLastActiveTime(now);
+
         // Update saved profile for returning Google user
         const profileToSave: SavedProfile = {
           id: updatedUser.id,
@@ -824,6 +869,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await saveAuthUser(hydratedUser);
       setToken(bioToken);
       setUser(hydratedUser);
+
+      const now = Date.now();
+      lastActiveRef.current = now;
+      authGracePeriodRef.current = now + 15000;
+      await setLastActiveTime(now);
 
       return { success: true };
     } catch (err: any) {
