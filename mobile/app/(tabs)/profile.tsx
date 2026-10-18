@@ -54,6 +54,7 @@ import { colors } from "../../constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { uploadFileToServer } from "../../lib/upload";
+import { TERMS_OF_SERVICE_DOC, PRIVACY_POLICY_DOC } from "../../constants/legalDocuments";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -1156,7 +1157,7 @@ export default function ProfileScreen() {
 
       {/* App Version Stamp */}
       <View style={styles.versionContainer}>
-        <Text style={styles.versionText}>Lorabiz Mobile • v1.2.0 (Build 42)</Text>
+        <Text style={styles.versionText}>Lorabiz Mobile • v1.0</Text>
       </View>
 
       {/* ==================================================== */}
@@ -1753,90 +1754,84 @@ export default function ProfileScreen() {
             contentContainerStyle={styles.docViewerScrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {documentType === "TERMS" ? (
-              <View>
-                <View style={styles.legalNoticeBanner}>
-                  <Text style={styles.legalNoticeTag}>STATUTORY LEGAL DOCUMENT</Text>
-                  <Text style={styles.legalNoticeHeading}>User Service Agreements & Operating Terms</Text>
-                  <Text style={styles.legalNoticeSub}>
-                    Governing Law: Federal Republic of Nigeria (NDPA 2023 & CAMA 2020)
-                  </Text>
-                </View>
+            {(() => {
+              const doc = documentType === "TERMS" ? TERMS_OF_SERVICE_DOC : PRIVACY_POLICY_DOC;
+              return (
+                <View>
+                  <View style={styles.legalNoticeBanner}>
+                    <Text style={styles.legalNoticeTag}>{doc.tag}</Text>
+                    <Text style={styles.legalNoticeHeading}>{doc.title}</Text>
+                    <Text style={styles.legalNoticeSub}>
+                      Effective Date: {doc.effectiveDate} • {doc.regulatoryStandard}
+                    </Text>
+                  </View>
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>1. Acceptance of Terms & Legal Capacity</Text>
-                  <Text style={styles.docSectionBody}>
-                    By creating an account, accessing the Lorabiz mobile application, or utilizing any services provided herein, you agree to be bound by these Terms of Service. If you do not agree to all terms, you must discontinue use immediately.
-                  </Text>
-                </View>
+                  {doc.preambleCallout ? (
+                    <View style={styles.legalCalloutBox}>
+                      <View style={styles.legalCalloutHeader}>
+                        <AlertTriangle size={15} color="#D97706" style={{ marginRight: 6 }} />
+                        <Text style={styles.legalCalloutTitle}>{doc.preambleCallout.title}</Text>
+                      </View>
+                      <Text style={styles.legalCalloutText}>{doc.preambleCallout.text}</Text>
+                    </View>
+                  ) : null}
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>2. Nature of Platform & Independent Facilitation</Text>
-                  <Text style={styles.docSectionBody}>
-                    Lorabiz is an independent corporate facilitation, compliance assistance, and digital business services platform. Lorabiz is an accredited corporate facilitator and strictly not a government agency, nor is it affiliated with or an arm of the Corporate Affairs Commission (CAC) or National Identity Management Commission (NIMC).
-                  </Text>
-                </View>
+                  {doc.intro ? (
+                    <Text style={styles.legalIntroText}>{doc.intro}</Text>
+                  ) : null}
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>3. Account Security & Verification</Text>
-                  <Text style={styles.docSectionBody}>
-                    Users are responsible for safeguarding their login credentials and session tokens. All account identity details (including CAC, NIN, or BVN verification records) must be accurate, truthful, and lawfully owned by the account holder. Legal names cannot be altered once verified to uphold KYC compliance.
-                  </Text>
-                </View>
+                  {doc.sections.map((sec) => (
+                    <View key={sec.id} style={styles.docSection}>
+                      <Text style={styles.docSectionTitle}>{sec.title}</Text>
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>4. Turnaround Times & Fulfillment</Text>
-                  <Text style={styles.docSectionBody}>
-                    Estimated delivery windows (e.g. 1 – 48 Working Hours) apply strictly to standard Nigerian business working days (Monday to Friday, excluding public holidays). Agency registry downtimes and portal maintenance outside Lorabiz control may occasionally adjust processing durations.
-                  </Text>
-                </View>
+                      {sec.callout ? (
+                        <View style={styles.sectionCallout}>
+                          <Text style={styles.sectionCalloutText}>{sec.callout}</Text>
+                        </View>
+                      ) : null}
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>5. Wallet & Financial Transactions</Text>
-                  <Text style={styles.docSectionBody}>
-                    Wallet deposits and electronic billing services are handled via licensed central switch payment processors. Transaction histories and proof of compliance filings are retained in accordance with financial regulations.
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <View>
-                <View style={styles.legalNoticeBanner}>
-                  <Text style={styles.legalNoticeTag}>DATA PRIVACY COMPLIANCE</Text>
-                  <Text style={styles.legalNoticeHeading}>Privacy & Data Protection Policy</Text>
-                  <Text style={styles.legalNoticeSub}>
-                    Nigeria Data Protection Act (NDPA 2023) Compliant
-                  </Text>
-                </View>
+                      {sec.subsections ? (
+                        sec.subsections.map((sub, idx) => (
+                          <View key={idx} style={{ marginBottom: 10 }}>
+                            {sub.subtitle ? (
+                              <Text style={styles.docSubsectionTitle}>{sub.subtitle}</Text>
+                            ) : null}
+                            <Text style={styles.docSectionBody}>{sub.text}</Text>
+                          </View>
+                        ))
+                      ) : null}
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>1. Information We Collect</Text>
-                  <Text style={styles.docSectionBody}>
-                    To facilitate corporate filings and business utility services, we collect user registration information (full name, email address, phone number), identity documents required for verification, transaction records, and device security telemetry.
-                  </Text>
-                </View>
+                      {sec.body ? (
+                        <Text style={[styles.docSectionBody, { marginBottom: sec.bullets ? 8 : 0 }]}>
+                          {sec.body}
+                        </Text>
+                      ) : null}
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>2. How Your Information is Used</Text>
-                  <Text style={styles.docSectionBody}>
-                    Personal data is utilized strictly for processing corporate registrations, fulfilling utility orders, verifying account ownership, communicating operational updates, and preventing fraudulent activities.
-                  </Text>
-                </View>
+                      {sec.bullets ? (
+                        <View style={{ marginTop: 4, marginBottom: 4 }}>
+                          {sec.bullets.map((b, bIdx) => (
+                            <View key={bIdx} style={styles.legalBulletRow}>
+                              <Text style={styles.legalBulletDot}>•</Text>
+                              <Text style={styles.legalBulletText}>{b}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      ) : null}
+                    </View>
+                  ))}
 
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>3. Storage & Encryption</Text>
-                  <Text style={styles.docSectionBody}>
-                    All communications and sensitive database fields are encrypted using industry-standard AES-256 and TLS protocols. Access to user documents is restricted to authorized operations personnel solely for verification and statutory filing purposes.
-                  </Text>
+                  {/* Document Footer */}
+                  <View style={styles.docFooterBox}>
+                    <Text style={styles.docFooterCompany}>{doc.footer.company}</Text>
+                    {doc.footer.items.map((item, idx) => (
+                      <Text key={idx} style={styles.docFooterItem}>
+                        {item.label}: <Text style={{ color: colors.primary, fontWeight: "600" }}>{item.value}</Text>
+                      </Text>
+                    ))}
+                  </View>
                 </View>
-
-                <View style={styles.docSection}>
-                  <Text style={styles.docSectionTitle}>4. User Rights & Account Closure</Text>
-                  <Text style={styles.docSectionBody}>
-                    You maintain the right to inspect your personal data, request corrections, or deactivate your account at any time directly through the Account & Settings screen in compliance with Apple App Store and NDPA guidelines.
-                  </Text>
-                </View>
-              </View>
-            )}
+              );
+            })()}
 
             <TouchableOpacity
               style={styles.docViewerDoneBtn}
@@ -2711,6 +2706,96 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#475569",
     lineHeight: 20,
+  },
+  docSubsectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 4,
+  },
+  legalCalloutBox: {
+    backgroundColor: "#FEF3C7",
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+  },
+  legalCalloutHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  legalCalloutTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#92400E",
+    flex: 1,
+  },
+  legalCalloutText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#78350F",
+  },
+  legalIntroText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#334155",
+    marginBottom: 16,
+    fontWeight: "500",
+  },
+  sectionCallout: {
+    backgroundColor: "#F1F5F9",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  sectionCalloutText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#334155",
+    lineHeight: 18,
+  },
+  legalBulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 6,
+    paddingRight: 8,
+  },
+  legalBulletDot: {
+    fontSize: 14,
+    lineHeight: 19,
+    color: colors.primary,
+    marginRight: 6,
+    fontWeight: "800",
+  },
+  legalBulletText: {
+    flex: 1,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: "#475569",
+  },
+  docFooterBox: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  docFooterCompany: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 6,
+  },
+  docFooterItem: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
   },
   docViewerDoneBtn: {
     backgroundColor: colors.primary,

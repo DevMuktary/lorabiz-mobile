@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 import BiometricPromptModal from "../../components/BiometricPromptModal";
-import AppLockModal from "../../components/AppLockModal";
 import CustomAlertModal from "../../components/CustomAlertModal";
 import { getBioPromptDismissed, setBioPromptDismissed } from "../../lib/storage";
 
@@ -19,7 +18,6 @@ export default function TabLayout() {
     biometricAvailable,
     biometricEnabled,
     toggleBiometrics,
-    isAppLocked,
   } = useAuth();
   const bottomInset = insets.bottom;
   const bottomPadding = Math.max(bottomInset, Platform.OS === "ios" ? 16 : 8);
@@ -162,8 +160,6 @@ export default function TabLayout() {
       onDismissForever={handleDismissBioForever}
       onClose={() => setShowBioPrompt(false)}
     />
-
-    <AppLockModal visible={isAppLocked} />
 
     <CustomAlertModal
       visible={alertConfig.visible}

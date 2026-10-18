@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
+import { useRouter } from "expo-router";
 import {
   getAuthToken,
   saveAuthToken,
@@ -23,6 +24,8 @@ import {
   setAutoLockTimeout,
   getHideBalancePref,
   setHideBalancePref,
+  getLastActiveTime,
+  setLastActiveTime,
 } from "../lib/storage";
 import { api, BASE_URL } from "../lib/api";
 import { promptBiometricAuth, getBiometricCapabilities } from "../lib/biometrics";
@@ -67,8 +70,6 @@ interface AuthContextType {
   setAutoLockSetting: (timeout: string) => Promise<void>;
   hideBalance: boolean;
   setHideBalancePreference: (hide: boolean) => Promise<void>;
-  isAppLocked: boolean;
-  unlockApp: () => Promise<boolean>;
   login: (email: string, password: string, otpCode?: string, isBackupCode?: boolean) => Promise<LoginResult>;
   logout: () => Promise<void>;
   clearSavedProfile: () => Promise<void>;
@@ -105,6 +106,7 @@ function extractCleanCookies(rawCookieHeader: string | null): string {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [wallet, setWallet] = useState<{ id?: string; balance: number } | null>(null);
@@ -114,10 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [autoLockTimeout, setAutoLockTimeoutState] = useState<string>("never");
   const [hideBalance, setHideBalanceState] = useState<boolean>(false);
-  const [isAppLocked, setIsAppLocked] = useState<boolean>(false);
 
   const lastActiveRef = useRef<number>(Date.now());
-  const isLockingRef = useRef<boolean>(false);
 
   useEffect(() => {
     initAuth();
@@ -126,17 +126,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const sub = AppState.addEventListener("change", async (nextState: AppStateStatus) => {
       if (nextState === "background" || nextState === "inactive") {
-        lastActiveRef.current = Date.now();
+        const now = Date.now();
+        lastActiveRef.current = now;
+        await setLastActiveTime(now);
       } else if (nextState === "active") {
         const timeoutSetting = await getAutoLockTimeout();
-        if (timeoutSetting === "never" || !token || isLockingRef.current) {
+        if (timeoutSetting === "never" || !token) {
           lastActiveRef.current = Date.now();
           return;
         }
 
-        const elapsedMs = Date.now() - lastActiveRef.current;
-        let thresholdMs = Infinity;
-        if (timeoutSetting === "immediately") thresholdMs = 1500;
+        const lastActive = lastActiveRef.current || (await getLastActiveTime());
+        const elapsedMs = Date.now() - lastActive;
+        let thresholdMs = 0;
+        if (timeoutSetting === "immediately") thresholdMs = 0;
         else if (timeoutSetting === "1m") thresholdMs = 60 * 1000;
         else if (timeoutSetting === "5m") thresholdMs = 5 * 60 * 1000;
         else if (timeoutSetting === "15m") thresholdMs = 15 * 60 * 1000;
@@ -144,15 +147,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         else if (timeoutSetting === "2h") thresholdMs = 2 * 60 * 60 * 1000;
 
         if (elapsedMs >= thresholdMs) {
-          setIsAppLocked(true);
-          if (biometricAvailable && biometricEnabled) {
-            const unlocked = await promptBiometricAuth("Confirm your biometrics to resume Lorabiz");
-            if (unlocked) {
-              setIsAppLocked(false);
-              lastActiveRef.current = Date.now();
-              return;
-            }
-          }
+          // Session timed out! Clear token and redirect to login with reason=timeout
+          await removeAuthToken();
+          setToken(null);
+          setUser(null);
+          router.replace("/(auth)/login?reason=timeout" as any);
         } else {
           lastActiveRef.current = Date.now();
         }
@@ -160,19 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => sub.remove();
-  }, [token, biometricAvailable, biometricEnabled]);
-
-  async function unlockApp(): Promise<boolean> {
-    if (biometricAvailable && biometricEnabled) {
-      const unlocked = await promptBiometricAuth("Confirm your biometrics to resume Lorabiz");
-      if (unlocked) {
-        setIsAppLocked(false);
-        lastActiveRef.current = Date.now();
-        return true;
-      }
-    }
-    return false;
-  }
+  }, [token]);
 
   async function setAutoLockSetting(timeout: string) {
     await setAutoLockTimeout(timeout);
@@ -220,6 +207,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedUser = await getAuthUser();
 
       if (storedToken && storedUser) {
+        // Enforce auto-lock timeout on app cold start (e.g. killed/swiped away)
+        const lastActive = await getLastActiveTime();
+        let isTimedOut = false;
+        if (savedAutoLock === "immediately") {
+          isTimedOut = true;
+        } else if (savedAutoLock !== "never" && lastActive > 0) {
+          let thresholdMs = Infinity;
+          if (savedAutoLock === "1m") thresholdMs = 60 * 1000;
+          else if (savedAutoLock === "5m") thresholdMs = 5 * 60 * 1000;
+          else if (savedAutoLock === "15m") thresholdMs = 15 * 60 * 1000;
+          else if (savedAutoLock === "1h") thresholdMs = 60 * 60 * 1000;
+          else if (savedAutoLock === "2h") thresholdMs = 2 * 60 * 60 * 1000;
+
+          if (Date.now() - lastActive >= thresholdMs) {
+            isTimedOut = true;
+          }
+        }
+
+        if (isTimedOut) {
+          await removeAuthToken();
+          setToken(null);
+          setUser(null);
+          setIsLoading(false);
+          setTimeout(() => {
+            router.replace("/(auth)/login?reason=timeout" as any);
+          }, 50);
+          return;
+        }
+
         setToken(storedToken);
         if (storedUser.wallet) {
           setWallet(storedUser.wallet);
@@ -833,8 +849,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAutoLockSetting,
         hideBalance,
         setHideBalancePreference,
-        isAppLocked,
-        unlockApp,
         login,
         logout,
         clearSavedProfile,

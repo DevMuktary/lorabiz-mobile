@@ -272,4 +272,22 @@ export async function getAutoLockTimeout(): Promise<string> {
   }
 }
 
+const LAST_ACTIVE_TIME_KEY = "lorabiz_last_active_time";
+
+export async function setLastActiveTime(time: number): Promise<void> {
+  try {
+    await setItem(LAST_ACTIVE_TIME_KEY, time.toString());
+  } catch {}
+}
+
+export async function getLastActiveTime(): Promise<number> {
+  try {
+    const val = await getItem(LAST_ACTIVE_TIME_KEY);
+    return val ? parseInt(val, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+
 

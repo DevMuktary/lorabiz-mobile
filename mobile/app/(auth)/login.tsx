@@ -13,7 +13,7 @@ import {
   Image,
   StatusBar,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
@@ -23,6 +23,8 @@ import {
   EyeOff,
   ShieldCheck,
   Lock,
+  Clock,
+  X,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../constants/theme";
@@ -94,6 +96,7 @@ function AppleFaceIdIcon({ size = 28, color = "#0F172A" }: { size?: number; colo
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ reason?: string }>();
   const {
     login,
     savedProfile,
@@ -105,6 +108,26 @@ export default function LoginScreen() {
     refreshProfile,
     completeSocialLogin,
   } = useAuth();
+
+  // Inactivity timeout notification
+  const [timeoutNotice, setTimeoutNotice] = useState<string | null>(
+    params.reason === "timeout" ? "Session locked due to inactivity. Please sign in to resume." : null
+  );
+
+  useEffect(() => {
+    if (params.reason === "timeout") {
+      setTimeoutNotice("Session locked due to inactivity. Please sign in to resume.");
+    }
+  }, [params.reason]);
+
+  useEffect(() => {
+    if (timeoutNotice) {
+      const timer = setTimeout(() => {
+        setTimeoutNotice(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeoutNotice]);
 
   // Mode: returning user quick-unlock (Screenshot 1) vs standard 1-step login (Screenshot 2)
   const [isReturningUser, setIsReturningUser] = useState<boolean>(Boolean(savedProfile));
@@ -503,6 +526,16 @@ export default function LoginScreen() {
         ) : isReturningUser && savedProfile ? (
           /* SCREEN STATE B: Returning User Quick Unlock (ALAT Screenshot 1) */
           <View style={styles.contentWrapper}>
+            {timeoutNotice ? (
+              <View style={styles.timeoutBanner}>
+                <Clock size={16} color="#B45309" style={{ marginRight: 8 }} />
+                <Text style={styles.timeoutBannerText}>{timeoutNotice}</Text>
+                <TouchableOpacity onPress={() => setTimeoutNotice(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <X size={15} color="#B45309" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
             {/* User Greeting Row: Left Avatar Circle, Right "Welcome Back" & User Name */}
             <View style={styles.returningProfileRow}>
               <Image
@@ -682,6 +715,16 @@ export default function LoginScreen() {
         ) : (
           /* SCREEN STATE C: Standard 1-Step Login (ALAT Screenshot 2) */
           <View style={styles.contentWrapper}>
+            {timeoutNotice ? (
+              <View style={styles.timeoutBanner}>
+                <Clock size={16} color="#B45309" style={{ marginRight: 8 }} />
+                <Text style={styles.timeoutBannerText}>{timeoutNotice}</Text>
+                <TouchableOpacity onPress={() => setTimeoutNotice(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <X size={15} color="#B45309" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
             {/* Header: Left Avatar Orb + Right "Glad to have you!" & bold "Log in to your account" */}
             <View style={styles.standardHeaderRow}>
               <View style={styles.headerOrbWrapper}>
@@ -1238,5 +1281,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#64748B",
+  },
+  timeoutBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+  },
+  timeoutBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#92400E",
+    lineHeight: 16,
   },
 });

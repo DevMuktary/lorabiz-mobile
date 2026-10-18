@@ -31,6 +31,7 @@ import {
   WifiOff,
   CheckCircle2,
   X,
+  Wifi,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../constants/theme";
@@ -245,13 +246,12 @@ export default function HomeScreen() {
       : "#D97706");
 
   // Quick Services Grid: Strictly 4 items per row, 2 rows (8 items total)
-  // Item 7 is Airtime, Item 8 is More
   const QUICK_SERVICES = [
     {
       id: "cac_reg",
       title: "CAC Reg",
       logo: require("../../assets/cac.png"),
-      route: "/(tabs)/services",
+      route: "/services/business-name",
     },
     {
       id: "nin_slip",
@@ -278,15 +278,16 @@ export default function HomeScreen() {
       route: "/services/scuml",
     },
     {
-      id: "affidavit",
-      title: "Affidavit",
-      logo: require("../../assets/court.png"),
+      id: "company_llc",
+      title: "Company LLC",
+      logo: require("../../assets/cac.png"),
       route: "/(tabs)/services",
     },
     {
-      id: "airtime",
-      title: "Airtime",
-      logo: require("../../assets/airtime.png"),
+      id: "data",
+      title: "Data",
+      icon: Wifi,
+      iconColor: "#2563EB",
       route: "/(tabs)/bills",
     },
     {
@@ -305,7 +306,7 @@ export default function HomeScreen() {
       title: "Register Your Business in 24h",
       desc: "Accredited CAC Certificate, Status Report and Tax ID delivered seamlessly.",
       cta: "Register Now",
-      route: "/(tabs)/services",
+      route: "/services/business-name",
       color: "#831843",
       accent: "#F472B6",
       btnTextColor: "#831843",
@@ -316,18 +317,18 @@ export default function HomeScreen() {
       title: "Instant SCUML Processing",
       desc: "Open corporate bank accounts fast with certified AML compliance.",
       cta: "Apply for SCUML",
-      route: "/(tabs)/services",
+      route: "/services/scuml",
       color: "#1E1B4B",
       accent: "#818CF8",
       btnTextColor: "#1E1B4B",
     },
     {
-      id: "affidavit_promo",
-      tag: "LEGAL SEAL",
-      title: "Certified Court Affidavits",
-      desc: "Declaration of age, name change and loss of document sworn online.",
-      cta: "Get Affidavit",
-      route: "/(tabs)/services",
+      id: "data_promo",
+      tag: "INSTANT UTILITIES",
+      title: "Nationwide Data & Airtime",
+      desc: "Instant high-speed data bundles across MTN, Airtel, Glo and 9mobile.",
+      cta: "Buy Data",
+      route: "/(tabs)/bills",
       color: "#064E3B",
       accent: "#34D399",
       btnTextColor: "#064E3B",
@@ -654,6 +655,8 @@ export default function HomeScreen() {
               <View style={[styles.gridIconBox, svc.isMore && styles.moreIconBox]}>
                 {svc.isMore ? (
                   <LayoutGrid size={22} color={colors.primary} />
+                ) : (svc as any).icon ? (
+                  <svc.icon size={22} color={(svc as any).iconColor || colors.primary} />
                 ) : (
                   <Image source={svc.logo} style={styles.gridAgencyLogo} resizeMode="contain" />
                 )}
