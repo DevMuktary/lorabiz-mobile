@@ -21,6 +21,8 @@ import {
   saveCachedWallet,
   getAutoLockTimeout,
   setAutoLockTimeout,
+  getHideBalancePref,
+  setHideBalancePref,
 } from "../lib/storage";
 import { api, BASE_URL } from "../lib/api";
 import { promptBiometricAuth, getBiometricCapabilities } from "../lib/biometrics";
@@ -32,10 +34,13 @@ export interface UserProfile {
   lastName?: string;
   name: string;
   phone?: string;
+  phoneChangedAt?: string | null;
   role: string;
   image?: string | null;
   isProfileComplete?: boolean;
   twoFactorEnabled?: boolean;
+  twoFactorMethod?: string | null;
+  emailLoginAlerts?: boolean;
   referralCode?: string | null;
   wallet?: {
     id?: string;
@@ -60,6 +65,10 @@ interface AuthContextType {
   biometricEnabled: boolean;
   autoLockTimeout: string;
   setAutoLockSetting: (timeout: string) => Promise<void>;
+  hideBalance: boolean;
+  setHideBalancePreference: (hide: boolean) => Promise<void>;
+  isAppLocked: boolean;
+  unlockApp: () => Promise<boolean>;
   login: (email: string, password: string, otpCode?: string, isBackupCode?: boolean) => Promise<LoginResult>;
   logout: () => Promise<void>;
   clearSavedProfile: () => Promise<void>;
@@ -104,6 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [autoLockTimeout, setAutoLockTimeoutState] = useState<string>("never");
+  const [hideBalance, setHideBalanceState] = useState<boolean>(false);
+  const [isAppLocked, setIsAppLocked] = useState<boolean>(false);
 
   const lastActiveRef = useRef<number>(Date.now());
   const isLockingRef = useRef<boolean>(false);
@@ -133,17 +144,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         else if (timeoutSetting === "2h") thresholdMs = 2 * 60 * 60 * 1000;
 
         if (elapsedMs >= thresholdMs) {
-          isLockingRef.current = true;
+          setIsAppLocked(true);
           if (biometricAvailable && biometricEnabled) {
             const unlocked = await promptBiometricAuth("Confirm your biometrics to resume Lorabiz");
             if (unlocked) {
-              isLockingRef.current = false;
+              setIsAppLocked(false);
               lastActiveRef.current = Date.now();
               return;
             }
           }
-          await logout();
-          isLockingRef.current = false;
         } else {
           lastActiveRef.current = Date.now();
         }
@@ -153,9 +162,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => sub.remove();
   }, [token, biometricAvailable, biometricEnabled]);
 
+  async function unlockApp(): Promise<boolean> {
+    if (biometricAvailable && biometricEnabled) {
+      const unlocked = await promptBiometricAuth("Confirm your biometrics to resume Lorabiz");
+      if (unlocked) {
+        setIsAppLocked(false);
+        lastActiveRef.current = Date.now();
+        return true;
+      }
+    }
+    return false;
+  }
+
   async function setAutoLockSetting(timeout: string) {
     await setAutoLockTimeout(timeout);
     setAutoLockTimeoutState(timeout);
+  }
+
+  async function setHideBalancePreference(hide: boolean) {
+    await setHideBalancePref(hide);
+    setHideBalanceState(hide);
   }
 
   async function initAuth() {
@@ -178,6 +204,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (profile) {
         setSavedProfile(profile);
       }
+
+      // 2b. Load persisted autolock and balance privacy preferences
+      const savedAutoLock = await getAutoLockTimeout();
+      setAutoLockTimeoutState(savedAutoLock);
+
+      const savedHideBal = await getHideBalancePref();
+      setHideBalanceState(savedHideBal);
 
       // 3. Pre-warm CSRF cookie in background native cookie storage
       fetch(`${BASE_URL}/api/auth/csrf`, { credentials: "include" }).catch(() => {});
@@ -534,6 +567,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // keep existing liveWallet on network failure
       }
 
+      try {
+        const profileRes = await api.get("/api/user/profile");
+        if (profileRes?.user) {
+          const p = profileRes.user;
+          const merged: UserProfile = {
+            id: p.id || user?.id || `user_${Date.now()}`,
+            email: p.email || user?.email || "",
+            name: p.name || `${p.firstName || ""} ${p.lastName || ""}`.trim() || user?.name || "User",
+            firstName: p.firstName || user?.firstName || "User",
+            lastName: p.lastName || user?.lastName || "",
+            phone: p.phone || user?.phone,
+            phoneChangedAt: p.phoneChangedAt || null,
+            role: p.role || user?.role || "USER",
+            image: p.image || user?.image || null,
+            twoFactorEnabled: p.twoFactorEnabled ?? false,
+            twoFactorMethod: p.twoFactorMethod || null,
+            emailLoginAlerts: p.emailLoginAlerts ?? true,
+            isProfileComplete: user?.isProfileComplete ?? true,
+            wallet: liveWallet || undefined,
+          };
+          setUser(merged);
+          await saveAuthUser(merged);
+          return;
+        }
+      } catch {
+        // Fallback to basic session
+      }
+
       if (data?.user) {
         const updatedUser: UserProfile = {
           id: data.user.id || user?.id || `user_${Date.now()}`,
@@ -770,6 +831,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         biometricEnabled,
         autoLockTimeout,
         setAutoLockSetting,
+        hideBalance,
+        setHideBalancePreference,
+        isAppLocked,
+        unlockApp,
         login,
         logout,
         clearSavedProfile,

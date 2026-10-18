@@ -37,8 +37,6 @@ import { colors } from "../../constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import {
-  getHideBalancePref,
-  setHideBalancePref,
   getCachedWallet,
   saveCachedWallet,
   CachedWalletData,
@@ -50,28 +48,22 @@ const BANNER_WIDTH = SCREEN_WIDTH - 32;
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, wallet, refreshProfile } = useAuth();
-  const [hideBalance, setHideBalance] = useState(false);
+  const { user, wallet, refreshProfile, hideBalance, setHideBalancePreference } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [activePromoIndex, setActivePromoIndex] = useState(0);
   const [cachedWallet, setCachedWallet] = useState<CachedWalletData | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const bannerScrollRef = useRef<ScrollView>(null);
 
-  // Load persisted balance privacy preference and cached wallet on mount
+  // Load cached wallet on mount
   useEffect(() => {
-    getHideBalancePref().then((savedPref) => {
-      setHideBalance(savedPref);
-    });
     getCachedWallet().then((cached) => {
       if (cached) setCachedWallet(cached);
     });
   }, []);
 
   const toggleHideBalance = async () => {
-    const nextVal = !hideBalance;
-    setHideBalance(nextVal);
-    await setHideBalancePref(nextVal);
+    await setHideBalancePreference(!hideBalance);
   };
 
   // Failsafe: Redirect incomplete profile users to finish registration details

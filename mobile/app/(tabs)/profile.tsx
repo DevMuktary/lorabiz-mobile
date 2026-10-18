@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Linking,
   ActivityIndicator,
   Image,
   Modal,
@@ -14,6 +13,8 @@ import {
   Platform,
   Clipboard,
   Pressable,
+  KeyboardAvoidingView,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -27,7 +28,6 @@ import {
   LogOut,
   Trash2,
   ChevronRight,
-  ExternalLink,
   Info,
   Sparkles,
   Camera,
@@ -44,24 +44,22 @@ import {
   AlertTriangle,
   X,
   KeyRound,
+  ShieldCheck,
+  Scale,
+  Phone,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
-import { api, BASE_URL } from "../../lib/api";
+import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { uploadFileToServer } from "../../lib/upload";
-import {
-  getHideBalancePref,
-  setHideBalancePref,
-} from "../../lib/storage";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
     user,
-    token,
     logout,
     biometricAvailable,
     biometricEnabled,
@@ -69,25 +67,30 @@ export default function ProfileScreen() {
     autoLockTimeout,
     setAutoLockSetting,
     refreshProfile,
+    hideBalance,
+    setHideBalancePreference,
   } = useAuth();
 
   // State
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [hideBalance, setHideBalance] = useState(false);
-  const [emailAlerts, setEmailAlerts] = useState(user?.twoFactorEnabled ?? true);
+  const [emailAlerts, setEmailAlerts] = useState(user?.emailLoginAlerts ?? true);
   const [copiedReferral, setCopiedReferral] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
 
-  // Modals state
+  // Active Modals
   const [activeModal, setActiveModal] = useState<
-    "PHOTO_OPTIONS" | "EDIT_PROFILE" | "CHANGE_PASSWORD" | "TWO_FACTOR" | "AUTO_LOCK" | null
+    "PHOTO_OPTIONS" | "CHANGE_PASSWORD" | "TWO_FACTOR" | "AUTO_LOCK" | "PHONE_CHANGE" | "DOCUMENT_VIEWER" | null
   >(null);
 
-  // Edit Profile Form State
-  const [firstName, setFirstName] = useState(user?.firstName || user?.name?.split(" ")[0] || "");
-  const [lastName, setLastName] = useState(user?.lastName || user?.name?.split(" ").slice(1).join(" ") || "");
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  // Document Viewer State
+  const [documentType, setDocumentType] = useState<"TERMS" | "PRIVACY">("TERMS");
+
+  // Phone Change State (30-day cooldown & 2-step OTP)
+  const [phoneStep, setPhoneStep] = useState<"ENTER_PHONE" | "VERIFY_OTP">("ENTER_PHONE");
+  const [newPhone, setNewPhone] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [isPhoneLoading, setIsPhoneLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   // Change Password Form State
   const [passwordStep, setPasswordStep] = useState<"CURRENT" | "NEW">("CURRENT");
@@ -97,6 +100,7 @@ export default function ProfileScreen() {
   const [passwordOtp, setPasswordOtp] = useState("");
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
@@ -105,7 +109,6 @@ export default function ProfileScreen() {
   const [twoFactorQrCode, setTwoFactorQrCode] = useState<string | null>(null);
   const [twoFactorSecret, setTwoFactorSecret] = useState<string | null>(null);
   const [twoFactorOtp, setTwoFactorOtp] = useState("");
-  const [twoFactorBackupCodes, setTwoFactorBackupCodes] = useState<string[]>([]);
   const [disablePassword, setDisablePassword] = useState("");
   const [is2FALoading, setIs2FALoading] = useState(false);
   const [twoFactorError, setTwoFactorError] = useState<string | null>(null);
@@ -128,20 +131,29 @@ export default function ProfileScreen() {
     message: "",
   });
 
-  // Load preferences
-  useEffect(() => {
-    getHideBalancePref().then(setHideBalance);
-  }, []);
-
-  // Sync form inputs when user profile updates
+  // Sync state with user profile updates
   useEffect(() => {
     if (user) {
-      setFirstName(user.firstName || user.name?.split(" ")[0] || "");
-      setLastName(user.lastName || user.name?.split(" ").slice(1).join(" ") || "");
-      setPhone(user.phone || "");
+      setEmailAlerts(user.emailLoginAlerts ?? true);
     }
   }, [user]);
 
+  // Check 30-Day Phone Cooldown
+  const isPhoneLocked = () => {
+    if (!user?.phoneChangedAt) return false;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    return new Date(user.phoneChangedAt) > thirtyDaysAgo;
+  };
+
+  const getPhoneDaysRemaining = () => {
+    if (!user?.phoneChangedAt) return 0;
+    const changeDate = new Date(user.phoneChangedAt).getTime();
+    const unlockDate = changeDate + 30 * 24 * 60 * 60 * 1000;
+    const msRemaining = unlockDate - Date.now();
+    return Math.max(1, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
+  };
+
+  // Loyalty Tier Query
   const { data: loyaltyData } = useQuery({
     queryKey: ["mobileLoyaltyProfile"],
     queryFn: async () => {
@@ -165,7 +177,7 @@ export default function ProfileScreen() {
       ? "#B45309"
       : "#D97706");
 
-  // Handle Photo Upload
+  // Handle Photo Pick
   async function handlePickImage(source: "camera" | "library") {
     setActiveModal(null);
     try {
@@ -267,63 +279,6 @@ export default function ProfileScreen() {
     }
   }
 
-  // Handle Save Profile Details
-  async function handleSaveProfileDetails() {
-    if (!firstName.trim() || !lastName.trim()) {
-      setAlertConfig({
-        visible: true,
-        type: "warning",
-        title: "Incomplete Details",
-        message: "First name and last name are required.",
-        confirmText: "OK",
-        onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
-      });
-      return;
-    }
-
-    setIsSavingProfile(true);
-    try {
-      const res = await api.put("/api/user/profile", {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim() || null,
-      });
-
-      if (res?.success) {
-        await refreshProfile();
-        setActiveModal(null);
-        setAlertConfig({
-          visible: true,
-          type: "success",
-          title: "Profile Updated",
-          message: "Your profile information has been securely updated.",
-          confirmText: "Done",
-          onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
-        });
-      } else {
-        setAlertConfig({
-          visible: true,
-          type: "error",
-          title: "Update Failed",
-          message: res?.message || "Could not update profile.",
-          confirmText: "OK",
-          onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
-        });
-      }
-    } catch (err: any) {
-      setAlertConfig({
-        visible: true,
-        type: "error",
-        title: "Update Failed",
-        message: err?.message || "An unexpected error occurred.",
-        confirmText: "OK",
-        onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
-      });
-    } finally {
-      setIsSavingProfile(false);
-    }
-  }
-
   // Handle Toggle Biometrics
   async function handleToggleBiometrics(val: boolean) {
     const success = await toggleBiometrics(val);
@@ -341,21 +296,112 @@ export default function ProfileScreen() {
 
   // Handle Toggle Hide Balances
   async function handleToggleHideBalances(val: boolean) {
-    setHideBalance(val);
-    await setHideBalancePref(val);
+    await setHideBalancePreference(val);
   }
 
   // Handle Toggle Email Login Alerts
   async function handleToggleEmailAlerts(val: boolean) {
     setEmailAlerts(val);
     try {
-      await api.put("/api/user/profile", { emailLoginAlerts: val });
+      const res = await api.put("/api/user/profile", { emailLoginAlerts: val });
+      if (res?.success) {
+        await refreshProfile();
+      } else {
+        setEmailAlerts(!val);
+      }
     } catch {
       setEmailAlerts(!val);
     }
   }
 
-  // Handle Send Password Change OTP
+  // =========================================================================
+  // Phone Change Logic (30-day security lock)
+  // =========================================================================
+  function handleOpenPhoneChange() {
+    if (isPhoneLocked()) {
+      setAlertConfig({
+        visible: true,
+        type: "warning",
+        title: "Security Lock",
+        message: `You updated your phone number recently. You can update it again in ${getPhoneDaysRemaining()} day(s).`,
+        confirmText: "Understood",
+        onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+      });
+      return;
+    }
+    setPhoneStep("ENTER_PHONE");
+    setNewPhone("");
+    setPhoneOtp("");
+    setPhoneError(null);
+    setActiveModal("PHONE_CHANGE");
+  }
+
+  async function handleSendPhoneOtp() {
+    setPhoneError(null);
+    const cleaned = newPhone.trim();
+    if (!cleaned || cleaned.length < 10) {
+      setPhoneError("Please enter a valid phone number (at least 10 digits).");
+      return;
+    }
+
+    setIsPhoneLoading(true);
+    try {
+      const res = await api.post("/api/user/security/phone", {
+        action: "SEND_OTP",
+        newPhone: cleaned,
+      });
+
+      if (res?.success) {
+        setPhoneStep("VERIFY_OTP");
+      } else {
+        setPhoneError(res?.message || "Could not send verification code.");
+      }
+    } catch (err: any) {
+      setPhoneError(err?.message || "Network error. Please try again.");
+    } finally {
+      setIsPhoneLoading(false);
+    }
+  }
+
+  async function handleVerifyPhoneOtp() {
+    setPhoneError(null);
+    if (!phoneOtp || phoneOtp.trim().length < 6) {
+      setPhoneError("Please enter the 6-digit verification code sent to your email.");
+      return;
+    }
+
+    setIsPhoneLoading(true);
+    try {
+      const res = await api.post("/api/user/security/phone", {
+        action: "VERIFY_OTP",
+        newPhone: newPhone.trim(),
+        otpCode: phoneOtp.trim(),
+      });
+
+      if (res?.success) {
+        await refreshProfile();
+        setActiveModal(null);
+        setAlertConfig({
+          visible: true,
+          type: "success",
+          title: "Phone Number Updated",
+          message: "Your phone number has been securely verified and updated.",
+          confirmText: "Done",
+          onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+        });
+      } else {
+        setPhoneError(res?.message || "Invalid or expired code.");
+      }
+    } catch (err: any) {
+      setPhoneError(err?.message || "Failed to verify phone number.");
+    } finally {
+      setIsPhoneLoading(false);
+    }
+  }
+
+  // =========================================================================
+  // Change Password Handlers
+  // =========================================================================
   async function handleSendPasswordOtp() {
     setPasswordError(null);
     if (!currentPassword) {
@@ -382,7 +428,6 @@ export default function ProfileScreen() {
     }
   }
 
-  // Handle Verify OTP and Set New Password
   async function handleVerifyNewPassword() {
     setPasswordError(null);
     if (!passwordOtp || passwordOtp.trim().length < 6) {
@@ -431,7 +476,9 @@ export default function ProfileScreen() {
     }
   }
 
-  // Handle 2FA Setup Request
+  // =========================================================================
+  // 2FA Setup & Disable Handlers
+  // =========================================================================
   async function handleInit2FASetup(method: "AUTHENTICATOR" | "EMAIL") {
     setTwoFactorMethod(method);
     setTwoFactorError(null);
@@ -452,7 +499,6 @@ export default function ProfileScreen() {
     }
   }
 
-  // Handle 2FA Confirm Verification
   async function handleConfirm2FASetup() {
     setTwoFactorError(null);
     if (!twoFactorOtp || twoFactorOtp.trim().length < 6) {
@@ -469,7 +515,6 @@ export default function ProfileScreen() {
 
       if (res?.success) {
         await refreshProfile();
-        setTwoFactorBackupCodes(res.backupCodes || []);
         setActiveModal(null);
         setAlertConfig({
           visible: true,
@@ -489,7 +534,6 @@ export default function ProfileScreen() {
     }
   }
 
-  // Handle Disable 2FA
   async function handleDisable2FA() {
     setTwoFactorError(null);
     if (!disablePassword) {
@@ -525,7 +569,6 @@ export default function ProfileScreen() {
     }
   }
 
-  // Copy Referral Code
   function handleCopyReferral() {
     if (user?.referralCode) {
       Clipboard.setString(user.referralCode);
@@ -534,7 +577,6 @@ export default function ProfileScreen() {
     }
   }
 
-  // Copy 2FA Secret
   function handleCopySecret() {
     if (twoFactorSecret) {
       Clipboard.setString(twoFactorSecret);
@@ -543,7 +585,6 @@ export default function ProfileScreen() {
     }
   }
 
-  // Handle Logout
   function handleLogout() {
     setAlertConfig({
       visible: true,
@@ -562,7 +603,6 @@ export default function ProfileScreen() {
     });
   }
 
-  // Handle Deactivate Account (Apple App Store Guideline 5.1.1(v) Compliant)
   function handleCloseAccount() {
     setAlertConfig({
       visible: true,
@@ -586,7 +626,7 @@ export default function ProfileScreen() {
               message: "Your account has been deactivated. You have been signed out.",
               confirmText: "OK",
               onConfirm: async () => {
-                setAlertConfig((prev) => ({ ...prev, visible: false })),
+                setAlertConfig((prev) => ({ ...prev, visible: false }));
                 await logout();
                 router.replace("/(auth)/login");
               },
@@ -637,6 +677,9 @@ export default function ProfileScreen() {
     }
   };
 
+  const userFirstName = user?.firstName || user?.name?.split(" ")[0] || "User";
+  const userLastName = user?.lastName || user?.name?.split(" ").slice(1).join(" ") || "";
+
   return (
     <ScrollView
       style={styles.container}
@@ -644,7 +687,7 @@ export default function ProfileScreen() {
         styles.contentContainer,
         {
           paddingTop: Math.max(insets.top, 16) + 12,
-          paddingBottom: 40,
+          paddingBottom: 48,
         },
       ]}
       showsVerticalScrollIndicator={false}
@@ -656,7 +699,6 @@ export default function ProfileScreen() {
 
       {/* User Info Hero Card */}
       <View style={styles.userCard}>
-        {/* Avatar with Camera Overlay */}
         <View style={styles.avatarWrapper}>
           <TouchableOpacity
             style={styles.avatarTouchTarget}
@@ -668,7 +710,7 @@ export default function ProfileScreen() {
             ) : (
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarText}>
-                  {(user?.firstName?.[0] || user?.name?.[0] || "U").toUpperCase()}
+                  {(userFirstName[0] || "U").toUpperCase()}
                 </Text>
               </View>
             )}
@@ -689,13 +731,11 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* User Identity Details */}
         <View style={styles.userInfoCol}>
           <Text style={styles.userName} numberOfLines={1}>
-            {user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Lorabiz Customer"}
+            {user?.name || `${userFirstName} ${userLastName}`.trim()}
           </Text>
 
-          {/* Tier Pill */}
           <View style={[styles.tierPill, { backgroundColor: tierColor + "18", borderColor: tierColor + "35" }]}>
             <Sparkles size={11} color={tierColor} style={{ marginRight: 4 }} />
             <Text style={[styles.tierPillText, { color: tierColor }]}>{tierName} Tier Member</Text>
@@ -704,7 +744,6 @@ export default function ProfileScreen() {
           <Text style={styles.userEmail} numberOfLines={1}>{user?.email}</Text>
           {user?.phone ? <Text style={styles.userPhone}>{user.phone}</Text> : null}
 
-          {/* Referral Code Quick Copy */}
           {user?.referralCode ? (
             <TouchableOpacity
               style={styles.refBadge}
@@ -723,43 +762,92 @@ export default function ProfileScreen() {
       </View>
 
       {/* ---------------------------------------------------- */}
-      {/* SECTION 1: Personal Details */}
+      {/* SECTION 1: Legal Identity (Strictly Read-Only CAC/NIN) */}
       {/* ---------------------------------------------------- */}
-      <Text style={styles.sectionHeading}>Personal Information</Text>
-      <View style={styles.menuCard}>
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => setActiveModal("EDIT_PROFILE")}
-          activeOpacity={0.7}
-        >
-          <View style={styles.menuIconBox}>
-            <User size={19} color={colors.primary} />
+      <Text style={styles.sectionHeading}>Legal Identity</Text>
+      <View style={styles.legalCard}>
+        <View style={styles.legalCardHeader}>
+          <View style={styles.legalTitleRow}>
+            <ShieldCheck size={18} color="#059669" />
+            <Text style={styles.legalCardTitle}>Verified Legal Name</Text>
           </View>
-          <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Edit Profile Details</Text>
-            <Text style={styles.menuSub}>Update name and phone number</Text>
+          <View style={styles.verifiedBadge}>
+            <CheckCircle2 size={12} color="#059669" />
+            <Text style={styles.verifiedBadgeText}>Verified</Text>
           </View>
-          <ChevronRight size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.menuItem, { borderBottomWidth: 0 }]}
-          onPress={() => setActiveModal("PHOTO_OPTIONS")}
-          activeOpacity={0.7}
-        >
-          <View style={styles.menuIconBox}>
-            <Camera size={19} color={colors.cyan} />
+        <View style={styles.legalFieldsRow}>
+          <View style={styles.legalFieldCol}>
+            <Text style={styles.legalFieldLabel}>First Name</Text>
+            <View style={styles.legalFieldBox}>
+              <Text style={styles.legalFieldValue} numberOfLines={1}>
+                {userFirstName}
+              </Text>
+            </View>
           </View>
-          <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Change Profile Photo</Text>
-            <Text style={styles.menuSub}>Upload from camera or photo library</Text>
+
+          <View style={styles.legalFieldCol}>
+            <Text style={styles.legalFieldLabel}>Last Name</Text>
+            <View style={styles.legalFieldBox}>
+              <Text style={styles.legalFieldValue} numberOfLines={1}>
+                {userLastName || "—"}
+              </Text>
+            </View>
           </View>
-          <ChevronRight size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+        </View>
+
+        <Text style={styles.legalComplianceNotice}>
+          Legal names are locked to maintain compliance with CAC/NIN verification standards and loyalty tier status.
+        </Text>
+
+        <View style={styles.legalEmailRow}>
+          <Text style={styles.legalFieldLabel}>Registered Email</Text>
+          <View style={styles.legalEmailBox}>
+            <Mail size={16} color="#64748B" style={{ marginRight: 8 }} />
+            <Text style={styles.legalEmailText} numberOfLines={1}>
+              {user?.email}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* ---------------------------------------------------- */}
-      {/* SECTION 2: Security & Login */}
+      {/* SECTION 2: Phone Verification (30-day limit) */}
+      {/* ---------------------------------------------------- */}
+      <Text style={styles.sectionHeading}>Phone Verification</Text>
+      <View style={styles.phoneCard}>
+        <View style={styles.phoneCardTop}>
+          <View style={styles.phoneIconBox}>
+            <Smartphone size={20} color={colors.primary} />
+          </View>
+          <View style={styles.phoneTexts}>
+            <Text style={styles.phoneCardLabel}>Registered Mobile Number</Text>
+            <Text style={styles.phoneCardNumber}>{user?.phone || "No phone linked"}</Text>
+          </View>
+        </View>
+
+        {isPhoneLocked() ? (
+          <View style={styles.phoneLockNotice}>
+            <AlertTriangle size={15} color="#D97706" style={{ marginRight: 8, marginTop: 1 }} />
+            <Text style={styles.phoneLockNoticeText}>
+              Security Lock: You updated your number recently. Wait 30 days before changing again. (Unlocks in {getPhoneDaysRemaining()} days)
+            </Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.changePhoneBtn}
+            onPress={handleOpenPhoneChange}
+            activeOpacity={0.8}
+          >
+            <Phone size={15} color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.changePhoneBtnText}>Change Phone Number</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* ---------------------------------------------------- */}
+      {/* SECTION 3: Security & Access */}
       {/* ---------------------------------------------------- */}
       <Text style={styles.sectionHeading}>Security & Access</Text>
       <View style={styles.menuCard}>
@@ -865,7 +953,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* ---------------------------------------------------- */}
-      {/* SECTION 3: Preferences */}
+      {/* SECTION 4: Preferences */}
       {/* ---------------------------------------------------- */}
       <Text style={styles.sectionHeading}>Preferences</Text>
       <View style={styles.menuCard}>
@@ -905,7 +993,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* ---------------------------------------------------- */}
-      {/* SECTION 4: Support & Legal */}
+      {/* SECTION 5: Support & Legal */}
       {/* ---------------------------------------------------- */}
       <Text style={styles.sectionHeading}>Support & Legal</Text>
       <View style={styles.menuCard}>
@@ -922,7 +1010,7 @@ export default function ProfileScreen() {
             <Text style={styles.menuTitle}>Customer Support</Text>
             <Text style={styles.menuSub}>Live chat on WhatsApp & email help</Text>
           </View>
-          <ExternalLink size={16} color={colors.textMuted} />
+          <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
         {/* Regulatory Disclaimer */}
@@ -951,10 +1039,13 @@ export default function ProfileScreen() {
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Terms */}
+        {/* In-App Terms of Service */}
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => Linking.openURL("https://lorabiz.com/terms")}
+          onPress={() => {
+            setDocumentType("TERMS");
+            setActiveModal("DOCUMENT_VIEWER");
+          }}
           activeOpacity={0.7}
         >
           <View style={styles.menuIconBox}>
@@ -964,13 +1055,16 @@ export default function ProfileScreen() {
             <Text style={styles.menuTitle}>Terms & Conditions</Text>
             <Text style={styles.menuSub}>User service agreements</Text>
           </View>
-          <ExternalLink size={16} color={colors.textMuted} />
+          <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Privacy Policy */}
+        {/* In-App Privacy Policy */}
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomWidth: 0 }]}
-          onPress={() => Linking.openURL("https://lorabiz.com/privacy")}
+          onPress={() => {
+            setDocumentType("PRIVACY");
+            setActiveModal("DOCUMENT_VIEWER");
+          }}
           activeOpacity={0.7}
         >
           <View style={styles.menuIconBox}>
@@ -980,12 +1074,12 @@ export default function ProfileScreen() {
             <Text style={styles.menuTitle}>Privacy Policy</Text>
             <Text style={styles.menuSub}>Data protection & privacy rights</Text>
           </View>
-          <ExternalLink size={16} color={colors.textMuted} />
+          <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
       {/* ---------------------------------------------------- */}
-      {/* SECTION 5: Account Actions */}
+      {/* SECTION 6: Account Actions */}
       {/* ---------------------------------------------------- */}
       <Text style={styles.sectionHeading}>Account Actions</Text>
       <View style={styles.menuCard}>
@@ -1001,7 +1095,7 @@ export default function ProfileScreen() {
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Deactivate / Delete Account (Apple App Store Guideline 5.1.1(v) Compliant) */}
+        {/* Deactivate / Delete Account */}
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomWidth: 0 }]}
           onPress={handleCloseAccount}
@@ -1085,78 +1179,122 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* ==================================================== */}
-      {/* MODAL 2: Edit Profile Information Modal */}
+      {/* MODAL 2: Change Phone Number (With Keyboard Avoidance) */}
       {/* ==================================================== */}
       <Modal
-        visible={activeModal === "EDIT_PROFILE"}
+        visible={activeModal === "PHONE_CHANGE"}
         transparent
         animationType="slide"
         onRequestClose={() => setActiveModal(null)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.formDialogCard}>
-            <View style={styles.dialogHeader}>
-              <Text style={styles.dialogTitle}>Edit Profile</Text>
-              <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <X size={20} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
-              <Text style={styles.inputLabel}>First Name</Text>
-              <TextInput
-                style={styles.formInput}
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="First Name"
-                placeholderTextColor="#94A3B8"
-              />
-
-              <Text style={styles.inputLabel}>Last Name</Text>
-              <TextInput
-                style={styles.formInput}
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Last Name"
-                placeholderTextColor="#94A3B8"
-              />
-
-              <Text style={styles.inputLabel}>Phone Number</Text>
-              <TextInput
-                style={styles.formInput}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="08012345678"
-                keyboardType="phone-pad"
-                placeholderTextColor="#94A3B8"
-              />
-
-              <Text style={styles.inputLabel}>Email Address</Text>
-              <View style={[styles.formInput, styles.inputDisabled]}>
-                <Text style={styles.disabledInputText}>{user?.email}</Text>
-                <CheckCircle2 size={16} color={colors.success} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingModal}
+        >
+          <View style={styles.modalBackdropCenter}>
+            <View style={styles.formDialogCard}>
+              <View style={styles.dialogHeader}>
+                <Text style={styles.dialogTitle}>Change Phone Number</Text>
+                <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <X size={20} color="#64748B" />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.helperNote}>Email address is verified and tied to your account identity.</Text>
-            </ScrollView>
 
-            <TouchableOpacity
-              style={[styles.dialogSaveBtn, isSavingProfile && styles.btnDisabled]}
-              onPress={handleSaveProfileDetails}
-              disabled={isSavingProfile}
-              activeOpacity={0.88}
-            >
-              {isSavingProfile ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.dialogSaveText}>Save Changes</Text>
-              )}
-            </TouchableOpacity>
+              {phoneError ? (
+                <View style={styles.errorBanner}>
+                  <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
+                  <Text style={styles.errorBannerText}>{phoneError}</Text>
+                </View>
+              ) : null}
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 16 }}
+              >
+                {phoneStep === "ENTER_PHONE" ? (
+                  <View>
+                    <Text style={styles.modalExplainer}>
+                      Enter your new Nigerian mobile phone number. We will send a 6-digit confirmation code to your registered email ({user?.email}) to verify ownership.
+                    </Text>
+
+                    <Text style={styles.inputLabel}>New Phone Number</Text>
+                    <TextInput
+                      style={styles.highContrastInput}
+                      value={newPhone}
+                      onChangeText={setNewPhone}
+                      placeholder="e.g. 08012345678"
+                      keyboardType="phone-pad"
+                      placeholderTextColor="#94A3B8"
+                      selectionColor={colors.primary}
+                      autoFocus
+                    />
+
+                    <Text style={styles.helperNote}>
+                      Note: You can only update your phone number once every 30 days for account security.
+                    </Text>
+
+                    <TouchableOpacity
+                      style={[styles.dialogSaveBtn, (!newPhone || isPhoneLoading) && styles.btnDisabled]}
+                      onPress={handleSendPhoneOtp}
+                      disabled={!newPhone || isPhoneLoading}
+                      activeOpacity={0.88}
+                    >
+                      {isPhoneLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text style={styles.dialogSaveText}>Send Verification Code</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View>
+                    <Text style={styles.modalExplainer}>
+                      Enter the 6-digit verification code sent to your registered email ({user?.email}) to confirm your new phone number ({newPhone}).
+                    </Text>
+
+                    <Text style={styles.inputLabel}>6-Digit Verification Code</Text>
+                    <TextInput
+                      style={[styles.highContrastInput, styles.otpInput]}
+                      value={phoneOtp}
+                      onChangeText={setPhoneOtp}
+                      placeholder="123456"
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      placeholderTextColor="#94A3B8"
+                      selectionColor={colors.primary}
+                      autoFocus
+                    />
+
+                    <TouchableOpacity
+                      style={[styles.dialogSaveBtn, (!phoneOtp || isPhoneLoading) && styles.btnDisabled]}
+                      onPress={handleVerifyPhoneOtp}
+                      disabled={!phoneOtp || isPhoneLoading}
+                      activeOpacity={0.88}
+                    >
+                      {isPhoneLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text style={styles.dialogSaveText}>Verify & Save Number</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.backStepBtn}
+                      onPress={() => setPhoneStep("ENTER_PHONE")}
+                    >
+                      <Text style={styles.backStepText}>Change Phone Number</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ==================================================== */}
-      {/* MODAL 3: Change Password Modal */}
+      {/* MODAL 3: Change Password Modal (With Keyboard Avoidance) */}
       {/* ==================================================== */}
       <Modal
         visible={activeModal === "CHANGE_PASSWORD"}
@@ -1164,118 +1302,139 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setActiveModal(null)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.formDialogCard}>
-            <View style={styles.dialogHeader}>
-              <Text style={styles.dialogTitle}>Change Password</Text>
-              <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <X size={20} color="#64748B" />
-              </TouchableOpacity>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingModal}
+        >
+          <View style={styles.modalBackdropCenter}>
+            <View style={styles.formDialogCard}>
+              <View style={styles.dialogHeader}>
+                <Text style={styles.dialogTitle}>Change Password</Text>
+                <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <X size={20} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+
+              {passwordError ? (
+                <View style={styles.errorBanner}>
+                  <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
+                  <Text style={styles.errorBannerText}>{passwordError}</Text>
+                </View>
+              ) : null}
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 16 }}
+              >
+                {passwordStep === "CURRENT" ? (
+                  <View>
+                    <Text style={styles.modalExplainer}>
+                      For your security, enter your current password. We will send a 6-digit confirmation code to your email.
+                    </Text>
+
+                    <Text style={styles.inputLabel}>Current Password</Text>
+                    <View style={styles.passwordInputWrapper}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        value={currentPassword}
+                        onChangeText={setCurrentPassword}
+                        placeholder="Enter current password"
+                        placeholderTextColor="#94A3B8"
+                        secureTextEntry={!showCurrentPass}
+                        selectionColor={colors.primary}
+                        autoFocus
+                      />
+                      <TouchableOpacity onPress={() => setShowCurrentPass(!showCurrentPass)}>
+                        {showCurrentPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
+                      </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[styles.dialogSaveBtn, (!currentPassword || isPasswordLoading) && styles.btnDisabled]}
+                      onPress={handleSendPasswordOtp}
+                      disabled={!currentPassword || isPasswordLoading}
+                      activeOpacity={0.88}
+                    >
+                      {isPasswordLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text style={styles.dialogSaveText}>Send Verification Code</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View>
+                    <Text style={styles.modalExplainer}>
+                      Enter the 6-digit code sent to {user?.email} and your new password.
+                    </Text>
+
+                    <Text style={styles.inputLabel}>6-Digit Verification Code</Text>
+                    <TextInput
+                      style={[styles.highContrastInput, styles.otpInput]}
+                      value={passwordOtp}
+                      onChangeText={setPasswordOtp}
+                      placeholder="123456"
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      placeholderTextColor="#94A3B8"
+                      selectionColor={colors.primary}
+                    />
+
+                    <Text style={styles.inputLabel}>New Password</Text>
+                    <View style={styles.passwordInputWrapper}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        placeholder="At least 8 characters"
+                        placeholderTextColor="#94A3B8"
+                        secureTextEntry={!showNewPass}
+                        selectionColor={colors.primary}
+                      />
+                      <TouchableOpacity onPress={() => setShowNewPass(!showNewPass)}>
+                        {showNewPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
+                      </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.inputLabel}>Confirm New Password</Text>
+                    <View style={styles.passwordInputWrapper}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        placeholder="Confirm new password"
+                        placeholderTextColor="#94A3B8"
+                        secureTextEntry={!showConfirmPass}
+                        selectionColor={colors.primary}
+                      />
+                      <TouchableOpacity onPress={() => setShowConfirmPass(!showConfirmPass)}>
+                        {showConfirmPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
+                      </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[styles.dialogSaveBtn, (!passwordOtp || !newPassword || isPasswordLoading) && styles.btnDisabled]}
+                      onPress={handleVerifyNewPassword}
+                      disabled={!passwordOtp || !newPassword || isPasswordLoading}
+                      activeOpacity={0.88}
+                    >
+                      {isPasswordLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text style={styles.dialogSaveText}>Update Password</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </ScrollView>
             </View>
-
-            {passwordError ? (
-              <View style={styles.errorBanner}>
-                <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
-                <Text style={styles.errorBannerText}>{passwordError}</Text>
-              </View>
-            ) : null}
-
-            {passwordStep === "CURRENT" ? (
-              <View>
-                <Text style={styles.modalExplainer}>
-                  For your security, enter your current password. We will send a 6-digit confirmation code to your email.
-                </Text>
-
-                <Text style={styles.inputLabel}>Current Password</Text>
-                <View style={styles.passwordInputWrapper}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    value={currentPassword}
-                    onChangeText={setCurrentPassword}
-                    placeholder="Enter current password"
-                    placeholderTextColor="#94A3B8"
-                    secureTextEntry={!showCurrentPass}
-                  />
-                  <TouchableOpacity onPress={() => setShowCurrentPass(!showCurrentPass)}>
-                    {showCurrentPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.dialogSaveBtn, (!currentPassword || isPasswordLoading) && styles.btnDisabled]}
-                  onPress={handleSendPasswordOtp}
-                  disabled={!currentPassword || isPasswordLoading}
-                  activeOpacity={0.88}
-                >
-                  {isPasswordLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <Text style={styles.dialogSaveText}>Send Verification Code</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View>
-                <Text style={styles.modalExplainer}>
-                  Enter the 6-digit code sent to {user?.email} and your new password.
-                </Text>
-
-                <Text style={styles.inputLabel}>6-Digit Verification Code</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={passwordOtp}
-                  onChangeText={setPasswordOtp}
-                  placeholder="123456"
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  placeholderTextColor="#94A3B8"
-                />
-
-                <Text style={styles.inputLabel}>New Password</Text>
-                <View style={styles.passwordInputWrapper}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    placeholder="At least 8 characters"
-                    placeholderTextColor="#94A3B8"
-                    secureTextEntry={!showNewPass}
-                  />
-                  <TouchableOpacity onPress={() => setShowNewPass(!showNewPass)}>
-                    {showNewPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.inputLabel}>Confirm New Password</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Confirm new password"
-                  placeholderTextColor="#94A3B8"
-                  secureTextEntry
-                />
-
-                <TouchableOpacity
-                  style={[styles.dialogSaveBtn, (!passwordOtp || !newPassword || isPasswordLoading) && styles.btnDisabled]}
-                  onPress={handleVerifyNewPassword}
-                  disabled={!passwordOtp || !newPassword || isPasswordLoading}
-                  activeOpacity={0.88}
-                >
-                  {isPasswordLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <Text style={styles.dialogSaveText}>Update Password</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ==================================================== */}
-      {/* MODAL 4: Two-Factor Authentication Modal */}
+      {/* MODAL 4: Two-Factor Authentication Modal (With Keyboard Avoidance) */}
       {/* ==================================================== */}
       <Modal
         visible={activeModal === "TWO_FACTOR"}
@@ -1283,159 +1442,168 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setActiveModal(null)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.formDialogCard}>
-            <View style={styles.dialogHeader}>
-              <Text style={styles.dialogTitle}>Two-Factor Authentication</Text>
-              <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <X size={20} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            {twoFactorError ? (
-              <View style={styles.errorBanner}>
-                <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
-                <Text style={styles.errorBannerText}>{twoFactorError}</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingModal}
+        >
+          <View style={styles.modalBackdropCenter}>
+            <View style={styles.formDialogCard}>
+              <View style={styles.dialogHeader}>
+                <Text style={styles.dialogTitle}>Two-Factor Authentication</Text>
+                <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <X size={20} color="#64748B" />
+                </TouchableOpacity>
               </View>
-            ) : null}
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
-              {user?.twoFactorEnabled ? (
-                /* 2FA Enabled State: Option to Disable */
-                <View style={{ alignItems: "center", paddingVertical: 12 }}>
-                  <View style={styles.shieldActiveOrb}>
-                    <Shield size={36} color={colors.success} />
-                  </View>
-                  <Text style={styles.twoFactorActiveTitle}>2FA is Active & Protecting Your Account</Text>
-                  <Text style={styles.twoFactorActiveSub}>
-                    Every sign-in requires a verification code from your authenticator app or email.
-                  </Text>
-
-                  <View style={styles.dividerSpacing} />
-
-                  <Text style={styles.inputLabel}>Enter Account Password to Disable 2FA</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={disablePassword}
-                    onChangeText={setDisablePassword}
-                    placeholder="Enter account password"
-                    secureTextEntry
-                    placeholderTextColor="#94A3B8"
-                  />
-
-                  <TouchableOpacity
-                    style={[styles.destructiveBtn, (!disablePassword || is2FALoading) && styles.btnDisabled]}
-                    onPress={handleDisable2FA}
-                    disabled={!disablePassword || is2FALoading}
-                    activeOpacity={0.88}
-                  >
-                    {is2FALoading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <Text style={styles.destructiveBtnText}>Disable Two-Factor Auth</Text>
-                    )}
-                  </TouchableOpacity>
+              {twoFactorError ? (
+                <View style={styles.errorBanner}>
+                  <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
+                  <Text style={styles.errorBannerText}>{twoFactorError}</Text>
                 </View>
-              ) : (
-                /* 2FA Setup Flow */
-                <View>
-                  <Text style={styles.modalExplainer}>
-                    Add an extra layer of security. Choose an authenticator app (Google Authenticator, Microsoft Authenticator) or Email OTP.
-                  </Text>
+              ) : null}
 
-                  {/* Method Selector Tabs */}
-                  <View style={styles.methodTabRow}>
-                    <TouchableOpacity
-                      style={[styles.methodTab, twoFactorMethod === "AUTHENTICATOR" && styles.methodTabActive]}
-                      onPress={() => handleInit2FASetup("AUTHENTICATOR")}
-                    >
-                      <Text style={[styles.methodTabText, twoFactorMethod === "AUTHENTICATOR" && styles.methodTabTextActive]}>
-                        Authenticator App
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.methodTab, twoFactorMethod === "EMAIL" && styles.methodTabActive]}
-                      onPress={() => handleInit2FASetup("EMAIL")}
-                    >
-                      <Text style={[styles.methodTabText, twoFactorMethod === "EMAIL" && styles.methodTabTextActive]}>
-                        Email Passkey
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 16 }}
+              >
+                {user?.twoFactorEnabled ? (
+                  <View style={{ alignItems: "center", paddingVertical: 12 }}>
+                    <View style={styles.shieldActiveOrb}>
+                      <Shield size={36} color={colors.success} />
+                    </View>
+                    <Text style={styles.twoFactorActiveTitle}>2FA is Active & Protecting Your Account</Text>
+                    <Text style={styles.twoFactorActiveSub}>
+                      Every sign-in requires a verification code from your authenticator app or email.
+                    </Text>
 
-                  {twoFactorMethod === "AUTHENTICATOR" ? (
-                    <View style={{ alignItems: "center" }}>
-                      {twoFactorQrCode ? (
-                        <View style={styles.qrCodeBox}>
-                          <Image source={{ uri: twoFactorQrCode }} style={{ width: 160, height: 160 }} />
-                        </View>
+                    <View style={styles.dividerSpacing} />
+
+                    <Text style={styles.inputLabel}>Enter Account Password to Disable 2FA</Text>
+                    <TextInput
+                      style={styles.highContrastInput}
+                      value={disablePassword}
+                      onChangeText={setDisablePassword}
+                      placeholder="Enter account password"
+                      secureTextEntry
+                      placeholderTextColor="#94A3B8"
+                      selectionColor={colors.primary}
+                    />
+
+                    <TouchableOpacity
+                      style={[styles.destructiveBtn, (!disablePassword || is2FALoading) && styles.btnDisabled]}
+                      onPress={handleDisable2FA}
+                      disabled={!disablePassword || is2FALoading}
+                      activeOpacity={0.88}
+                    >
+                      {is2FALoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
                       ) : (
-                        <View style={[styles.qrCodeBox, { height: 160, justifyContent: "center" }]}>
-                          <ActivityIndicator color={colors.primary} size="small" />
-                        </View>
+                        <Text style={styles.destructiveBtnText}>Disable Two-Factor Auth</Text>
                       )}
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View>
+                    <Text style={styles.modalExplainer}>
+                      Add an extra layer of security. Choose an authenticator app (Google Authenticator, Microsoft Authenticator) or Email OTP.
+                    </Text>
 
-                      {twoFactorSecret ? (
-                        <TouchableOpacity
-                          style={styles.secretPill}
-                          onPress={handleCopySecret}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={styles.secretText}>Secret: {twoFactorSecret}</Text>
-                          {copiedSecret ? (
-                            <Check size={13} color={colors.primary} style={{ marginLeft: 6 }} />
-                          ) : (
-                            <Copy size={13} color={colors.primary} style={{ marginLeft: 6 }} />
-                          )}
-                        </TouchableOpacity>
-                      ) : null}
-
-                      <Text style={styles.inputLabel}>Enter 6-Digit Authenticator Code</Text>
-                      <TextInput
-                        style={[styles.formInput, { textAlign: "center", letterSpacing: 4, fontSize: 18, fontWeight: "700" }]}
-                        value={twoFactorOtp}
-                        onChangeText={setTwoFactorOtp}
-                        placeholder="123456"
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        placeholderTextColor="#94A3B8"
-                      />
+                    <View style={styles.methodTabRow}>
+                      <TouchableOpacity
+                        style={[styles.methodTab, twoFactorMethod === "AUTHENTICATOR" && styles.methodTabActive]}
+                        onPress={() => handleInit2FASetup("AUTHENTICATOR")}
+                      >
+                        <Text style={[styles.methodTabText, twoFactorMethod === "AUTHENTICATOR" && styles.methodTabTextActive]}>
+                          Authenticator App
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.methodTab, twoFactorMethod === "EMAIL" && styles.methodTabActive]}
+                        onPress={() => handleInit2FASetup("EMAIL")}
+                      >
+                        <Text style={[styles.methodTabText, twoFactorMethod === "EMAIL" && styles.methodTabTextActive]}>
+                          Email Passkey
+                        </Text>
+                      </TouchableOpacity>
                     </View>
-                  ) : (
-                    <View>
-                      <Text style={[styles.modalExplainer, { marginTop: 12 }]}>
-                        A 6-digit verification code has been dispatched to {user?.email}.
-                      </Text>
-                      <Text style={styles.inputLabel}>Enter 6-Digit Email Code</Text>
-                      <TextInput
-                        style={[styles.formInput, { textAlign: "center", letterSpacing: 4, fontSize: 18, fontWeight: "700" }]}
-                        value={twoFactorOtp}
-                        onChangeText={setTwoFactorOtp}
-                        placeholder="123456"
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        placeholderTextColor="#94A3B8"
-                      />
-                    </View>
-                  )}
 
-                  <TouchableOpacity
-                    style={[styles.dialogSaveBtn, (!twoFactorOtp || is2FALoading) && styles.btnDisabled]}
-                    onPress={handleConfirm2FASetup}
-                    disabled={!twoFactorOtp || is2FALoading}
-                    activeOpacity={0.88}
-                  >
-                    {is2FALoading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    {twoFactorMethod === "AUTHENTICATOR" ? (
+                      <View style={{ alignItems: "center" }}>
+                        {twoFactorQrCode ? (
+                          <View style={styles.qrCodeBox}>
+                            <Image source={{ uri: twoFactorQrCode }} style={{ width: 150, height: 150 }} />
+                          </View>
+                        ) : (
+                          <View style={[styles.qrCodeBox, { height: 150, width: 150, justifyContent: "center" }]}>
+                            <ActivityIndicator color={colors.primary} size="small" />
+                          </View>
+                        )}
+
+                        {twoFactorSecret ? (
+                          <TouchableOpacity
+                            style={styles.secretPill}
+                            onPress={handleCopySecret}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.secretText}>Secret: {twoFactorSecret}</Text>
+                            {copiedSecret ? (
+                              <Check size={13} color={colors.primary} style={{ marginLeft: 6 }} />
+                            ) : (
+                              <Copy size={13} color={colors.primary} style={{ marginLeft: 6 }} />
+                            )}
+                          </TouchableOpacity>
+                        ) : null}
+
+                        <Text style={styles.inputLabel}>Enter 6-Digit Authenticator Code</Text>
+                        <TextInput
+                          style={[styles.highContrastInput, styles.otpInput]}
+                          value={twoFactorOtp}
+                          onChangeText={setTwoFactorOtp}
+                          placeholder="123456"
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          placeholderTextColor="#94A3B8"
+                          selectionColor={colors.primary}
+                        />
+                      </View>
                     ) : (
-                      <Text style={styles.dialogSaveText}>Verify & Enable 2FA</Text>
+                      <View>
+                        <Text style={[styles.modalExplainer, { marginTop: 8 }]}>
+                          A 6-digit verification code has been dispatched to {user?.email}.
+                        </Text>
+                        <Text style={styles.inputLabel}>Enter 6-Digit Email Code</Text>
+                        <TextInput
+                          style={[styles.highContrastInput, styles.otpInput]}
+                          value={twoFactorOtp}
+                          onChangeText={setTwoFactorOtp}
+                          placeholder="123456"
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          placeholderTextColor="#94A3B8"
+                          selectionColor={colors.primary}
+                        />
+                      </View>
                     )}
-                  </TouchableOpacity>
-                </View>
-              )}
-            </ScrollView>
+
+                    <TouchableOpacity
+                      style={[styles.dialogSaveBtn, (!twoFactorOtp || is2FALoading) && styles.btnDisabled]}
+                      onPress={handleConfirm2FASetup}
+                      disabled={!twoFactorOtp || is2FALoading}
+                      activeOpacity={0.88}
+                    >
+                      {is2FALoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text style={styles.dialogSaveText}>Verify & Enable 2FA</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ==================================================== */}
@@ -1453,7 +1621,7 @@ export default function ProfileScreen() {
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetModalTitle}>App Auto-Lock Timeout</Text>
             <Text style={styles.sheetModalSub}>
-              Automatically require Face ID or password when the app has been inactive in the background.
+              Automatically lock the session when the app is inactive or sent to the background.
             </Text>
 
             {[
@@ -1492,6 +1660,155 @@ export default function ProfileScreen() {
               <Text style={styles.sheetCancelText}>Done</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+      {/* ==================================================== */}
+      {/* MODAL 6: In-App Terms & Privacy Document Viewer */}
+      {/* ==================================================== */}
+      <Modal
+        visible={activeModal === "DOCUMENT_VIEWER"}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <View style={[styles.docViewerContainer, { paddingTop: Math.max(insets.top, 20) }]}>
+          {/* Header */}
+          <View style={styles.docViewerHeader}>
+            <View style={styles.docViewerTitleRow}>
+              <Scale size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.docViewerTitle}>
+                {documentType === "TERMS" ? "Terms & Conditions" : "Privacy Policy"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setActiveModal(null)}
+              style={styles.docViewerCloseBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <X size={20} color="#0F172A" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Segmented Switcher */}
+          <View style={styles.docTabSwitcher}>
+            <TouchableOpacity
+              style={[styles.docTab, documentType === "TERMS" && styles.docTabActive]}
+              onPress={() => setDocumentType("TERMS")}
+            >
+              <Text style={[styles.docTabText, documentType === "TERMS" && styles.docTabTextActive]}>
+                Terms of Service
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.docTab, documentType === "PRIVACY" && styles.docTabActive]}
+              onPress={() => setDocumentType("PRIVACY")}
+            >
+              <Text style={[styles.docTabText, documentType === "PRIVACY" && styles.docTabTextActive]}>
+                Privacy Policy
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Scrollable Legal Document Body */}
+          <ScrollView
+            style={styles.docViewerScroll}
+            contentContainerStyle={styles.docViewerScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {documentType === "TERMS" ? (
+              <View>
+                <View style={styles.legalNoticeBanner}>
+                  <Text style={styles.legalNoticeTag}>STATUTORY LEGAL DOCUMENT</Text>
+                  <Text style={styles.legalNoticeHeading}>User Service Agreements & Operating Terms</Text>
+                  <Text style={styles.legalNoticeSub}>
+                    Governing Law: Federal Republic of Nigeria (NDPA 2023 & CAMA 2020)
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>1. Acceptance of Terms & Legal Capacity</Text>
+                  <Text style={styles.docSectionBody}>
+                    By creating an account, accessing the Lorabiz mobile application, or utilizing any services provided herein, you agree to be bound by these Terms of Service. If you do not agree to all terms, you must discontinue use immediately.
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>2. Nature of Platform & Independent Facilitation</Text>
+                  <Text style={styles.docSectionBody}>
+                    Lorabiz is an independent corporate facilitation, compliance assistance, and digital business services platform. Lorabiz is an accredited corporate facilitator and strictly not a government agency, nor is it affiliated with or an arm of the Corporate Affairs Commission (CAC) or National Identity Management Commission (NIMC).
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>3. Account Security & Verification</Text>
+                  <Text style={styles.docSectionBody}>
+                    Users are responsible for safeguarding their login credentials and session tokens. All account identity details (including CAC, NIN, or BVN verification records) must be accurate, truthful, and lawfully owned by the account holder. Legal names cannot be altered once verified to uphold KYC compliance.
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>4. Turnaround Times & Fulfillment</Text>
+                  <Text style={styles.docSectionBody}>
+                    Estimated delivery windows (e.g. 1 – 48 Working Hours) apply strictly to standard Nigerian business working days (Monday to Friday, excluding public holidays). Agency registry downtimes and portal maintenance outside Lorabiz control may occasionally adjust processing durations.
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>5. Wallet & Financial Transactions</Text>
+                  <Text style={styles.docSectionBody}>
+                    Wallet deposits and electronic billing services are handled via licensed central switch payment processors. Transaction histories and proof of compliance filings are retained in accordance with financial regulations.
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View>
+                <View style={styles.legalNoticeBanner}>
+                  <Text style={styles.legalNoticeTag}>DATA PRIVACY COMPLIANCE</Text>
+                  <Text style={styles.legalNoticeHeading}>Privacy & Data Protection Policy</Text>
+                  <Text style={styles.legalNoticeSub}>
+                    Nigeria Data Protection Act (NDPA 2023) Compliant
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>1. Information We Collect</Text>
+                  <Text style={styles.docSectionBody}>
+                    To facilitate corporate filings and business utility services, we collect user registration information (full name, email address, phone number), identity documents required for verification, transaction records, and device security telemetry.
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>2. How Your Information is Used</Text>
+                  <Text style={styles.docSectionBody}>
+                    Personal data is utilized strictly for processing corporate registrations, fulfilling utility orders, verifying account ownership, communicating operational updates, and preventing fraudulent activities.
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>3. Storage & Encryption</Text>
+                  <Text style={styles.docSectionBody}>
+                    All communications and sensitive database fields are encrypted using industry-standard AES-256 and TLS protocols. Access to user documents is restricted to authorized operations personnel solely for verification and statutory filing purposes.
+                  </Text>
+                </View>
+
+                <View style={styles.docSection}>
+                  <Text style={styles.docSectionTitle}>4. User Rights & Account Closure</Text>
+                  <Text style={styles.docSectionBody}>
+                    You maintain the right to inspect your personal data, request corrections, or deactivate your account at any time directly through the Account & Settings screen in compliance with Apple App Store and NDPA guidelines.
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.docViewerDoneBtn}
+              onPress={() => setActiveModal(null)}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.docViewerDoneText}>Close Document</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -1534,7 +1851,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 18,
-    marginBottom: 24,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     shadowColor: "#000",
@@ -1660,12 +1977,192 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginLeft: 4,
   },
+
+  // Legal Identity Section Card
+  legalCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  legalCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  legalTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  legalCardTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginLeft: 6,
+  },
+  verifiedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.25)",
+  },
+  verifiedBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#059669",
+    marginLeft: 4,
+  },
+  legalFieldsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 10,
+  },
+  legalFieldCol: {
+    flex: 1,
+  },
+  legalFieldLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#64748B",
+    marginBottom: 4,
+  },
+  legalFieldBox: {
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+  legalFieldValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  legalComplianceNotice: {
+    fontSize: 11,
+    color: "#64748B",
+    lineHeight: 16,
+    marginTop: 2,
+    marginBottom: 12,
+  },
+  legalEmailRow: {
+    marginTop: 2,
+  },
+  legalEmailBox: {
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  legalEmailText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#475569",
+  },
+
+  // Phone Verification Card
+  phoneCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  phoneCardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  phoneIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  phoneTexts: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  phoneCardLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  phoneCardNumber: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+  phoneLockNotice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "rgba(245, 158, 11, 0.1)",
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.25)",
+  },
+  phoneLockNoticeText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#B45309",
+    lineHeight: 17,
+  },
+  changePhoneBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    height: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(200, 45, 117, 0.2)",
+  },
+  changePhoneBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+
+  // Menu Items & Cards
   menuCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    marginBottom: 22,
+    marginBottom: 20,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -1725,8 +2222,8 @@ const styles = StyleSheet.create({
   },
   versionContainer: {
     alignItems: "center",
-    marginTop: 8,
-    marginBottom: 20,
+    marginTop: 4,
+    marginBottom: 16,
   },
   versionText: {
     fontSize: 12,
@@ -1742,6 +2239,14 @@ const styles = StyleSheet.create({
   },
   modalDismissOverlay: {
     flex: 1,
+  },
+  keyboardAvoidingModal: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
+  },
+  modalBackdropCenter: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   bottomSheetCard: {
     backgroundColor: "#FFFFFF",
@@ -1807,16 +2312,18 @@ const styles = StyleSheet.create({
     color: "#64748B",
   },
 
+  // Form Dialog Cards
   formDialogCard: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 22,
     paddingTop: 18,
-    paddingBottom: 36,
+    paddingBottom: 32,
+    maxHeight: "88%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 8,
   },
@@ -1827,64 +2334,61 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   dialogTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "800",
     color: "#0F172A",
   },
   modalExplainer: {
     fontSize: 13,
-    color: "#64748B",
-    lineHeight: 18,
+    color: "#475569",
+    lineHeight: 19,
     marginBottom: 14,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#334155",
+    color: "#0F172A",
     marginBottom: 6,
     marginTop: 10,
   },
-  formInput: {
-    height: 48,
+  highContrastInput: {
+    height: 50,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 14,
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: "600",
     color: "#0F172A",
   },
-  inputDisabled: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#F1F5F9",
-    borderColor: "#E2E8F0",
-  },
-  disabledInputText: {
-    fontSize: 14,
-    color: "#64748B",
-    fontWeight: "600",
+  otpInput: {
+    textAlign: "center",
+    letterSpacing: 6,
+    fontSize: 20,
+    fontWeight: "800",
   },
   helperNote: {
-    fontSize: 11,
-    color: "#94A3B8",
-    marginTop: 4,
-    marginBottom: 8,
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 6,
+    marginBottom: 10,
+    lineHeight: 16,
   },
   passwordInputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    height: 48,
+    height: 50,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 14,
   },
   passwordInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: "600",
     color: "#0F172A",
   },
   errorBanner: {
@@ -1894,6 +2398,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   errorBannerText: {
     fontSize: 12,
@@ -1907,7 +2413,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 18,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -1918,6 +2424,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  backStepBtn: {
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 6,
+  },
+  backStepText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748B",
   },
   destructiveBtn: {
     width: "100%",
@@ -1934,18 +2450,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   btnDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
 
   // 2FA Specific Styles
   shieldActiveOrb: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: "#10B98115",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+    marginBottom: 12,
   },
   twoFactorActiveTitle: {
     fontSize: 17,
@@ -1965,7 +2481,7 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#E2E8F0",
     width: "100%",
-    marginVertical: 18,
+    marginVertical: 16,
   },
   methodTabRow: {
     flexDirection: "row",
@@ -2043,5 +2559,135 @@ const styles = StyleSheet.create({
   timeoutLabelSelected: {
     fontWeight: "800",
     color: colors.primary,
+  },
+
+  // In-App Document Viewer Styles
+  docViewerContainer: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
+  docViewerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  docViewerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  docViewerTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  docViewerCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  docTabSwitcher: {
+    flexDirection: "row",
+    backgroundColor: "#E2E8F0",
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 12,
+    padding: 3,
+  },
+  docTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  docTabActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  docTabText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  docTabTextActive: {
+    fontWeight: "800",
+    color: colors.primary,
+  },
+  docViewerScroll: {
+    flex: 1,
+  },
+  docViewerScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 48,
+  },
+  legalNoticeBanner: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  legalNoticeTag: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.primary,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  legalNoticeHeading: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 4,
+  },
+  legalNoticeSub: {
+    fontSize: 12,
+    color: "#64748B",
+  },
+  docSection: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  docSectionTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 8,
+  },
+  docSectionBody: {
+    fontSize: 13,
+    color: "#475569",
+    lineHeight: 20,
+  },
+  docViewerDoneBtn: {
+    backgroundColor: colors.primary,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+  },
+  docViewerDoneText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });
