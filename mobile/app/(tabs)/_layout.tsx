@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { Tabs, useRouter } from "expo-router";
+import React from "react";
+import { Tabs, Redirect } from "expo-router";
 import { LayoutDashboard, Briefcase, Clock, User } from "lucide-react-native";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,20 +8,13 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { token, isLoading } = useAuth();
   const bottomInset = insets.bottom;
   const bottomPadding = Math.max(bottomInset, Platform.OS === "ios" ? 16 : 8);
   const tabHeight = 52 + bottomPadding;
 
-  useEffect(() => {
-    if (!isLoading && !token) {
-      router.replace("/(auth)/login");
-    }
-  }, [isLoading, token]);
-
   if (!isLoading && !token) {
-    return null;
+    return <Redirect href="/(auth)/login" />;
   }
 
   return (

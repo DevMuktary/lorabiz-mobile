@@ -71,26 +71,6 @@ function EditPencilIcon({ size = 14, color = "#475569" }: { size?: number; color
   );
 }
 
-// Apple Face ID Biometric Glyph matching ALAT
-function AppleFaceIdIcon({ size = 28, color = "#0F172A" }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      {/* 4 Corner Brackets */}
-      <Path d="M6 3H5a2 2 0 0 0-2 2v1" />
-      <Path d="M18 3h1a2 2 0 0 1 2 2v1" />
-      <Path d="M21 18v1a2 2 0 0 1-2 2h-1" />
-      <Path d="M3 18v1a2 2 0 0 0 2 2h1" />
-      {/* Eyes */}
-      <Path d="M9 9h.01" strokeWidth={3} />
-      <Path d="M15 9h.01" strokeWidth={3} />
-      {/* Nose */}
-      <Path d="M12 11v3h-1" />
-      {/* Smile curve */}
-      <Path d="M8.5 16.5c1.2 1 2.3 1.5 3.5 1.5s2.3-.5 3.5-1.5" />
-    </Svg>
-  );
-}
-
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -98,9 +78,6 @@ export default function LoginScreen() {
     login,
     savedProfile,
     clearSavedProfile,
-    biometricAvailable,
-    biometricEnabled,
-    promptBiometricUnlock,
     refreshProfile,
     completeSocialLogin,
   } = useAuth();
@@ -193,22 +170,6 @@ export default function LoginScreen() {
     const sub = Linking.addEventListener("url", handleDeepLink);
     return () => sub.remove();
   }, []);
-
-  async function handleBiometricUnlock() {
-    setErrorMsg(null);
-    if (!token) {
-      setErrorMsg("Please enter your password to sign in.");
-      return;
-    }
-    try {
-      const success = await promptBiometricUnlock();
-      if (success && token) {
-        router.replace("/(tabs)");
-      }
-    } catch {
-      // User cancelled
-    }
-  }
 
   async function handleLogin() {
     setErrorMsg(null);
@@ -617,19 +578,6 @@ export default function LoginScreen() {
                 </View>
               </View>
             )}
-
-            {/* Circular Face ID Button positioned right in that lower spot */}
-            {biometricAvailable && biometricEnabled && !!token ? (
-              <View style={styles.faceIdSection}>
-                <TouchableOpacity
-                  style={styles.faceIdCircleButton}
-                  onPress={handleBiometricUnlock}
-                  activeOpacity={0.75}
-                >
-                  <AppleFaceIdIcon size={30} color="#0F172A" />
-                </TouchableOpacity>
-              </View>
-            ) : null}
           </View>
         ) : (
           /* SCREEN STATE C: Standard 1-Step Login (ALAT Screenshot 2) */
