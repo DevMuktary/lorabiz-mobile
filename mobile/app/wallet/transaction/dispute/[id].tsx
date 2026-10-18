@@ -23,6 +23,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Check,
+  Send,
+  MessageSquare,
+  ShieldCheck,
+  RotateCw,
 } from "lucide-react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { colors } from "../../../../constants/theme";
@@ -42,15 +46,24 @@ export default function TransactionDisputeScreen() {
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
 
+  // Filing state
   const [selectedReason, setSelectedReason] = useState(DISPUTE_REASONS[0]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
 
-  // Fetch transaction details
-  const { data: tx, isLoading } = useQuery({
+  // Comment state for ongoing dispute discussion
+  const [followUpComment, setFollowUpComment] = useState("");
+  const [isSendingComment, setIsSendingComment] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+
+  // Fetch complete real-time transaction details including dispute case & message history
+  const {
+    data: tx,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["transactionDetail", id],
     queryFn: async () => {
       if (!id) return null;
@@ -64,10 +77,13 @@ export default function TransactionDisputeScreen() {
     enabled: !!id,
   });
 
-  const isPendingDispute = tx?.dispute?.status === "PENDING";
+  const hasDispute = !!tx?.dispute;
+  const isDisputePending = tx?.dispute?.status === "PENDING";
+  const isDisputeResolved = tx?.dispute?.status === "RESOLVED";
 
-  const handleSubmit = async () => {
-    if (!tx) return;
+  // Submit new dispute
+  const handleSubmitNewDispute = async () => {
+    if (!tx || isSubmitting) return;
     setSubmitError(null);
 
     if (!selectedReason) {
@@ -84,13 +100,9 @@ export default function TransactionDisputeScreen() {
       });
 
       if (res?.success) {
-        setIsSuccess(true);
-        setSuccessMessage(
-          res.message || "Dispute submitted successfully. Our team will review your case within 1 – 48 Working Hours."
-        );
-        // Invalidate transaction queries so parent screens update immediately
-        queryClient.invalidateQueries({ queryKey: ["transactionDetail", id] });
-        queryClient.invalidateQueries({ queryKey: ["mobileAllTransactions"] });
+        setNotes("");
+        await queryClient.invalidateQueries({ queryKey: ["transactionDetail", id] });
+        await queryClient.invalidateQueries({ queryKey: ["mobileAllTransactions"] });
       } else {
         setSubmitError(res?.message || "Unable to submit dispute at this time.");
       }
@@ -100,6 +112,56 @@ export default function TransactionDisputeScreen() {
       setIsSubmitting(false);
     }
   };
+
+  // Submit follow-up comment to ongoing dispute thread
+  const handleSendFollowUp = async () => {
+    if (!tx || !followUpComment.trim() || isSendingComment) return;
+    setCommentError(null);
+    setIsSendingComment(true);
+
+    try {
+      const res: any = await api.post("/api/user/transactions/dispute", {
+        transactionId: tx.id,
+        comment: followUpComment.trim(),
+      });
+
+      if (res?.success) {
+        setFollowUpComment("");
+        Keyboard.dismiss();
+        await queryClient.invalidateQueries({ queryKey: ["transactionDetail", id] });
+      } else {
+        setCommentError(res?.message || "Could not post follow-up message.");
+      }
+    } catch (err: any) {
+      setCommentError(err?.message || "Network error. Please try again.");
+    } finally {
+      setIsSendingComment(false);
+    }
+  };
+
+  const rawMessages = tx?.dispute?.messages || [];
+  const threadMessages = rawMessages.length > 0
+    ? rawMessages
+    : tx?.dispute
+    ? [
+        {
+          id: "msg_init",
+          sender: "USER",
+          text: tx.dispute.notes ? `${tx.dispute.issueType}: ${tx.dispute.notes}` : tx.dispute.issueType,
+          createdAt: tx.dispute.createdAt,
+        },
+        ...(tx.dispute.adminResponse
+          ? [
+              {
+                id: "msg_admin",
+                sender: "SUPPORT",
+                text: tx.dispute.adminResponse,
+                createdAt: tx.dispute.updatedAt || tx.dispute.createdAt,
+              },
+            ]
+          : []),
+      ]
+    : [];
 
   return (
     <KeyboardAvoidingView
@@ -126,117 +188,328 @@ export default function TransactionDisputeScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>Dispute Transaction</Text>
+          <Text style={styles.headerTitle}>
+            {hasDispute ? "Dispute Case & Updates" : "Dispute Transaction"}
+          </Text>
           <Text style={styles.headerSubtitle} numberOfLines={1}>
-            {tx?.reference ? `Ref: ${tx.reference}` : "Case Filing"}
+            {tx?.reference ? `Ref: ${tx.reference}` : "Support Investigation"}
           </Text>
         </View>
 
-        <View style={{ width: 38 }} />
+        <TouchableOpacity
+          onPress={() => refetch()}
+          style={styles.refreshBtn}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.7}
+        >
+          <RotateCw size={17} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading transaction...</Text>
+          <Text style={styles.loadingText}>Loading case details...</Text>
         </View>
-      ) : isSuccess ? (
-        /* Success State */
-        <ScrollView
-          style={styles.scrollContent}
-          contentContainerStyle={[styles.successContainer, { paddingBottom: Math.max(insets.bottom, 24) + 24 }]}
-        >
-          <View style={styles.successIconCircle}>
-            <CheckCircle2 size={44} color={colors.success} />
-          </View>
-          <Text style={styles.successTitle}>Dispute Filed Successfully</Text>
-          <Text style={styles.successMsg}>{successMessage}</Text>
-
-          <View style={styles.successInfoCard}>
-            <Text style={styles.successInfoLabel}>Transaction Reference</Text>
-            <Text style={styles.successInfoValue}>{tx?.reference}</Text>
-
-            <View style={styles.divider} />
-
-            <Text style={styles.successInfoLabel}>Reason Filed</Text>
-            <Text style={styles.successInfoValue}>{selectedReason}</Text>
-
-            <View style={styles.divider} />
-
-            <Text style={styles.successInfoLabel}>Investigation Window</Text>
-            <Text style={[styles.successInfoValue, { color: colors.primary, fontWeight: "800" }]}>
-              1 – 48 Working Hours
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.returnBtn}
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/(tabs)/activity");
-              }
-            }}
-            activeOpacity={0.88}
+      ) : hasDispute ? (
+        /* =================================================================== */
+        /* SCREEN STATE A: ONGOING DISPUTE CASE & DISCUSSION THREAD            */
+        /* =================================================================== */
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            style={styles.scrollContent}
+            contentContainerStyle={[
+              styles.caseHubContainer,
+              { paddingBottom: Math.max(insets.bottom, 24) + 120 },
+            ]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.returnBtnText}>Back to Transaction</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      ) : isPendingDispute ? (
-        /* Duplicate Dispute Blocked State */
-        <ScrollView
-          style={styles.scrollContent}
-          contentContainerStyle={[styles.pendingContainer, { paddingBottom: Math.max(insets.bottom, 24) + 24 }]}
-        >
-          <View style={styles.pendingIconCircle}>
-            <Clock3 size={40} color="#D97706" />
-          </View>
+            {/* Case Overview Card */}
+            <View style={styles.caseCard}>
+              <View style={styles.caseCardHeader}>
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text style={styles.caseCardTag}>CASE STATUS</Text>
+                  <Text style={styles.caseIssueType} numberOfLines={2}>
+                    {tx?.dispute?.issueType || "Transaction Inquiry"}
+                  </Text>
+                </View>
 
-          <Text style={styles.pendingTitle}>Dispute Already Active</Text>
-          <Text style={styles.pendingSubtitle}>
-            A dispute for this transaction is currently under review by our compliance team. You cannot submit multiple dispute requests for the same transaction until the active case is concluded.
-          </Text>
+                {/* Sleek Slate Status Badge */}
+                <View
+                  style={[
+                    styles.caseStatusBadge,
+                    {
+                      backgroundColor: isDisputeResolved
+                        ? "#ECFDF5"
+                        : tx?.dispute?.status === "REJECTED"
+                        ? "#FEF2F2"
+                        : "#F1F5F9",
+                      borderColor: isDisputeResolved
+                        ? "#A7F3D0"
+                        : tx?.dispute?.status === "REJECTED"
+                        ? "#FECACA"
+                        : "#CBD5E1",
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor: isDisputeResolved
+                          ? "#10B981"
+                          : tx?.dispute?.status === "REJECTED"
+                          ? "#EF4444"
+                          : "#475569",
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.caseStatusText,
+                      {
+                        color: isDisputeResolved
+                          ? "#065F46"
+                          : tx?.dispute?.status === "REJECTED"
+                          ? "#991B1B"
+                          : "#1E293B",
+                      },
+                    ]}
+                  >
+                    {isDisputeResolved
+                      ? "RESOLVED"
+                      : tx?.dispute?.status === "REJECTED"
+                      ? "CLOSED"
+                      : "UNDER INVESTIGATION"}
+                  </Text>
+                </View>
+              </View>
 
-          {/* Active Dispute Summary Card */}
-          <View style={styles.activeCaseCard}>
-            <View style={styles.activeCaseHeader}>
-              <Text style={styles.activeCaseHeaderTitle}>Active Case Details</Text>
-              <View style={styles.activeCaseStatusPill}>
-                <Text style={styles.activeCaseStatusText}>UNDER REVIEW</Text>
+              {/* Transaction Mini Ledger */}
+              <View style={styles.caseTxBox}>
+                <View style={styles.caseTxRow}>
+                  <Text style={styles.caseTxLabel}>Transaction Reference</Text>
+                  <Text style={styles.caseTxVal}>{tx?.reference}</Text>
+                </View>
+                <View style={styles.caseTxRow}>
+                  <Text style={styles.caseTxLabel}>Disputed Amount</Text>
+                  <Text style={[styles.caseTxVal, { fontWeight: "800", color: "#0F172A" }]}>
+                    ₦{Number(tx?.amount || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+                <View style={[styles.caseTxRow, { borderBottomWidth: 0 }]}>
+                  <Text style={styles.caseTxLabel}>Date Filed</Text>
+                  <Text style={styles.caseTxVal}>
+                    {tx?.dispute?.createdAt
+                      ? new Date(tx.dispute.createdAt).toLocaleString("en-NG", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Recent"}
+                  </Text>
+                </View>
+              </View>
+
+              {/* SLA Turnaround Pill */}
+              <View style={styles.turnaroundBar}>
+                <Clock3 size={14} color="#475569" style={{ marginRight: 6 }} />
+                <Text style={styles.turnaroundBarText}>
+                  Standard Review Turnaround: <Text style={{ fontWeight: "800", color: "#0F172A" }}>1 – 48 Working Hours</Text>
+                </Text>
               </View>
             </View>
 
-            <View style={styles.caseRow}>
-              <Text style={styles.caseLabel}>Reason:</Text>
-              <Text style={styles.caseValue}>{tx?.dispute?.issueType}</Text>
+            {/* Investigation Progress Stages */}
+            <View style={styles.stagesCard}>
+              <Text style={styles.stagesTitle}>Investigation Timeline</Text>
+              <View style={styles.stagesList}>
+                {/* Stage 1: Received */}
+                <View style={styles.stageItem}>
+                  <View style={[styles.stageIconWrap, styles.stageIconCompleted]}>
+                    <Check size={12} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.stageContent}>
+                    <Text style={styles.stageName}>Dispute Received & Logged</Text>
+                    <Text style={styles.stageDesc}>Case created in security audit log</Text>
+                  </View>
+                </View>
+
+                {/* Connector */}
+                <View style={[styles.stageConnector, styles.stageConnectorActive]} />
+
+                {/* Stage 2: In Review */}
+                <View style={styles.stageItem}>
+                  <View
+                    style={[
+                      styles.stageIconWrap,
+                      isDisputeResolved ? styles.stageIconCompleted : styles.stageIconCurrent,
+                    ]}
+                  >
+                    {isDisputeResolved ? (
+                      <Check size={12} color="#FFFFFF" />
+                    ) : (
+                      <View style={styles.pulseInnerDot} />
+                    )}
+                  </View>
+                  <View style={styles.stageContent}>
+                    <Text style={styles.stageName}>Compliance Review</Text>
+                    <Text style={styles.stageDesc}>
+                      {isDisputeResolved
+                        ? "Investigation concluded"
+                        : "Our review team is auditing the gateway settlement"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Connector */}
+                <View
+                  style={[
+                    styles.stageConnector,
+                    isDisputeResolved && styles.stageConnectorActive,
+                  ]}
+                />
+
+                {/* Stage 3: Resolution */}
+                <View style={styles.stageItem}>
+                  <View
+                    style={[
+                      styles.stageIconWrap,
+                      isDisputeResolved ? styles.stageIconCompleted : styles.stageIconPending,
+                    ]}
+                  >
+                    {isDisputeResolved ? (
+                      <Check size={12} color="#FFFFFF" />
+                    ) : (
+                      <View style={[styles.pulseInnerDot, { backgroundColor: "#94A3B8" }]} />
+                    )}
+                  </View>
+                  <View style={styles.stageContent}>
+                    <Text style={styles.stageName}>Final Resolution</Text>
+                    <Text style={styles.stageDesc}>
+                      {isDisputeResolved
+                        ? "Case resolved and balance reconciled"
+                        : "Pending conclusion of gateway audit"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
             </View>
 
-            {tx?.dispute?.notes ? (
-              <View style={styles.caseNotesBox}>
-                <Text style={styles.caseNotesLabel}>Submitted Note:</Text>
-                <Text style={styles.caseNotesText}>{tx?.dispute?.notes}</Text>
+            {/* Conversation / Update Thread */}
+            <View style={styles.threadSection}>
+              <View style={styles.threadHeader}>
+                <MessageSquare size={16} color="#0F172A" style={{ marginRight: 6 }} />
+                <Text style={styles.threadTitle}>Case Discussion & Notes</Text>
               </View>
+
+              {threadMessages.length === 0 ? (
+                <View style={styles.emptyThreadCard}>
+                  <Text style={styles.emptyThreadText}>No messages yet in this case thread.</Text>
+                </View>
+              ) : (
+                <View style={styles.messagesList}>
+                  {threadMessages.map((msg: any, idx: number) => {
+                    const isUser = msg.sender === "USER";
+                    const formattedMsgTime = msg.createdAt
+                      ? new Date(msg.createdAt).toLocaleString("en-NG", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "";
+
+                    return (
+                      <View
+                        key={msg.id || idx}
+                        style={[
+                          styles.messageBubbleWrap,
+                          isUser ? styles.messageBubbleUserWrap : styles.messageBubbleSupportWrap,
+                        ]}
+                      >
+                        <View style={styles.messageSenderRow}>
+                          {!isUser && (
+                            <View style={styles.supportAvatar}>
+                              <ShieldCheck size={12} color="#FFFFFF" />
+                            </View>
+                          )}
+                          <Text style={styles.messageSenderName}>
+                            {isUser ? "You" : "Compliance Review Team"}
+                          </Text>
+                          {formattedMsgTime ? (
+                            <Text style={styles.messageTime}>{formattedMsgTime}</Text>
+                          ) : null}
+                        </View>
+
+                        <View
+                          style={[
+                            styles.messageBubble,
+                            isUser ? styles.messageBubbleUser : styles.messageBubbleSupport,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.messageText,
+                              isUser ? styles.messageTextUser : styles.messageTextSupport,
+                            ]}
+                          >
+                            {msg.text}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </ScrollView>
+
+          {/* Sticky Bottom Comment Bar */}
+          <View style={[styles.bottomCommentBar, { paddingBottom: Math.max(insets.bottom, 12) + 6 }]}>
+            {commentError ? (
+              <Text style={styles.commentErrorText}>{commentError}</Text>
             ) : null}
 
-            <View style={styles.turnaroundBox}>
-              <Clock3 size={14} color="#B45309" style={{ marginRight: 6 }} />
-              <Text style={styles.turnaroundText}>
-                Turnaround window: 1 – 48 Working Hours
-              </Text>
+            <View style={styles.commentInputRow}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Type a follow-up message or detail..."
+                placeholderTextColor="#94A3B8"
+                value={followUpComment}
+                onChangeText={(txt) => {
+                  setFollowUpComment(txt);
+                  if (commentError) setCommentError(null);
+                }}
+                multiline
+                maxLength={500}
+              />
+
+              <TouchableOpacity
+                style={[
+                  styles.sendCommentBtn,
+                  (!followUpComment.trim() || isSendingComment) && styles.sendCommentBtnDisabled,
+                ]}
+                onPress={handleSendFollowUp}
+                disabled={!followUpComment.trim() || isSendingComment}
+                activeOpacity={0.8}
+              >
+                {isSendingComment ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Send size={16} color="#FFFFFF" />
+                )}
+              </TouchableOpacity>
             </View>
           </View>
-
-          <TouchableOpacity
-            style={styles.returnBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.88}
-          >
-            <Text style={styles.returnBtnText}>Return to Transaction Details</Text>
-          </TouchableOpacity>
-        </ScrollView>
+        </View>
       ) : (
-        /* Dispute Filing Form */
+        /* =================================================================== */
+        /* SCREEN STATE B: DISPUTE FILING FORM (NO DISPUTE FILED YET)          */
+        /* =================================================================== */
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
             style={styles.scrollContent}
@@ -246,7 +519,7 @@ export default function TransactionDisputeScreen() {
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {/* 1. REGULATORY / FRAUD WARNING BANNER (as explicitly requested) */}
+            {/* Regulatory Fraud Notice */}
             <View style={styles.regulatoryWarningCard}>
               <View style={styles.warningHeader}>
                 <AlertTriangle size={18} color="#DC2626" style={{ marginRight: 8 }} />
@@ -257,7 +530,7 @@ export default function TransactionDisputeScreen() {
               </Text>
             </View>
 
-            {/* 2. Transaction Summary Header */}
+            {/* Transaction Summary Header */}
             {tx ? (
               <View style={styles.txMiniCard}>
                 <View style={{ flex: 1 }}>
@@ -272,7 +545,7 @@ export default function TransactionDisputeScreen() {
               </View>
             ) : null}
 
-            {/* 3. Reason Selection */}
+            {/* Reason Selection */}
             <Text style={styles.sectionTitle}>Select Issue Reason</Text>
             <View style={styles.reasonsList}>
               {DISPUTE_REASONS.map((r) => {
@@ -305,28 +578,35 @@ export default function TransactionDisputeScreen() {
               })}
             </View>
 
-            {/* 4. Detailed Notes Textarea */}
-            <Text style={styles.sectionTitle}>Additional Details (Optional)</Text>
-            <TextInput
-              style={styles.notesTextarea}
-              placeholder="Provide specific details about what occurred (e.g., service error, transmission timeout, or expected deliverable)..."
-              placeholderTextColor="#94A3B8"
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+            {/* Detailed Explanation */}
+            <Text style={styles.sectionTitle}>Additional Details</Text>
+            <Text style={styles.sectionSubtitle}>
+              Explain what occurred (e.g. error code, payment method, bank account debited).
+            </Text>
+            <View style={styles.textAreaCard}>
+              <TextInput
+                style={styles.textArea}
+                placeholder="Describe the issue with this transaction..."
+                placeholderTextColor="#94A3B8"
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                numberOfLines={4}
+                maxLength={400}
+                textAlignVertical="top"
+              />
+              <Text style={styles.charCounter}>{notes.length} / 400</Text>
+            </View>
 
-            {/* Turnaround Notice */}
-            <View style={styles.turnaroundNoticeRow}>
-              <Clock3 size={14} color="#64748B" style={{ marginRight: 6 }} />
-              <Text style={styles.turnaroundNoticeText}>
-                Dispute investigation turnaround: 1 – 48 Working Hours
+            {/* SLA Turnaround Notice */}
+            <View style={styles.turnaroundBox}>
+              <Clock3 size={15} color="#475569" style={{ marginRight: 8 }} />
+              <Text style={styles.turnaroundText}>
+                Turnaround window: <Text style={{ fontWeight: "700", color: "#0F172A" }}>1 – 48 Working Hours</Text>. Our compliance team audits all logs.
               </Text>
             </View>
 
-            {/* Error Message */}
+            {/* Inline Error Notice */}
             {submitError ? (
               <View style={styles.errorInline}>
                 <AlertCircle size={15} color={colors.error} style={{ marginRight: 6 }} />
@@ -334,17 +614,17 @@ export default function TransactionDisputeScreen() {
               </View>
             ) : null}
 
-            {/* Submit Button */}
+            {/* Submit Action Button */}
             <TouchableOpacity
-              style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
-              onPress={handleSubmit}
+              style={[styles.submitBtn, isSubmitting && styles.btnDisabled]}
+              onPress={handleSubmitNewDispute}
               disabled={isSubmitting}
               activeOpacity={0.88}
             >
               {isSubmitting ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={styles.submitBtnText}>Submit Dispute Request</Text>
+                <Text style={styles.submitBtnText}>Submit Dispute Case</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
@@ -379,47 +659,371 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
+  refreshBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
   headerTitleWrap: {
     flex: 1,
     alignItems: "center",
+    marginHorizontal: 12,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   headerSubtitle: {
     fontSize: 11,
-    color: "#64748B",
-    marginTop: 2,
-    fontWeight: "500",
-  },
-  scrollContent: {
-    flex: 1,
-  },
-  formContainer: {
-    padding: 16,
-    gap: 16,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    padding: 24,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+  scrollContent: {
+    flex: 1,
+  },
+
+  /* ------------------------------------------------------------------ */
+  /* ONGOING CASE HUB STYLES (Screen State A)                           */
+  /* ------------------------------------------------------------------ */
+  caseHubContainer: {
+    padding: 16,
+    gap: 16,
+  },
+  caseCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  caseCardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  caseCardTag: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: "#64748B",
+    marginBottom: 2,
+  },
+  caseIssueType: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F172A",
+    lineHeight: 20,
+  },
+  caseStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 100,
+    borderWidth: 1,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  caseStatusText: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  caseTxBox: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: 12,
+  },
+  caseTxRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EDF2F7",
+  },
+  caseTxLabel: {
+    fontSize: 12,
     color: "#64748B",
     fontWeight: "600",
   },
+  caseTxVal: {
+    fontSize: 12,
+    color: "#1E293B",
+    fontWeight: "700",
+  },
+  turnaroundBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  turnaroundBarText: {
+    fontSize: 11,
+    color: "#475569",
+    fontWeight: "500",
+  },
 
-  /* Regulatory Warning Card */
-  regulatoryWarningCard: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 14,
-    padding: 14,
+  /* Investigation Stages */
+  stagesCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 18,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: "#E2E8F0",
+  },
+  stagesTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    color: "#0F172A",
+    textTransform: "uppercase",
+    marginBottom: 16,
+  },
+  stagesList: {
+    paddingLeft: 4,
+  },
+  stageItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  stageIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stageIconCompleted: {
+    backgroundColor: "#10B981",
+  },
+  stageIconCurrent: {
+    backgroundColor: "#0F172A",
+  },
+  stageIconPending: {
+    backgroundColor: "#E2E8F0",
+  },
+  pulseInnerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FFFFFF",
+  },
+  stageConnector: {
+    width: 2,
+    height: 22,
+    backgroundColor: "#E2E8F0",
+    marginLeft: 12,
+    marginVertical: 2,
+  },
+  stageConnectorActive: {
+    backgroundColor: "#10B981",
+  },
+  stageContent: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  stageName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  stageDesc: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 1,
+  },
+
+  /* Conversation Thread */
+  threadSection: {
+    marginTop: 4,
+  },
+  threadHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  threadTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#0F172A",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  emptyThreadCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 18,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  emptyThreadText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    fontStyle: "italic",
+  },
+  messagesList: {
+    gap: 12,
+  },
+  messageBubbleWrap: {
+    maxWidth: "92%",
+  },
+  messageBubbleUserWrap: {
+    alignSelf: "flex-end",
+  },
+  messageBubbleSupportWrap: {
+    alignSelf: "flex-start",
+  },
+  messageSenderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+    gap: 6,
+  },
+  supportAvatar: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#0F172A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  messageSenderName: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#475569",
+  },
+  messageTime: {
+    fontSize: 10,
+    color: "#94A3B8",
+  },
+  messageBubble: {
+    padding: 14,
+    borderRadius: 16,
+  },
+  messageBubbleUser: {
+    backgroundColor: "#0F172A",
+    borderBottomRightRadius: 4,
+  },
+  messageBubbleSupport: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderBottomLeftRadius: 4,
+  },
+  messageText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  messageTextUser: {
+    color: "#FFFFFF",
+    fontWeight: "500",
+  },
+  messageTextSupport: {
+    color: "#1E293B",
+    fontWeight: "500",
+  },
+
+  /* Sticky Bottom Comment Input Bar */
+  bottomCommentBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  commentErrorText: {
+    fontSize: 11,
+    color: colors.error,
+    marginBottom: 6,
+    fontWeight: "600",
+  },
+  commentInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: "#0F172A",
+    maxHeight: 100,
+  },
+  sendCommentBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendCommentBtnDisabled: {
+    backgroundColor: "#CBD5E1",
+  },
+
+  /* ------------------------------------------------------------------ */
+  /* DISPUTE FILING FORM STYLES (Screen State B)                        */
+  /* ------------------------------------------------------------------ */
+  formContainer: {
+    padding: 16,
+  },
+  regulatoryWarningCard: {
+    backgroundColor: "rgba(239, 68, 68, 0.06)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.2)",
+    padding: 14,
+    marginBottom: 16,
   },
   warningHeader: {
     flexDirection: "row",
@@ -429,16 +1033,13 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#B91C1C",
+    color: "#DC2626",
   },
   warningBody: {
     fontSize: 12,
     color: "#991B1B",
-    lineHeight: 18,
-    fontWeight: "600",
+    lineHeight: 17,
   },
-
-  /* Mini Transaction Summary Card */
   txMiniCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -447,7 +1048,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#F1F5F9",
+    marginBottom: 20,
   },
   txMiniDesc: {
     fontSize: 13,
@@ -464,27 +1066,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     color: "#0F172A",
-    marginLeft: 10,
   },
-
-  /* Reasons List */
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "800",
     color: "#0F172A",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
+    marginBottom: 10,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginBottom: 10,
+    marginTop: -4,
   },
   reasonsList: {
     gap: 8,
+    marginBottom: 20,
   },
   reasonItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
     borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
@@ -493,65 +1097,75 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(200, 45, 117, 0.04)",
   },
   radioCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: "#CBD5E1",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
+    marginRight: 12,
   },
   radioCircleActive: {
     borderColor: colors.primary,
   },
   radioDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: colors.primary,
   },
   reasonText: {
     fontSize: 13,
-    color: "#475569",
     fontWeight: "600",
+    color: "#334155",
     flex: 1,
   },
   reasonTextActive: {
-    color: "#0F172A",
+    color: colors.primary,
     fontWeight: "700",
   },
-
-  /* Notes */
-  notesTextarea: {
+  textAreaCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
+    padding: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 14,
+    borderColor: "#CBD5E1",
+    marginBottom: 16,
+  },
+  textArea: {
+    minHeight: 90,
     fontSize: 13,
     color: "#0F172A",
-    minHeight: 90,
+    lineHeight: 18,
   },
-  turnaroundNoticeRow: {
+  charCounter: {
+    fontSize: 10,
+    color: "#94A3B8",
+    textAlign: "right",
+    marginTop: 4,
+  },
+  turnaroundBox: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#F1F5F9",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
   },
-  turnaroundNoticeText: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "500",
+  turnaroundText: {
+    fontSize: 11,
+    color: "#475569",
+    lineHeight: 16,
+    flex: 1,
   },
-
-  /* Error */
   errorInline: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
     padding: 10,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#FECACA",
+    marginBottom: 14,
   },
   errorText: {
     fontSize: 12,
@@ -559,204 +1173,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     flex: 1,
   },
-
-  /* Primary Button */
   submitBtn: {
     backgroundColor: colors.primary,
-    paddingVertical: 14,
+    paddingVertical: 15,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 6,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
   submitBtnText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "800",
-  },
-
-  /* Success View */
-  successContainer: {
-    padding: 24,
-    alignItems: "center",
-  },
-  successIconCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#0F172A",
-    textAlign: "center",
-  },
-  successMsg: {
-    fontSize: 13,
-    color: "#64748B",
-    textAlign: "center",
-    marginTop: 8,
-    lineHeight: 20,
-    paddingHorizontal: 10,
-  },
-  successInfoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    width: "100%",
-    marginTop: 24,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  successInfoLabel: {
-    fontSize: 11,
-    color: "#64748B",
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  successInfoValue: {
-    fontSize: 13,
-    color: "#0F172A",
-    fontWeight: "700",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F1F5F9",
-    marginVertical: 10,
-  },
-  returnBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-    width: "100%",
-  },
-  returnBtnText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-
-  /* Pending View */
-  pendingContainer: {
-    padding: 24,
-    alignItems: "center",
-  },
-  pendingIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#FEF3C7",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  pendingTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#92400E",
-    textAlign: "center",
-  },
-  pendingSubtitle: {
-    fontSize: 13,
-    color: "#64748B",
-    textAlign: "center",
-    marginTop: 8,
-    lineHeight: 20,
-    paddingHorizontal: 8,
-  },
-  activeCaseCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    width: "100%",
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: "#FDE68A",
-  },
-  activeCaseHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  activeCaseHeaderTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  activeCaseStatusPill: {
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  activeCaseStatusText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#B45309",
     letterSpacing: 0.3,
   },
-  caseRow: {
-    flexDirection: "row",
-    marginBottom: 6,
-  },
-  caseLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#64748B",
-    marginRight: 6,
-  },
-  caseValue: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0F172A",
-    flex: 1,
-  },
-  caseNotesBox: {
-    backgroundColor: "#F8FAFC",
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 6,
-  },
-  caseNotesLabel: {
-    fontSize: 11,
-    color: "#64748B",
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  caseNotesText: {
-    fontSize: 12,
-    color: "#1E293B",
-  },
-  turnaroundBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
-  },
-  turnaroundText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#B45309",
+  btnDisabled: {
+    opacity: 0.65,
   },
 });

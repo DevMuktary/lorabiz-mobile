@@ -30,14 +30,19 @@ import {
 } from "lucide-react-native";
 import { useQuery } from "@tanstack/react-query";
 import { colors } from "../../../constants/theme";
-import { api } from "../../../lib/api";
+import { api, BASE_URL } from "../../../lib/api";
+import { downloadAndSharePdf } from "../../../lib/pdf";
+import { getAuthToken } from "../../../lib/storage";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function TransactionDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { token } = useAuth();
   const { id, reference } = useLocalSearchParams<{ id: string; reference?: string }>();
   const [copiedRef, setCopiedRef] = useState(false);
   const [showReceiptCard, setShowReceiptCard] = useState(true);
+  const [isSharing, setIsSharing] = useState(false);
 
   // Fetch complete real-time transaction details
   const {
@@ -73,28 +78,23 @@ export default function TransactionDetailsScreen() {
   };
 
   const handleShareReceipt = async () => {
-    if (!tx) return;
-    const isCredit = tx.type === "CREDIT" || tx.type === "DEPOSIT";
-    const dateStr = tx.createdAt ? new Date(tx.createdAt).toLocaleString("en-NG") : "N/A";
-    const receiptSummary = [
-      "--- LORABIZ TRANSACTION RECEIPT ---",
-      `Service: ${tx.description || (isCredit ? "Wallet Funding" : "Service Order")}`,
-      `Amount: ${isCredit ? "+" : "-"}₦${Number(tx.amount || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`,
-      `Status: ${tx.status || "SUCCESS"}`,
-      `Reference: ${tx.reference}`,
-      `Date: ${dateStr}`,
-      `Balance Before: ₦${Number(tx.balanceBefore || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`,
-      `Balance After: ₦${Number(tx.balanceAfter || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`,
-      "----------------------------------",
-      "Processed securely on Lorabiz Infrastructure",
-    ].join("\n");
-
+    if (!tx || isSharing) return;
+    setIsSharing(true);
     try {
-      await Share.share({
-        message: receiptSummary,
-        title: `Lorabiz Receipt - ${tx.reference}`,
+      const activeToken = token || (await getAuthToken());
+      const receiptUrl = `${BASE_URL}/api/user/transactions/${tx.id}/receipt-image?token=${encodeURIComponent(activeToken || "")}`;
+
+      await downloadAndSharePdf({
+        source: receiptUrl,
+        filename: `Lorabiz_Receipt_${tx.reference}.png`,
+        dialogTitle: `Lorabiz Receipt - ${tx.reference}`,
+        mimeType: "image/png",
       });
-    } catch {}
+    } catch (err: any) {
+      console.error("Receipt image share error:", err);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const isCredit = tx?.type === "CREDIT" || tx?.type === "DEPOSIT";
@@ -281,7 +281,7 @@ export default function TransactionDetailsScreen() {
             <View style={styles.disputeStatusCard}>
               <View style={styles.disputeHeaderRow}>
                 <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                  <ShieldAlert size={18} color="#D97706" style={{ marginRight: 8 }} />
+                  <ShieldAlert size={18} color="#0F172A" style={{ marginRight: 8 }} />
                   <Text style={styles.disputeTitle}>Dispute Case</Text>
                 </View>
                 <View
@@ -290,10 +290,16 @@ export default function TransactionDetailsScreen() {
                     {
                       backgroundColor:
                         tx.dispute?.status === "RESOLVED"
-                          ? "rgba(16, 185, 129, 0.12)"
+                          ? "#ECFDF5"
                           : tx.dispute?.status === "REJECTED"
-                          ? "rgba(239, 68, 68, 0.12)"
-                          : "rgba(245, 158, 11, 0.15)",
+                          ? "#FEF2F2"
+                          : "#F1F5F9",
+                      borderColor:
+                        tx.dispute?.status === "RESOLVED"
+                          ? "#A7F3D0"
+                          : tx.dispute?.status === "REJECTED"
+                          ? "#FECACA"
+                          : "#E2E8F0",
                     },
                   ]}
                 >
@@ -303,10 +309,10 @@ export default function TransactionDetailsScreen() {
                       {
                         color:
                           tx.dispute?.status === "RESOLVED"
-                            ? colors.success
+                            ? "#059669"
                             : tx.dispute?.status === "REJECTED"
-                            ? colors.error
-                            : "#D97706",
+                            ? "#DC2626"
+                            : "#334155",
                       },
                     ]}
                   >
@@ -314,7 +320,7 @@ export default function TransactionDetailsScreen() {
                       ? "RESOLVED"
                       : tx.dispute?.status === "REJECTED"
                       ? "CLOSED"
-                      : "PENDING REVIEW"}
+                      : "IN REVIEW"}
                   </Text>
                 </View>
               </View>
@@ -326,23 +332,37 @@ export default function TransactionDetailsScreen() {
 
               {tx.dispute?.notes ? (
                 <View style={styles.disputeNotesBox}>
-                  <Text style={styles.disputeNotesLabel}>Your Note:</Text>
+                  <Text style={styles.disputeNotesLabel}>Your Submitted Note:</Text>
                   <Text style={styles.disputeNotesText}>{tx.dispute.notes}</Text>
                 </View>
               ) : null}
 
               {tx.dispute?.adminResponse ? (
                 <View style={styles.disputeAdminBox}>
-                  <Text style={styles.disputeAdminLabel}>Resolution Response:</Text>
+                  <Text style={styles.disputeAdminLabel}>Response from Review Team:</Text>
                   <Text style={styles.disputeAdminText}>{tx.dispute.adminResponse}</Text>
                 </View>
               ) : null}
 
               <Text style={styles.disputeTurnaroundNotice}>
                 {isDisputePending
-                  ? "Our review team is actively investigating this report within 1 – 48 Working Hours."
+                  ? "Investigation window: 1 – 48 Working Hours."
                   : "Case recorded in audit logs."}
               </Text>
+
+              <TouchableOpacity
+                style={styles.openCaseTimelineBtn}
+                onPress={() =>
+                  router.push({
+                    pathname: "/wallet/transaction/dispute/[id]",
+                    params: { id: tx.id },
+                  })
+                }
+                activeOpacity={0.8}
+              >
+                <Text style={styles.openCaseTimelineText}>View Dispute Discussion & Updates</Text>
+                <ExternalLink size={14} color="#0F172A" style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
             </View>
           )}
 
@@ -443,25 +463,41 @@ export default function TransactionDetailsScreen() {
             {/* Action Buttons */}
             <View style={styles.receiptActionsRow}>
               <TouchableOpacity
-                style={styles.shareReceiptBtn}
+                style={[styles.shareReceiptBtn, isSharing && { opacity: 0.7 }]}
                 onPress={handleShareReceipt}
+                disabled={isSharing}
                 activeOpacity={0.8}
               >
-                <Share2 size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.shareReceiptText}>Share Receipt</Text>
+                {isSharing ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 6 }} />
+                ) : (
+                  <Share2 size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
+                )}
+                <Text style={styles.shareReceiptText}>
+                  {isSharing ? "Generating Receipt..." : "Share Receipt"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* DISPUTE TRIGGER OR PENDING NOTICE */}
+          {/* DISPUTE TRIGGER OR CASE ACCESS */}
           <View style={styles.disputeActionSection}>
-            {isDisputePending ? (
-              <View style={styles.disputePendingBanner}>
-                <Clock3 size={16} color="#D97706" style={{ marginRight: 8 }} />
-                <Text style={styles.disputePendingText}>
-                  A dispute is pending review for this transaction. Multiple submissions are restricted until the existing case is resolved.
+            {hasDispute ? (
+              <TouchableOpacity
+                style={[styles.openDisputePageBtn, styles.openDisputeActiveBtn]}
+                onPress={() =>
+                  router.push({
+                    pathname: "/wallet/transaction/dispute/[id]",
+                    params: { id: tx.id },
+                  })
+                }
+                activeOpacity={0.85}
+              >
+                <ShieldAlert size={16} color="#334155" style={{ marginRight: 8 }} />
+                <Text style={[styles.openDisputePageText, { color: "#1E293B" }]}>
+                  View Dispute Case & Updates
                 </Text>
-              </View>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={styles.openDisputePageBtn}
@@ -475,7 +511,7 @@ export default function TransactionDetailsScreen() {
               >
                 <ShieldAlert size={16} color="#DC2626" style={{ marginRight: 8 }} />
                 <Text style={styles.openDisputePageText}>
-                  {hasDispute ? "View Dispute History" : "Dispute This Transaction"}
+                  Dispute This Transaction
                 </Text>
               </TouchableOpacity>
             )}
@@ -651,11 +687,16 @@ const styles = StyleSheet.create({
 
   /* Dispute Progress Card */
   disputeStatusCard: {
-    backgroundColor: "#FFFBEB",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#FDE68A",
+    borderColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   disputeHeaderRow: {
     flexDirection: "row",
@@ -666,12 +707,13 @@ const styles = StyleSheet.create({
   disputeTitle: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#92400E",
+    color: "#0F172A",
   },
   disputeStatusPill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   disputeStatusPillText: {
     fontSize: 10,
@@ -685,26 +727,28 @@ const styles = StyleSheet.create({
   },
   disputeLabel: {
     fontSize: 12,
-    color: "#78350F",
+    color: "#64748B",
     fontWeight: "700",
     marginRight: 6,
   },
   disputeValue: {
     fontSize: 12,
-    color: "#92400E",
+    color: "#0F172A",
     fontWeight: "600",
     flex: 1,
   },
   disputeNotesBox: {
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    backgroundColor: "#F8FAFC",
     padding: 10,
     borderRadius: 10,
     marginTop: 6,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
   },
   disputeNotesLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#78350F",
+    color: "#475569",
     marginBottom: 2,
   },
   disputeNotesText: {
@@ -733,9 +777,25 @@ const styles = StyleSheet.create({
   },
   disputeTurnaroundNotice: {
     fontSize: 11,
-    color: "#92400E",
+    color: "#64748B",
     marginTop: 10,
     fontStyle: "italic",
+  },
+  openCaseTimelineBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginTop: 12,
+  },
+  openCaseTimelineText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#0F172A",
   },
 
   /* Ledger Information Card */
@@ -880,6 +940,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: "#DC2626",
+  },
+  openDisputeActiveBtn: {
+    backgroundColor: "#F8FAFC",
+    borderColor: "#CBD5E1",
   },
   disputePendingBanner: {
     flexDirection: "row",

@@ -270,20 +270,14 @@ export default function ActivityScreen() {
               <Text style={styles.txDate}>
                 {formattedDate} {formattedTime ? `• ${formattedTime}` : ""}
               </Text>
-              {item.serviceCategory ? (
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryBadgeText}>{item.serviceCategory}</Text>
-                </View>
-              ) : null}
               {hasDispute && (
                 <View style={styles.disputePillBadge}>
                   <Text style={styles.disputePillBadgeText}>
-                    {item.dispute?.status === "RESOLVED" ? "DISPUTE RESOLVED" : "UNDER DISPUTE"}
+                    {item.dispute?.status === "RESOLVED" ? "Resolved" : "Disputed"}
                   </Text>
                 </View>
               )}
             </View>
-            <Text style={styles.txRef}>Ref: {item.reference}</Text>
           </View>
         </View>
 
@@ -968,15 +962,17 @@ const styles = StyleSheet.create({
     color: colors.primaryLight,
   },
   disputePillBadge: {
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
   },
   disputePillBadgeText: {
-    fontSize: 8,
-    fontWeight: "800",
-    color: "#B45309",
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#475569",
   },
   txRef: {
     fontSize: 10,

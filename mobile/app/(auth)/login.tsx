@@ -145,19 +145,6 @@ export default function LoginScreen() {
     fetch(`${BASE_URL}/api/auth/csrf`, { credentials: "include" }).catch(() => {});
   }, []);
 
-  // Auto-prompt Face ID on mount when returning user arrives on the page (matching ALAT & top banking apps)
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (isReturningUser && savedProfile && biometricAvailable && biometricEnabled) {
-      timer = setTimeout(() => {
-        handleBiometricUnlock();
-      }, 350);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isReturningUser, savedProfile, biometricAvailable, biometricEnabled]);
-
   // Listen for deep-link returns from Google OAuth (lorabiz://auth/google-success)
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
@@ -209,9 +196,13 @@ export default function LoginScreen() {
 
   async function handleBiometricUnlock() {
     setErrorMsg(null);
+    if (!token) {
+      setErrorMsg("Please enter your password to sign in.");
+      return;
+    }
     try {
       const success = await promptBiometricUnlock();
-      if (success) {
+      if (success && token) {
         router.replace("/(tabs)");
       }
     } catch {
@@ -628,7 +619,7 @@ export default function LoginScreen() {
             )}
 
             {/* Circular Face ID Button positioned right in that lower spot */}
-            {biometricAvailable && biometricEnabled ? (
+            {biometricAvailable && biometricEnabled && !!token ? (
               <View style={styles.faceIdSection}>
                 <TouchableOpacity
                   style={styles.faceIdCircleButton}
