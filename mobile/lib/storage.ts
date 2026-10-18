@@ -103,6 +103,9 @@ export async function removeAuthUser(): Promise<void> {
   await deleteItem(USER_KEY);
 }
 
+const BIO_USER_ID_KEY = "lorabiz_bio_user_id";
+const BIO_EMAIL_KEY = "lorabiz_bio_email";
+
 export async function setBiometricsEnabled(enabled: boolean): Promise<void> {
   await setItem(BIOMETRIC_KEY, enabled ? "true" : "false");
 }
@@ -110,6 +113,79 @@ export async function setBiometricsEnabled(enabled: boolean): Promise<void> {
 export async function isBiometricsEnabled(): Promise<boolean> {
   const val = await getItem(BIOMETRIC_KEY);
   return val === "true";
+}
+
+export async function saveBiometricAuth(userId: string, token: string, email: string): Promise<void> {
+  try {
+    const cleanEmail = (email || "").toLowerCase().trim();
+    await setItem(BIOMETRIC_KEY, "true");
+    await setItem(BIO_USER_ID_KEY, userId);
+    await setItem(BIO_EMAIL_KEY, cleanEmail);
+    await setItem(`lorabiz_bio_token_${userId}`, token);
+    if (cleanEmail) {
+      await setItem(`lorabiz_bio_token_${cleanEmail}`, token);
+      await setItem(`lorabiz_bio_active_${cleanEmail}`, "true");
+    }
+    await setItem(`lorabiz_bio_active_${userId}`, "true");
+  } catch (err) {
+    console.error("saveBiometricAuth error:", err);
+  }
+}
+
+export async function getBiometricTokenForAccount(userIdOrEmail: string): Promise<string | null> {
+  try {
+    const isEnabled = await isBiometricsEnabled();
+    if (!isEnabled) return null;
+
+    const cleanInput = (userIdOrEmail || "").toLowerCase().trim();
+    if (!cleanInput) return null;
+
+    // Check direct account biometric activation
+    const isAccountActive = (await getItem(`lorabiz_bio_active_${cleanInput}`)) === "true";
+    if (isAccountActive) {
+      const token = await getItem(`lorabiz_bio_token_${cleanInput}`);
+      if (token) return token;
+    }
+
+    // Check primary stored biometric user ID / email
+    const storedUserId = await getItem(BIO_USER_ID_KEY);
+    const storedEmail = ((await getItem(BIO_EMAIL_KEY)) || "").toLowerCase().trim();
+
+    if (cleanInput === storedUserId?.toLowerCase().trim() || (storedEmail && cleanInput === storedEmail)) {
+      if (storedUserId) {
+        const token = await getItem(`lorabiz_bio_token_${storedUserId}`);
+        if (token) return token;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function isBiometricsConfiguredForAccount(userIdOrEmail: string): Promise<boolean> {
+  const token = await getBiometricTokenForAccount(userIdOrEmail);
+  return !!token;
+}
+
+export async function removeBiometricAuth(userId?: string): Promise<void> {
+  try {
+    const targetId = userId || (await getItem(BIO_USER_ID_KEY));
+    const storedEmail = await getItem(BIO_EMAIL_KEY);
+    if (targetId) {
+      await deleteItem(`lorabiz_bio_token_${targetId}`);
+      await deleteItem(`lorabiz_bio_active_${targetId}`);
+    }
+    if (storedEmail) {
+      await deleteItem(`lorabiz_bio_token_${storedEmail.toLowerCase().trim()}`);
+      await deleteItem(`lorabiz_bio_active_${storedEmail.toLowerCase().trim()}`);
+    }
+    await deleteItem(BIO_USER_ID_KEY);
+    await deleteItem(BIO_EMAIL_KEY);
+    await setItem(BIOMETRIC_KEY, "false");
+  } catch (err) {
+    console.error("removeBiometricAuth error:", err);
+  }
 }
 
 export async function setHideBalancePref(hidden: boolean): Promise<void> {

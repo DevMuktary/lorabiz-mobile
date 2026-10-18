@@ -8,6 +8,10 @@ import {
   removeAuthUser,
   isBiometricsEnabled,
   setBiometricsEnabled,
+  saveBiometricAuth,
+  getBiometricTokenForAccount,
+  isBiometricsConfiguredForAccount,
+  removeBiometricAuth,
   getSavedProfile,
   saveSavedProfile,
   removeSavedProfile,
@@ -60,6 +64,8 @@ interface AuthContextType {
   completeSocialLogin: (sessionToken?: string) => Promise<UserProfile | null>;
   toggleBiometrics: (enabled: boolean) => Promise<boolean>;
   promptBiometricUnlock: () => Promise<boolean>;
+  loginWithBiometrics: (accountIdentifier?: string) => Promise<{ success: boolean; message?: string }>;
+  isAccountBiometricsConfigured: (accountIdentifier?: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -348,6 +354,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await saveSavedProfile(profileToSave);
         setSavedProfile(profileToSave);
 
+        if (biometricEnabled) {
+          await saveBiometricAuth(userProfile.id, activeToken, userProfile.email);
+        }
+
         return { success: true };
       } catch (err: any) {
         console.error("Login attempt error:", err);
@@ -551,6 +561,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await saveSavedProfile(profileToSave);
         setSavedProfile(profileToSave);
 
+        if (biometricEnabled && activeToken) {
+          await saveBiometricAuth(updatedUser.id, activeToken, updatedUser.email);
+        }
+
         return updatedUser;
       }
       return null;
@@ -566,12 +580,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (success) {
         await setBiometricsEnabled(true);
         setBiometricEnabledState(true);
+        const activeToken = token || (await getAuthToken());
+        if (user && activeToken) {
+          await saveBiometricAuth(user.id, activeToken, user.email);
+        }
         return true;
       }
       return false;
     } else {
       await setBiometricsEnabled(false);
       setBiometricEnabledState(false);
+      if (user) {
+        await removeBiometricAuth(user.id);
+      }
       return true;
     }
   }
@@ -579,6 +600,107 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function promptBiometricUnlock(): Promise<boolean> {
     if (!biometricEnabled) return false;
     return await promptBiometricAuth("Unlock Lorabiz with Face ID or Fingerprint");
+  }
+
+  async function isAccountBiometricsConfigured(accountIdentifier?: string): Promise<boolean> {
+    const target = accountIdentifier || savedProfile?.id || savedProfile?.email;
+    if (!target) return false;
+    return await isBiometricsConfiguredForAccount(target);
+  }
+
+  async function loginWithBiometrics(
+    accountIdentifier?: string
+  ): Promise<{ success: boolean; message?: string }> {
+    const target = accountIdentifier || savedProfile?.id || savedProfile?.email;
+    if (!target) {
+      return {
+        success: false,
+        message: "Please enter your password to sign in.",
+      };
+    }
+
+    const isConfigured = await isBiometricsConfiguredForAccount(target);
+    if (!isConfigured) {
+      return {
+        success: false,
+        message: "Biometrics is not set up for this account. Please enter your password to sign in.",
+      };
+    }
+
+    const authSuccess = await promptBiometricAuth(
+      "Sign in to your Lorabiz account with Face ID"
+    );
+    if (!authSuccess) {
+      return {
+        success: false,
+        message: "Biometric authentication was cancelled.",
+      };
+    }
+
+    const bioToken = await getBiometricTokenForAccount(target);
+    if (!bioToken) {
+      return {
+        success: false,
+        message: "Biometrics is not set up for this account. Please enter your password to sign in.",
+      };
+    }
+
+    try {
+      const sessionHeaders: Record<string, string> = {
+        Authorization: `Bearer ${bioToken}`,
+        Cookie: `next-auth.session-token=${bioToken}; __Secure-next-auth.session-token=${bioToken}`,
+      };
+
+      const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
+        credentials: "include",
+        headers: sessionHeaders,
+      });
+      const sessionData = await sessionRes.json().catch(() => ({}));
+
+      let hydratedUser: UserProfile = {
+        id: sessionData?.user?.id || savedProfile?.id || `user_${Date.now()}`,
+        email: sessionData?.user?.email || savedProfile?.email || "",
+        name: sessionData?.user?.name || savedProfile?.name || "User",
+        firstName:
+          sessionData?.user?.name?.split(" ")[0] ||
+          savedProfile?.firstName ||
+          "User",
+        lastName: sessionData?.user?.name?.split(" ").slice(1).join(" ") || "",
+        role: sessionData?.user?.role || "USER",
+        image: sessionData?.user?.image || savedProfile?.image || null,
+        isProfileComplete: sessionData?.user?.isProfileComplete ?? true,
+      };
+
+      try {
+        const walletRes = await fetch(`${BASE_URL}/api/user/wallet`, {
+          credentials: "include",
+          headers: sessionHeaders,
+        }).then((r) => r.json());
+
+        if (walletRes?.success || typeof walletRes?.balance === "number") {
+          const bal = Number(walletRes.balance ?? walletRes.wallet?.balance ?? 0);
+          const wObj = { id: walletRes.wallet?.id || "wallet", balance: bal };
+          hydratedUser.wallet = wObj;
+          setWallet(wObj);
+          saveCachedWallet(bal);
+        }
+      } catch {
+        // Fallback to cached wallet if offline
+      }
+
+      await saveAuthToken(bioToken);
+      await saveAuthUser(hydratedUser);
+      setToken(bioToken);
+      setUser(hydratedUser);
+
+      return { success: true };
+    } catch (err: any) {
+      console.error("Biometric login hydration error:", err);
+      return {
+        success: false,
+        message: "Failed to authenticate session. Please enter your password.",
+      };
+    }
   }
 
   return (
@@ -600,6 +722,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         completeSocialLogin,
         toggleBiometrics,
         promptBiometricUnlock,
+        loginWithBiometrics,
+        isAccountBiometricsConfigured,
       }}
     >
       {children}
