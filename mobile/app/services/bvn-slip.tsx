@@ -321,6 +321,9 @@ export default function BvnSlipScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Edge-to-Edge Single Line TV Ticker */}
+        <ServiceTvTicker serviceKey="BVN_SLIP" />
+
         {isStatusLoading ? (
           <View style={styles.centerContainer}>
             <BrandLoader inline visible message="Loading BVN services..." />
@@ -360,14 +363,6 @@ export default function BvnSlipScreen() {
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
-
-        {/* Dynamic Service Guidance TV Ticker */}
-        <ServiceTvTicker
-          serviceKey="BVN_SLIP"
-          defaultBadge="BVN NOTICE"
-          fallbackText="BVN Verification: Requires registered phone number or 11-digit BVN. Instant verified slip generation available 24/7."
-        />
-
         {/* Input Card */}
         <View style={styles.inputCard}>
           <View style={styles.inputLabelRow}>

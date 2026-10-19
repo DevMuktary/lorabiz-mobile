@@ -881,6 +881,9 @@ export default function BusinessNameScreen() {
         })}
       </View>
 
+      {/* Edge-to-Edge Single Line TV Ticker */}
+      <ServiceTvTicker serviceKey="CAC_BUSINESS_NAME" />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -1234,12 +1237,6 @@ export default function BusinessNameScreen() {
           {/* ========================================================================= */}
           {currentStep === 2 && (
             <View style={styles.stepContainer}>
-              <ServiceTvTicker
-                serviceKey="CAC_BUSINESS_NAME"
-                defaultBadge="STEP 2 NOTICE"
-                fallbackText="Step 2 Guideline: Ensure all proprietor names match your NIN / BVN records exactly. Upload clear passport photos with plain background. Turnaround is 1 – 48 Working Hours."
-              />
-
               <View style={styles.sectionHeaderBetween}>
                 <View>
                   <Text style={styles.sectionTitle}>Proprietor Information</Text>

@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../context/AuthContext";
+import AppLockModal from "../components/AppLockModal";
 import { colors } from "../constants/theme";
 
 const queryClient = new QueryClient({
@@ -65,6 +66,7 @@ export default function RootLayout() {
             <Stack.Screen name="services/nin-modification" options={{ headerShown: false, animation: "none" }} />
             <Stack.Screen name="services/nin-modification-history" options={{ headerShown: false, animation: "none" }} />
           </Stack>
+          <AppLockModal />
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

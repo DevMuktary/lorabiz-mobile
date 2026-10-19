@@ -576,6 +576,9 @@ export default function TaxIdScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Edge-to-Edge Single Line TV Ticker */}
+      <ServiceTvTicker serviceKey="TAX_ID" />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -613,13 +616,6 @@ export default function TaxIdScreen() {
               <Text style={styles.turnaroundText}>Turnaround Time: 1 – 24 Working Hours</Text>
             </View>
           </View>
-
-          {/* Dynamic Service Guidance TV Ticker */}
-          <ServiceTvTicker
-            serviceKey="TAX_ID"
-            defaultBadge="TAX NOTICE"
-            fallbackText="Tax ID Notice: Provide registered business RC or proprietor NIN. JTB validation processed within 1 – 24 Working Hours."
-          />
 
           {/* Reward Voucher Pass Card (If Available) */}
           {freePassCount > 0 && (

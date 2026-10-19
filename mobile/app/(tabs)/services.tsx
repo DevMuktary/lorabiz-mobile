@@ -19,6 +19,7 @@ import {
 } from "lucide-react-native";
 import { colors } from "../../constants/theme";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface ServiceItem {
   id: string;
@@ -237,6 +238,9 @@ export default function ServicesScreen() {
         <Text style={styles.topBarTitle}>Services</Text>
         <View style={styles.backBtnPlaceholder} />
       </View>
+
+      {/* Edge-to-Edge Single Line TV Ticker */}
+      <ServiceTvTicker serviceKey="GLOBAL" />
 
       <ScrollView
         style={styles.container}

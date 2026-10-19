@@ -463,6 +463,9 @@ export default function ScumlScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Edge-to-Edge Single Line TV Ticker */}
+      <ServiceTvTicker serviceKey="SCUML" />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -504,13 +507,6 @@ export default function ScumlScreen() {
               </View>
             </View>
           </View>
-
-          {/* Dynamic Service Guidance TV Ticker */}
-          <ServiceTvTicker
-            serviceKey="SCUML"
-            defaultBadge="AML COMPLIANCE"
-            fallbackText="SCUML Requirements: Ensure CAC Certificate, Status Report, and Bank Statement/Utility bill are uploaded in high resolution. Turnaround: 1 – 72 Working Hours."
-          />
 
           {/* Section 1: Registration Type Selection */}
           <View style={styles.card}>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import { AppState, AppStateStatus, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import {
   getAuthToken,
@@ -79,8 +79,10 @@ interface AuthContextType {
   completeSocialLogin: (sessionToken?: string) => Promise<UserProfile | null>;
   toggleBiometrics: (enabled: boolean) => Promise<boolean>;
   promptBiometricUnlock: () => Promise<boolean>;
-  loginWithBiometrics: (accountIdentifier?: string) => Promise<{ success: boolean; message?: string }>;
   isAccountBiometricsConfigured: (accountIdentifier?: string) => Promise<boolean>;
+  isAppLocked: boolean;
+  unlockApp: () => Promise<boolean>;
+  unlockWithPassword: (password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -116,10 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [autoLockTimeout, setAutoLockTimeoutState] = useState<string>("never");
   const [hideBalance, setHideBalanceState] = useState<boolean>(false);
+  const [isAppLocked, setIsAppLocked] = useState<boolean>(false);
 
   const lastActiveRef = useRef<number>(Date.now());
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
-  const authGracePeriodRef = useRef<number>(0);
+  const isAuthenticatingBiometricsRef = useRef<boolean>(false);
 
   useEffect(() => {
     initAuth();
@@ -137,15 +140,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (nextState === "active") {
         const now = Date.now();
 
-        // 1. If within active post-authentication grace period, never lock
-        if (now < authGracePeriodRef.current) {
+        // Prevent in-app Face ID / Touch ID prompt modal from re-triggering lock
+        if (isAuthenticatingBiometricsRef.current) {
           lastActiveRef.current = now;
           await setLastActiveTime(now);
           return;
         }
 
-        // 2. Only check auto-lock if coming back from actual BACKGROUND
-        // (Prevents in-app Face ID prompts, notification tray swipes, or permission modals from locking)
+        // Only lock if coming back from actual BACKGROUND
         if (prevState !== "background") {
           lastActiveRef.current = now;
           return;
@@ -157,12 +159,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // Immediate lock when user leaves the app
+        if (timeoutSetting === "immediately") {
+          setIsAppLocked(true);
+          return;
+        }
+
         const lastActive = lastActiveRef.current || (await getLastActiveTime());
         const elapsedMs = now - lastActive;
 
-        // For "immediately", require that user was actually in the background for at least 2.5 seconds
-        // to prevent accidental multitasking gestures or fast switcher taps from kicking them out
-        let thresholdMs = 2500;
+        let thresholdMs = Infinity;
         if (timeoutSetting === "1m") thresholdMs = 60 * 1000;
         else if (timeoutSetting === "5m") thresholdMs = 5 * 60 * 1000;
         else if (timeoutSetting === "15m") thresholdMs = 15 * 60 * 1000;
@@ -170,11 +176,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         else if (timeoutSetting === "2h") thresholdMs = 2 * 60 * 60 * 1000;
 
         if (elapsedMs >= thresholdMs) {
-          // Session timed out! Clear token and redirect to login with reason=timeout
-          await removeAuthToken();
-          setToken(null);
-          setUser(null);
-          router.replace("/(auth)/login?reason=timeout" as any);
+          // Non-destructive lock: overlay modal preserves exact user page and input state
+          setIsAppLocked(true);
         } else {
           lastActiveRef.current = now;
           await setLastActiveTime(now);
@@ -231,17 +234,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedUser = await getAuthUser();
 
       if (storedToken && storedUser) {
-        // Enforce auto-lock timeout on app cold start (e.g. killed/swiped away)
+        setToken(storedToken);
+        if (storedUser.wallet) {
+          setWallet(storedUser.wallet);
+        }
+        setUser(storedUser);
+
+        // Enforce auto-lock overlay on app cold start (if enabled)
         const lastActive = await getLastActiveTime();
-        let isTimedOut = false;
         const now = Date.now();
 
         if (savedAutoLock === "immediately") {
-          // If auto-lock is immediately and app was killed/swiped away:
-          // Check that lastActive was recorded and at least 2.5 seconds have elapsed
-          if (lastActive > 0 && now - lastActive > 2500) {
-            isTimedOut = true;
-          }
+          setIsAppLocked(true);
         } else if (savedAutoLock !== "never" && lastActive > 0) {
           let thresholdMs = Infinity;
           if (savedAutoLock === "1m") thresholdMs = 60 * 1000;
@@ -251,31 +255,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           else if (savedAutoLock === "2h") thresholdMs = 2 * 60 * 60 * 1000;
 
           if (now - lastActive >= thresholdMs) {
-            isTimedOut = true;
+            setIsAppLocked(true);
           }
         }
 
-        if (isTimedOut) {
-          await removeAuthToken();
-          setToken(null);
-          setUser(null);
-          setIsLoading(false);
-          setTimeout(() => {
-            router.replace("/(auth)/login?reason=timeout" as any);
-          }, 50);
-          return;
-        }
-
-        // Session valid on cold start: update active timestamps and grace period
         lastActiveRef.current = now;
-        authGracePeriodRef.current = now + 15000;
         await setLastActiveTime(now);
-
-        setToken(storedToken);
-        if (storedUser.wallet) {
-          setWallet(storedUser.wallet);
-        }
-        setUser(storedUser);
 
         // Fetch fresh wallet balance immediately in background
         api
@@ -482,7 +467,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const now = Date.now();
         lastActiveRef.current = now;
-        authGracePeriodRef.current = now + 15000;
+        setIsAppLocked(false);
         await setLastActiveTime(now);
 
         // Save persistent profile for returning user quick-unlock
@@ -543,6 +528,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(null);
       setUser(null);
       setWallet(null);
+      setIsAppLocked(false);
+      router.replace("/(auth)/login" as any);
     } catch (err) {
       console.error("Logout error:", err);
     }
@@ -722,7 +709,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const now = Date.now();
         lastActiveRef.current = now;
-        authGracePeriodRef.current = now + 15000;
+        setIsAppLocked(false);
         await setLastActiveTime(now);
 
         // Update saved profile for returning Google user
@@ -872,7 +859,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const now = Date.now();
       lastActiveRef.current = now;
-      authGracePeriodRef.current = now + 15000;
+      setIsAppLocked(false);
       await setLastActiveTime(now);
 
       return { success: true };
@@ -882,6 +869,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         success: false,
         message: "Failed to authenticate session. Please enter your password.",
       };
+    }
+  }
+
+  // Non-destructive Biometric App Unlock: preserves active screen & input state
+  async function unlockApp(): Promise<boolean> {
+    if (Platform.OS === "web") {
+      setIsAppLocked(false);
+      return true;
+    }
+
+    isAuthenticatingBiometricsRef.current = true;
+    try {
+      const success = await promptBiometricAuth("Authenticate to unlock Lorabiz");
+      if (success) {
+        setIsAppLocked(false);
+        const now = Date.now();
+        lastActiveRef.current = now;
+        await setLastActiveTime(now);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Biometric unlock error:", err);
+      return false;
+    } finally {
+      setTimeout(() => {
+        isAuthenticatingBiometricsRef.current = false;
+      }, 600);
+    }
+  }
+
+  // Non-destructive Password App Unlock: validates password and resumes current screen
+  async function unlockWithPassword(pwd: string): Promise<boolean> {
+    if (!user?.email) return false;
+    try {
+      const res = await api.post("/api/auth/callback/credentials", {
+        email: user.email,
+        password: pwd,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        return false;
+      }
+
+      setIsAppLocked(false);
+      const now = Date.now();
+      lastActiveRef.current = now;
+      await setLastActiveTime(now);
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -910,6 +949,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         promptBiometricUnlock,
         loginWithBiometrics,
         isAccountBiometricsConfigured,
+        isAppLocked,
+        unlockApp,
+        unlockWithPassword,
       }}
     >
       {children}

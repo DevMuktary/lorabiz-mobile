@@ -422,6 +422,9 @@ export default function NinSlipScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Edge-to-Edge Single Line TV Ticker */}
+        <ServiceTvTicker serviceKey="NIN_SLIP" />
+
         {isStatusLoading ? (
           <View style={styles.centerContainer}>
             <BrandLoader inline visible message="Loading NIN services..." />
@@ -513,13 +516,6 @@ export default function NinSlipScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-
-            {/* Dynamic Service Guidance TV Ticker */}
-            <ServiceTvTicker
-              serviceKey="NIN_SLIP"
-              defaultBadge="NIN NOTICE"
-              fallbackText="NIN Slip Notice: High-resolution Standard and Premium slips generated instantly. Ensure 11-digit NIN is correct before submitting."
-            />
 
             {/* Error Banner */}
             {errorMessage ? (
