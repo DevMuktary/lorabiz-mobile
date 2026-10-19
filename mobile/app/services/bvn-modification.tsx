@@ -739,8 +739,8 @@ export default function BvnModificationScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#0F172A" />
           </TouchableOpacity>
@@ -755,9 +755,9 @@ export default function BvnModificationScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => router.back()}

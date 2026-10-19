@@ -1038,7 +1038,7 @@ export default function ProfileScreen() {
         {/* Live Support */}
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => Linking.openURL("https://wa.me/2349000000000?text=Hello%20Lorabiz%20Support")}
+          onPress={() => Linking.openURL("https://wa.me/12299494839?text=Hello%20Lorabiz%20Support")}
           activeOpacity={0.7}
         >
           <View style={styles.menuIconBox}>

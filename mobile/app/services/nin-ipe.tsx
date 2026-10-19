@@ -278,7 +278,7 @@ export default function NinIpeScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Top Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 14) }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}

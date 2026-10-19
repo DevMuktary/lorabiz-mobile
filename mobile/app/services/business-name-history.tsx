@@ -456,7 +456,7 @@ export default function BusinessNameHistoryScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Fixed Top Bar */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <ArrowLeft size={20} color={colors.text} />
         </TouchableOpacity>

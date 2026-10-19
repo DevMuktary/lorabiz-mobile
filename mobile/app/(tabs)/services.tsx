@@ -225,7 +225,7 @@ export default function ServicesScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Stagnant / Fixed Top App Bar */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
           onPress={handleGoBack}
           style={styles.backBtn}

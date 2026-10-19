@@ -253,7 +253,7 @@ export default function NinPersonalizationScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Top Header Bar */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}

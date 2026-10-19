@@ -398,7 +398,7 @@ export default function SlipHistoryScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Top Header */}
-      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}

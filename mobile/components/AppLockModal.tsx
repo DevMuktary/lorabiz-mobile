@@ -109,9 +109,9 @@ export default function AppLockModal() {
             <Lock size={36} color={colors.primary} />
           </View>
 
-          <Text style={styles.title}>Lorabiz Security Lock</Text>
+          <Text style={styles.title}>Session Locked</Text>
           <Text style={styles.subtitle}>
-            Your session was locked due to inactivity. Verify your identity to resume right where you left off.
+            Confirm your identity to continue where you left off.
           </Text>
 
           {/* User Badge */}

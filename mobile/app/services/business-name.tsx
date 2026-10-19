@@ -808,7 +808,7 @@ export default function BusinessNameScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Top Header */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity onPress={handleGoBack} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <ArrowLeft size={20} color={colors.text} />
         </TouchableOpacity>

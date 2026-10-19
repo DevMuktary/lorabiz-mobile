@@ -402,7 +402,7 @@ export default function NinSlipScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.screen}>
         {/* Top Header matching BVN Slip */}
-        <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+        <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backBtn}

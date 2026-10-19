@@ -473,7 +473,7 @@ export default function HomeScreen() {
         <View style={styles.topBarRight}>
           <TouchableOpacity
             style={styles.headerIconBtn}
-            onPress={() => Linking.openURL("mailto:support@lorabiz.com")}
+            onPress={() => Linking.openURL("https://wa.me/12299494839?text=Hello%20Lorabiz%20Support")}
             activeOpacity={0.75}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >

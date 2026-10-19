@@ -247,7 +247,7 @@ export default function NinModificationHistoryScreen() {
   return (
     <View style={styles.screen}>
       {/* Top Header */}
-      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}
