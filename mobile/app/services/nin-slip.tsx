@@ -423,7 +423,7 @@ export default function NinSlipScreen() {
         </View>
 
         {/* Edge-to-Edge Single Line TV Ticker */}
-        <ServiceTvTicker serviceKey="NIN_SLIP" />
+        <ServiceTvTicker serviceKey="NIN_SLIP" visible={!isStatusLoading} />
 
         {isStatusLoading ? (
           <View style={styles.centerContainer}>

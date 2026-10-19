@@ -36,6 +36,7 @@ import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface InitialIpeData {
   success: boolean;
@@ -139,14 +140,6 @@ export default function NinIpeScreen() {
       fetchServiceData();
     }, [fetchServiceData])
   );
-
-  useEffect(() => {
-    // 1-tap focus tracking input on mount
-    const timer = setTimeout(() => {
-      trackingInputRef.current?.focus();
-    }, 450);
-    return () => clearTimeout(timer);
-  }, []);
 
   const sanitizedTrackingId = trackingId.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const isValidTrackingId = sanitizedTrackingId.length >= 8 && sanitizedTrackingId.length <= 30;
@@ -315,6 +308,9 @@ export default function NinIpeScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Top Single-Line TV Ticker */}
+      <ServiceTvTicker serviceKey="NIN_IPE" visible={!isLoading} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}

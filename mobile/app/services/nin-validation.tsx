@@ -38,6 +38,7 @@ import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface CategoryPricing {
   price: number;
@@ -298,6 +299,9 @@ export default function NinValidationScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Top Single-Line TV Ticker */}
+      <ServiceTvTicker serviceKey="NIN_VALIDATION" visible={!isLoadingInitial} />
+
       {/* Central Loading State with 100% Transparent BrandLoader */}
       {isLoadingInitial ? (
         <View style={styles.centerContainer}>
@@ -379,7 +383,7 @@ export default function NinValidationScreen() {
                     <View style={styles.summaryDivider} />
                     <View style={styles.summaryRow}>
                       <Text style={styles.summaryLabel}>Processing Time:</Text>
-                      <Text style={styles.summaryValue}>24–48 Business Hours</Text>
+                      <Text style={styles.summaryValue}>24 – 48 Working Hours</Text>
                     </View>
                   </View>
 

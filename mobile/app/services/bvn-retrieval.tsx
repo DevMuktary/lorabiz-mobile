@@ -38,6 +38,7 @@ import { colors } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface InitialRetrievalData {
   success: boolean;
@@ -164,13 +165,6 @@ export default function BvnRetrievalScreen() {
       refreshWallet().catch(() => {});
     }, [fetchServiceData, refreshWallet])
   );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      nameInputRef.current?.focus();
-    }, 450);
-    return () => clearTimeout(timer);
-  }, []);
 
   const cleanedPhone = phone.replace(/\s+/g, "").replace(/^\+234/, "0");
   const isPhoneValid = /^\d{11}$/.test(cleanedPhone);
@@ -343,6 +337,9 @@ export default function BvnRetrievalScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Top Single-Line TV Ticker */}
+      <ServiceTvTicker serviceKey="BVN_RETRIEVAL" visible={!isLoading} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}

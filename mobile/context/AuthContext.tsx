@@ -79,6 +79,7 @@ interface AuthContextType {
   completeSocialLogin: (sessionToken?: string) => Promise<UserProfile | null>;
   toggleBiometrics: (enabled: boolean) => Promise<boolean>;
   promptBiometricUnlock: () => Promise<boolean>;
+  loginWithBiometrics: (accountIdentifier?: string) => Promise<{ success: boolean; message?: string }>;
   isAccountBiometricsConfigured: (accountIdentifier?: string) => Promise<boolean>;
   isAppLocked: boolean;
   unlockApp: () => Promise<boolean>;

@@ -37,6 +37,7 @@ import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface InitialPersonalizationData {
   success: boolean;
@@ -272,6 +273,9 @@ export default function NinPersonalizationScreen() {
           <Text style={styles.historyBtnText}>History</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Top Single-Line TV Ticker */}
+      <ServiceTvTicker serviceKey="NIN_PERSONALIZATION" visible={!isLoadingInitial} />
 
       {/* Central Loading State */}
       {isLoadingInitial ? (

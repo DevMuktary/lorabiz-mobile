@@ -35,7 +35,7 @@ import {
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../constants/theme";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import {
   getCachedWallet,
@@ -49,6 +49,7 @@ const BANNER_WIDTH = SCREEN_WIDTH - 32;
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const { user, wallet, refreshProfile, hideBalance, setHideBalancePreference } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [activePromoIndex, setActivePromoIndex] = useState(0);
@@ -181,22 +182,24 @@ export default function HomeScreen() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Unified Refresh Handler - immediately updates timestamp to now
+  // Unified Global Refresh Handler - invalidates and refreshes entire app state + dashboard
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     const now = Date.now();
     try {
-      const results = await Promise.all([
+      // 1. Invalidate all app queries (services, tickers, banners, user records)
+      // 2. Refresh active dashboard queries, wallet, and profile in parallel
+      const [, , walletRes] = await Promise.all([
+        queryClient.invalidateQueries(),
         refreshProfile(),
-        refetchProfile(),
         refetchWallet(),
+        refetchProfile(),
         refetchTx(),
         refetchLoyalty(),
         refetchBanners(),
       ]);
       setIsOffline(false);
-      const walletRes: any = results[2];
-      const freshBalance = walletRes?.data?.balance ?? walletRes?.data?.wallet?.balance;
+      const freshBalance = (walletRes as any)?.data?.balance ?? (walletRes as any)?.data?.wallet?.balance;
       if (typeof freshBalance === "number") {
         saveCachedWallet(freshBalance);
         setCachedWallet({ balance: freshBalance, lastUpdated: now });
@@ -208,7 +211,7 @@ export default function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [refreshProfile, refetchProfile, refetchWallet, refetchTx, refetchLoyalty]);
+  }, [queryClient, refreshProfile, refetchProfile, refetchWallet, refetchTx, refetchLoyalty, refetchBanners]);
 
   // Focus effect: auto-refetch whenever user navigates back to dashboard
   useFocusEffect(

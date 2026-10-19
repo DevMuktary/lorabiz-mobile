@@ -322,7 +322,7 @@ export default function BvnSlipScreen() {
         </View>
 
         {/* Edge-to-Edge Single Line TV Ticker */}
-        <ServiceTvTicker serviceKey="BVN_SLIP" />
+        <ServiceTvTicker serviceKey="BVN_SLIP" visible={!isStatusLoading} />
 
         {isStatusLoading ? (
           <View style={styles.centerContainer}>
