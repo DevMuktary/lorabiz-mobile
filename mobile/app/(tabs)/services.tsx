@@ -17,7 +17,8 @@ import {
   X,
   Wifi,
 } from "lucide-react-native";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 
 interface ServiceItem {
@@ -162,6 +163,7 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
 export default function ServicesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [alertConfig, setAlertConfig] = useState<{
@@ -221,20 +223,32 @@ export default function ServicesScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Stagnant / Fixed Top App Bar */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
+      <View
+        style={[
+          styles.topBar,
+          {
+            paddingTop: Math.max(insets.top, 20) + 12,
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.surfaceBorder,
+          },
+        ]}
+      >
         <TouchableOpacity
           onPress={handleGoBack}
-          style={styles.backBtn}
+          style={[
+            styles.backBtn,
+            { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" },
+          ]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.7}
         >
           <ArrowLeft size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Services</Text>
+        <Text style={[styles.topBarTitle, { color: colors.text }]}>Services</Text>
         <View style={styles.backBtnPlaceholder} />
       </View>
 
@@ -251,10 +265,10 @@ export default function ServicesScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Search Input Bar */}
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
           <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search services (NIN, BVN, CAC, Data...)"
             placeholderTextColor={colors.textMuted}
             value={searchQuery}
@@ -273,10 +287,21 @@ export default function ServicesScreen() {
         {/* Categorized Service Grids */}
         {filteredSections.length > 0 ? (
           filteredSections.map((section) => (
-            <View key={section.id} style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+            <View
+              key={section.id}
+              style={[
+                styles.sectionCard,
+                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+              ]}
+            >
+              <View
+                style={[
+                  styles.sectionHeader,
+                  { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)" },
+                ]}
+              >
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{section.subtitle}</Text>
               </View>
 
               <View style={styles.gridContainer}>
@@ -290,6 +315,7 @@ export default function ServicesScreen() {
                     <View
                       style={[
                         styles.gridIconBox,
+                        { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)" },
                         svc.iconBg ? { backgroundColor: svc.iconBg } : null,
                       ]}
                     >
@@ -304,7 +330,7 @@ export default function ServicesScreen() {
                       ) : null}
                     </View>
                     <Text
-                      style={styles.gridLabel}
+                      style={[styles.gridLabel, { color: colors.text }]}
                       numberOfLines={2}
                       adjustsFontSizeToFit={true}
                       minimumFontScale={0.75}
@@ -317,10 +343,10 @@ export default function ServicesScreen() {
             </View>
           ))
         ) : (
-          <View style={styles.emptySearchCard}>
+          <View style={[styles.emptySearchCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
             <Search size={28} color={colors.textMuted} />
-            <Text style={styles.emptySearchTitle}>No services found</Text>
-            <Text style={styles.emptySearchSubtitle}>
+            <Text style={[styles.emptySearchTitle, { color: colors.text }]}>No services found</Text>
+            <Text style={[styles.emptySearchSubtitle, { color: colors.textSecondary }]}>
               Try searching with another keyword like &quot;NIN&quot;, &quot;BVN&quot;, or &quot;CAC&quot;.
             </Text>
           </View>

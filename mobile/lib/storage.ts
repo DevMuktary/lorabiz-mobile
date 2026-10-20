@@ -289,5 +289,24 @@ export async function getLastActiveTime(): Promise<number> {
   }
 }
 
+export type ThemeMode = "system" | "light" | "dark";
+const THEME_MODE_KEY = "lorabiz_theme_mode";
+
+export async function setThemeModePref(mode: ThemeMode): Promise<void> {
+  try {
+    await setItem(THEME_MODE_KEY, mode);
+  } catch {}
+}
+
+export async function getThemeModePref(): Promise<ThemeMode> {
+  try {
+    const val = await getItem(THEME_MODE_KEY);
+    if (val === "dark" || val === "system" || val === "light") return val;
+    return "light"; // Default white per user specification
+  } catch {
+    return "light";
+  }
+}
+
 
 

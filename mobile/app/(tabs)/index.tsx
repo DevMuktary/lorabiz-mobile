@@ -34,7 +34,8 @@ import {
   Wifi,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
-import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
+import { colors as defaultColors } from "../../constants/theme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import {
@@ -50,6 +51,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const { colors, isDark } = useTheme();
   const { user, wallet, refreshProfile, hideBalance, setHideBalancePreference } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [activePromoIndex, setActivePromoIndex] = useState(0);
@@ -442,13 +444,22 @@ export default function HomeScreen() {
   }, [PROMO_ADS.length]);
 
   return (
-    <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* =================================================================== */}
       {/* 1. TOP APP BAR: Left Avatar + Tier Name + Greeting (NO EMOJIS) */}
       {/* =================================================================== */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View
+        style={[
+          styles.topBar,
+          {
+            paddingTop: Math.max(insets.top, 16) + 4,
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.surfaceBorder,
+          },
+        ]}
+      >
         <View style={styles.topBarLeft}>
           <TouchableOpacity
             style={styles.avatarWrap}
@@ -464,7 +475,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <View style={styles.greetingWrap}>
-            <Text style={styles.greetingTitle}>
+            <Text style={[styles.greetingTitle, { color: colors.text }]}>
               Hi, {displayName ? `${displayName}` : "there"}
             </Text>
           </View>
@@ -472,7 +483,10 @@ export default function HomeScreen() {
 
         <View style={styles.topBarRight}>
           <TouchableOpacity
-            style={styles.headerIconBtn}
+            style={[
+              styles.headerIconBtn,
+              { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" },
+            ]}
             onPress={() => Linking.openURL("https://wa.me/12299494839?text=Hello%20Lorabiz%20Support")}
             activeOpacity={0.75}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -481,7 +495,10 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.headerIconBtn}
+            style={[
+              styles.headerIconBtn,
+              { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" },
+            ]}
             onPress={() => router.push("/(tabs)/profile")}
             activeOpacity={0.75}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -688,10 +705,10 @@ export default function HomeScreen() {
         {/* 4. QUICK SERVICES GRID (Strictly 4x2 = 8 Total Items) */}
         {/* =================================================================== */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Quick Services</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Services</Text>
         </View>
 
-        <View style={styles.quickServicesGrid}>
+        <View style={[styles.quickServicesGrid, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
           {QUICK_SERVICES.map((svc) => (
             <TouchableOpacity
               key={svc.id}
@@ -699,7 +716,13 @@ export default function HomeScreen() {
               onPress={() => router.push(svc.route as any)}
               activeOpacity={0.75}
             >
-              <View style={[styles.gridIconBox, svc.isMore && styles.moreIconBox]}>
+              <View
+                style={[
+                  styles.gridIconBox,
+                  { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)" },
+                  svc.isMore && styles.moreIconBox,
+                ]}
+              >
                 {svc.isMore ? (
                   <LayoutGrid size={22} color={colors.primary} />
                 ) : (svc as any).icon ? (
@@ -709,7 +732,7 @@ export default function HomeScreen() {
                 )}
               </View>
               <Text
-                style={[styles.gridLabel, svc.isMore && styles.moreGridLabel]}
+                style={[styles.gridLabel, { color: colors.text }, svc.isMore && styles.moreGridLabel]}
                 numberOfLines={1}
               >
                 {svc.title}
@@ -722,7 +745,7 @@ export default function HomeScreen() {
         {/* 5. RECENT TRANSACTIONS (STREAMLINED CARD WITH VIEW ALL BUTTON) */}
         {/* =================================================================== */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Transactions</Text>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/activity" as any)}
             activeOpacity={0.75}
@@ -734,7 +757,7 @@ export default function HomeScreen() {
         </View>
 
         {recentTransactions.length > 0 ? (
-          <View style={styles.txListContainer}>
+          <View style={[styles.txListContainer, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
             {recentTransactions.map((tx: any, idx: number) => {
               const isCredit = tx.type === "DEPOSIT" || tx.type === "CREDIT";
               return (
@@ -742,6 +765,7 @@ export default function HomeScreen() {
                   key={tx.id || idx}
                   style={[
                     styles.txItem,
+                    { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder },
                     idx === recentTransactions.length - 1 && { borderBottomWidth: 0 },
                   ]}
                 >
@@ -762,10 +786,10 @@ export default function HomeScreen() {
                     )}
                   </View>
                   <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.txDesc} numberOfLines={1}>
+                    <Text style={[styles.txDesc, { color: colors.text }]} numberOfLines={1}>
                       {tx.description || tx.reference || "Wallet Transaction"}
                     </Text>
-                    <Text style={styles.txDate}>
+                    <Text style={[styles.txDate, { color: colors.textMuted }]}>
                       {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : "Recent"}
                     </Text>
                   </View>
@@ -785,12 +809,13 @@ export default function HomeScreen() {
             })}
           </View>
         ) : (
-          <View style={styles.emptyTxCard}>
+          <View style={[styles.emptyTxCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
             <Clock size={20} color={colors.textSecondary} />
-            <Text style={styles.emptyTxTitle}>No Recent Transactions</Text>
-            <Text style={styles.emptyTxSub}>Your recent wallet orders and deposits will appear here</Text>
+            <Text style={[styles.emptyTxTitle, { color: colors.text }]}>No Recent Transactions</Text>
+            <Text style={[styles.emptyTxSub, { color: colors.textSecondary }]}>Your recent wallet orders and deposits will appear here</Text>
           </View>
         )}
+
       </ScrollView>
     </View>
   );

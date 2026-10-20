@@ -11,10 +11,13 @@ import {
   Platform,
 } from "react-native";
 import { Lock, Fingerprint, LogOut, Eye, EyeOff, ShieldCheck } from "lucide-react-native";
-import { colors } from "../constants/theme";
+import { StatusBar } from "expo-status-bar";
+import { colors as defaultColors } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 export default function AppLockModal() {
+  const { colors, isDark } = useTheme();
   const {
     user,
     isAppLocked,
@@ -99,26 +102,47 @@ export default function AppLockModal() {
       animationType="fade"
       statusBarTranslucent
     >
+      <StatusBar style={isDark ? "light" : "dark"} />
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background }]}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.card}>
           {/* Lock Icon */}
-          <View style={styles.iconCircle}>
+          <View
+            style={[
+              styles.iconCircle,
+              {
+                backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.08)",
+                borderColor: isDark ? "rgba(200, 45, 117, 0.35)" : "rgba(200, 45, 117, 0.22)",
+              },
+            ]}
+          >
             <Lock size={36} color={colors.primary} />
           </View>
 
-          <Text style={styles.title}>Session Locked</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.text }]}>Session Locked</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Confirm your identity to continue where you left off.
           </Text>
 
           {/* User Badge */}
-          <View style={styles.userBadge}>
-            <Text style={styles.userBadgeLabel}>Signed In Account</Text>
-            <Text style={styles.userBadgeName}>{displayName}</Text>
-            {user?.email && <Text style={styles.userBadgeEmail}>{user.email}</Text>}
+          <View
+            style={[
+              styles.userBadge,
+              {
+                backgroundColor: isDark ? "rgba(15, 23, 42, 0.85)" : colors.surface,
+                borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.userBadgeLabel, { color: colors.textMuted }]}>Signed In Account</Text>
+            <Text style={[styles.userBadgeName, { color: colors.text }]}>{displayName}</Text>
+            {user?.email && (
+              <Text style={[styles.userBadgeEmail, { color: colors.textSecondary }]}>
+                {user.email}
+              </Text>
+            )}
           </View>
 
           {/* Error Message */}
@@ -131,7 +155,7 @@ export default function AppLockModal() {
           {/* Biometrics Button */}
           {biometricAvailable && biometricEnabled && !showPasswordForm ? (
             <TouchableOpacity
-              style={styles.primaryBtn}
+              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
               onPress={handleBiometricUnlock}
               disabled={isVerifyingBio}
               activeOpacity={0.88}
@@ -150,11 +174,19 @@ export default function AppLockModal() {
           {/* Password Option */}
           {showPasswordForm ? (
             <View style={styles.passwordForm}>
-              <View style={styles.inputWrap}>
+              <View
+                style={[
+                  styles.inputWrap,
+                  {
+                    backgroundColor: isDark ? "rgba(15, 23, 42, 0.9)" : colors.surface,
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : colors.surfaceBorder,
+                  },
+                ]}
+              >
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.text }]}
                   placeholder="Enter your account password"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={colors.textMuted}
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={(t) => {
@@ -170,15 +202,15 @@ export default function AppLockModal() {
                   style={styles.eyeBtn}
                 >
                   {showPassword ? (
-                    <EyeOff size={18} color="#94A3B8" />
+                    <EyeOff size={18} color={colors.textMuted} />
                   ) : (
-                    <Eye size={18} color="#94A3B8" />
+                    <Eye size={18} color={colors.textMuted} />
                   )}
                 </TouchableOpacity>
               </View>
 
               <TouchableOpacity
-                style={styles.primaryBtn}
+                style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
                 onPress={handlePasswordUnlock}
                 disabled={isVerifyingPassword}
                 activeOpacity={0.88}
@@ -195,7 +227,9 @@ export default function AppLockModal() {
                   onPress={() => setShowPasswordForm(false)}
                   style={styles.switchOptionBtn}
                 >
-                  <Text style={styles.switchOptionText}>Use Biometrics Instead</Text>
+                  <Text style={[styles.switchOptionText, { color: colors.textSecondary }]}>
+                    Use Biometrics Instead
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -204,7 +238,9 @@ export default function AppLockModal() {
               onPress={() => setShowPasswordForm(true)}
               style={styles.switchOptionBtn}
             >
-              <Text style={styles.switchOptionText}>Unlock with Password</Text>
+              <Text style={[styles.switchOptionText, { color: colors.textSecondary }]}>
+                Unlock with Password
+              </Text>
             </TouchableOpacity>
           )}
 
@@ -214,8 +250,8 @@ export default function AppLockModal() {
             onPress={logout}
             activeOpacity={0.7}
           >
-            <LogOut size={15} color="#94A3B8" style={{ marginRight: 6 }} />
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <LogOut size={15} color={colors.textMuted} style={{ marginRight: 6 }} />
+            <Text style={[styles.signOutText, { color: colors.textMuted }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -226,7 +262,6 @@ export default function AppLockModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#070B14", // Luxury Lorabiz dark canvas
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
@@ -240,9 +275,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "rgba(200, 45, 117, 0.12)",
     borderWidth: 1.5,
-    borderColor: "rgba(200, 45, 117, 0.35)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
@@ -250,14 +283,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#FFFFFF",
     letterSpacing: -0.4,
     marginBottom: 8,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 13,
-    color: "#94A3B8",
     textAlign: "center",
     lineHeight: 19,
     marginBottom: 24,
@@ -265,17 +296,14 @@ const styles = StyleSheet.create({
   },
   userBadge: {
     width: "100%",
-    backgroundColor: "rgba(15, 23, 42, 0.8)",
     borderRadius: 14,
     padding: 14,
     alignItems: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   userBadgeLabel: {
     fontSize: 10,
-    color: "#64748B",
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.6,
@@ -284,11 +312,9 @@ const styles = StyleSheet.create({
   userBadgeName: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#F8FAFC",
   },
   userBadgeEmail: {
     fontSize: 12,
-    color: "#94A3B8",
     marginTop: 2,
   },
   errorBox: {
@@ -302,7 +328,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(239, 68, 68, 0.3)",
   },
   errorText: {
-    color: "#FCA5A5",
+    color: "#EF4444",
     fontSize: 12.5,
     fontWeight: "600",
     textAlign: "center",
@@ -311,14 +337,12 @@ const styles = StyleSheet.create({
   primaryBtn: {
     width: "100%",
     height: 50,
-    backgroundColor: colors.primary, // #C82D75
     borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 4,
     marginBottom: 14,
@@ -334,17 +358,14 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(15, 23, 42, 0.9)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
     paddingHorizontal: 14,
     marginBottom: 14,
     height: 48,
   },
   input: {
     flex: 1,
-    color: "#FFFFFF",
     fontSize: 14,
     paddingVertical: 0,
   },
@@ -357,7 +378,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   switchOptionText: {
-    color: "#94A3B8",
     fontSize: 13,
     fontWeight: "600",
   },
@@ -369,8 +389,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   signOutText: {
-    color: "#64748B",
     fontSize: 13,
     fontWeight: "600",
   },
 });
+

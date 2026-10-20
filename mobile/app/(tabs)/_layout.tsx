@@ -3,14 +3,16 @@ import { Tabs, Redirect } from "expo-router";
 import { LayoutDashboard, Briefcase, Clock, User } from "lucide-react-native";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import BiometricPromptModal from "../../components/BiometricPromptModal";
 import CustomAlertModal from "../../components/CustomAlertModal";
 import { getBioPromptDismissed, setBioPromptDismissed } from "../../lib/storage";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const {
     token,
     isLoading,

@@ -47,10 +47,16 @@ import {
   ShieldCheck,
   Scale,
   Phone,
+  Settings,
+  Sun,
+  Moon,
+  UserCheck,
+  ArrowLeft,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { uploadFileToServer } from "../../lib/upload";
@@ -59,6 +65,7 @@ import { TERMS_OF_SERVICE_DOC, PRIVACY_POLICY_DOC } from "../../constants/legalD
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark, themeMode, setThemeMode } = useTheme();
   const {
     user,
     logout,
@@ -78,9 +85,19 @@ export default function ProfileScreen() {
   const [copiedReferral, setCopiedReferral] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
 
-  // Active Modals
+  // Active Modals & Sub-screens
   const [activeModal, setActiveModal] = useState<
-    "PHOTO_OPTIONS" | "CHANGE_PASSWORD" | "TWO_FACTOR" | "AUTO_LOCK" | "PHONE_CHANGE" | "DOCUMENT_VIEWER" | null
+    | "SETTINGS"
+    | "SECURITY"
+    | "IDENTITY"
+    | "LEGAL"
+    | "PHOTO_OPTIONS"
+    | "CHANGE_PASSWORD"
+    | "TWO_FACTOR"
+    | "AUTO_LOCK"
+    | "PHONE_CHANGE"
+    | "DOCUMENT_VIEWER"
+    | null
   >(null);
 
   // Document Viewer State
@@ -717,13 +734,23 @@ export default function ProfileScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Screen Title */}
+      {/* Top Header Bar */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Account & Settings</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+        <TouchableOpacity
+          style={[
+            styles.headerSettingsBtn,
+            { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" },
+          ]}
+          onPress={() => setActiveModal("SETTINGS")}
+          activeOpacity={0.7}
+        >
+          <Settings size={20} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
       {/* User Info Hero Card */}
-      <View style={styles.userCard}>
+      <View style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
         <View style={styles.avatarWrapper}>
           <TouchableOpacity
             style={styles.avatarTouchTarget}
@@ -757,7 +784,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.userInfoCol}>
-          <Text style={styles.userName} numberOfLines={1}>
+          <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
             {user?.name || `${userFirstName} ${userLastName}`.trim()}
           </Text>
 
@@ -766,12 +793,12 @@ export default function ProfileScreen() {
             <Text style={[styles.tierPillText, { color: tierColor }]}>{tierName} Tier Member</Text>
           </View>
 
-          <Text style={styles.userEmail} numberOfLines={1}>{user?.email}</Text>
-          {user?.phone ? <Text style={styles.userPhone}>{user.phone}</Text> : null}
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>{user?.email}</Text>
+          {user?.phone ? <Text style={[styles.userPhone, { color: colors.textMuted }]}>{user.phone}</Text> : null}
 
           {user?.referralCode ? (
             <TouchableOpacity
-              style={styles.refBadge}
+              style={[styles.refBadge, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#FDF2F8", borderColor: isDark ? "rgba(200, 45, 117, 0.3)" : "rgba(200, 45, 117, 0.2)" }]}
               onPress={handleCopyReferral}
               activeOpacity={0.7}
             >
@@ -786,361 +813,125 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* ---------------------------------------------------- */}
-      {/* SECTION 1: Legal Identity (Strictly Read-Only CAC/NIN) */}
-      {/* ---------------------------------------------------- */}
-      <Text style={styles.sectionHeading}>Legal Identity</Text>
-      <View style={styles.legalCard}>
-        <View style={styles.legalCardHeader}>
-          <View style={styles.legalTitleRow}>
-            <ShieldCheck size={18} color="#059669" />
-            <Text style={styles.legalCardTitle}>Verified Legal Name</Text>
-          </View>
-          <View style={styles.verifiedBadge}>
-            <CheckCircle2 size={12} color="#059669" />
-            <Text style={styles.verifiedBadgeText}>Verified</Text>
-          </View>
-        </View>
-
-        <View style={styles.legalFieldsRow}>
-          <View style={styles.legalFieldCol}>
-            <Text style={styles.legalFieldLabel}>First Name</Text>
-            <TouchableOpacity
-              style={styles.legalFieldBox}
-              onPress={handleLegalNamePress}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.legalFieldValue} numberOfLines={1}>
-                {userFirstName}
-              </Text>
-              <Lock size={12} color="#94A3B8" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.legalFieldCol}>
-            <Text style={styles.legalFieldLabel}>Last Name</Text>
-            <TouchableOpacity
-              style={styles.legalFieldBox}
-              onPress={handleLegalNamePress}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.legalFieldValue} numberOfLines={1}>
-                {userLastName || "—"}
-              </Text>
-              <Lock size={12} color="#94A3B8" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.legalEmailRow}>
-          <Text style={styles.legalFieldLabel}>Registered Email</Text>
-          <TouchableOpacity
-            style={styles.legalEmailBox}
-            onPress={handleEmailPress}
-            activeOpacity={0.7}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
-              <Mail size={16} color="#64748B" style={{ marginRight: 8 }} />
-              <Text style={styles.legalEmailText} numberOfLines={1}>
-                {user?.email}
-              </Text>
-            </View>
-            <Lock size={12} color="#94A3B8" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* ---------------------------------------------------- */}
-      {/* SECTION 2: Phone Verification (30-day limit) */}
-      {/* ---------------------------------------------------- */}
-      <Text style={styles.sectionHeading}>Phone Verification</Text>
-      <View style={styles.phoneCard}>
-        <View style={styles.phoneCardTop}>
-          <View style={styles.phoneIconBox}>
-            <Smartphone size={20} color={colors.primary} />
-          </View>
-          <View style={styles.phoneTexts}>
-            <Text style={styles.phoneCardLabel}>Registered Mobile Number</Text>
-            <Text style={styles.phoneCardNumber}>{user?.phone || "No phone linked"}</Text>
-          </View>
-        </View>
-
-        {isPhoneLocked() ? (
-          <View style={styles.phoneLockNotice}>
-            <AlertTriangle size={15} color="#D97706" style={{ marginRight: 8, marginTop: 1 }} />
-            <Text style={styles.phoneLockNoticeText}>
-              Security Lock: You updated your number recently. Wait 30 days before changing again. (Unlocks in {getPhoneDaysRemaining()} days)
-            </Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.changePhoneBtn}
-            onPress={handleOpenPhoneChange}
-            activeOpacity={0.8}
-          >
-            <Phone size={15} color={colors.primary} style={{ marginRight: 6 }} />
-            <Text style={styles.changePhoneBtnText}>Change Phone Number</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* ---------------------------------------------------- */}
-      {/* SECTION 3: Security & Access */}
-      {/* ---------------------------------------------------- */}
-      <Text style={styles.sectionHeading}>Security & Access</Text>
-      <View style={styles.menuCard}>
-        {/* Biometrics Toggle */}
-        {biometricAvailable ? (
-          <View style={styles.menuItem}>
-            <View style={styles.menuIconBox}>
-              <Fingerprint size={19} color={colors.primary} />
-            </View>
-            <View style={styles.menuTexts}>
-              <Text style={styles.menuTitle}>Biometric Unlock</Text>
-              <Text style={styles.menuSub}>Face ID / Touch ID instant login</Text>
-            </View>
-            <Switch
-              value={biometricEnabled}
-              onValueChange={handleToggleBiometrics}
-              trackColor={{ false: "#CBD5E1", true: colors.primary }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-        ) : null}
-
-        {/* Two-Factor Authentication */}
+      {/* Main Navigation Hub */}
+      <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder, marginTop: 12 }]}>
+        {/* 1. Settings & Preferences */}
         <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => {
-            if (!user?.twoFactorEnabled) {
-              handleInit2FASetup("AUTHENTICATOR");
-            }
-            setActiveModal("TWO_FACTOR");
-          }}
+          style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+          onPress={() => setActiveModal("SETTINGS")}
           activeOpacity={0.7}
         >
-          <View style={styles.menuIconBox}>
-            <Shield size={19} color={colors.success} />
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.10)" }]}>
+            <Settings size={20} color={colors.primary} />
           </View>
           <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Two-Factor Authentication</Text>
-            <Text style={styles.menuSub}>
-              {user?.twoFactorEnabled ? "Active & Enforced" : "Disabled (Tap to setup)"}
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Settings & Preferences</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+              Theme ({themeMode === "system" ? "System" : themeMode === "dark" ? "Dark" : "Light"}), auto-lock, privacy
             </Text>
-          </View>
-          <View
-            style={[
-              styles.statusChip,
-              { backgroundColor: user?.twoFactorEnabled ? "#10B98118" : "#64748B18" },
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusChipText,
-                { color: user?.twoFactorEnabled ? colors.success : colors.textMuted },
-              ]}
-            >
-              {user?.twoFactorEnabled ? "ON" : "OFF"}
-            </Text>
-          </View>
-          <ChevronRight size={18} color={colors.textMuted} style={{ marginLeft: 6 }} />
-        </TouchableOpacity>
-
-        {/* Change Password */}
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => {
-            setPasswordStep("CURRENT");
-            setPasswordError(null);
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            setPasswordOtp("");
-            setActiveModal("CHANGE_PASSWORD");
-          }}
-          activeOpacity={0.7}
-        >
-          <View style={styles.menuIconBox}>
-            <KeyRound size={19} color={colors.gold} />
-          </View>
-          <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Change Password</Text>
-            <Text style={styles.menuSub}>Update your account login password</Text>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* App Auto-Lock Inactivity Timeout */}
+        {/* 2. Security & Credentials */}
         <TouchableOpacity
-          style={[styles.menuItem, { borderBottomWidth: 0 }]}
-          onPress={() => setActiveModal("AUTO_LOCK")}
+          style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+          onPress={() => setActiveModal("SECURITY")}
           activeOpacity={0.7}
         >
-          <View style={styles.menuIconBox}>
-            <Clock size={19} color={colors.purple} />
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.10)" }]}>
+            <Shield size={20} color={colors.success} />
           </View>
           <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>App Auto-Lock</Text>
-            <Text style={styles.menuSub}>Lock session when inactive</Text>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Security & Authentication</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+              Biometrics, password, 2FA ({user?.twoFactorEnabled ? "Active" : "Off"})
+            </Text>
           </View>
-          <View style={styles.settingValueChip}>
-            <Text style={styles.settingValueText}>{getAutoLockLabel(autoLockTimeout)}</Text>
-          </View>
-          <ChevronRight size={18} color={colors.textMuted} style={{ marginLeft: 6 }} />
+          <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
-      </View>
 
-      {/* ---------------------------------------------------- */}
-      {/* SECTION 4: Preferences */}
-      {/* ---------------------------------------------------- */}
-      <Text style={styles.sectionHeading}>Preferences</Text>
-      <View style={styles.menuCard}>
-        {/* Hide Balance Toggle */}
-        <View style={styles.menuItem}>
-          <View style={styles.menuIconBox}>
-            <EyeClosed size={19} color={colors.textSecondary} />
-          </View>
-          <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Hide Balances by Default</Text>
-            <Text style={styles.menuSub}>Mask balances across dashboard tabs</Text>
-          </View>
-          <Switch
-            value={hideBalance}
-            onValueChange={handleToggleHideBalances}
-            trackColor={{ false: "#CBD5E1", true: colors.primary }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
-        {/* Email Login Security Alerts */}
-        <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
-          <View style={styles.menuIconBox}>
-            <Mail size={19} color={colors.info} />
-          </View>
-          <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Email Login Alerts</Text>
-            <Text style={styles.menuSub}>Notify me on new browser or mobile sign-ins</Text>
-          </View>
-          <Switch
-            value={emailAlerts}
-            onValueChange={handleToggleEmailAlerts}
-            trackColor={{ false: "#CBD5E1", true: colors.primary }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-      </View>
-
-      {/* ---------------------------------------------------- */}
-      {/* SECTION 5: Support & Legal */}
-      {/* ---------------------------------------------------- */}
-      <Text style={styles.sectionHeading}>Support & Legal</Text>
-      <View style={styles.menuCard}>
-        {/* Live Support */}
+        {/* 3. Identity & Verification */}
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+          onPress={() => setActiveModal("IDENTITY")}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.10)" }]}>
+            <UserCheck size={20} color="#3B82F6" />
+          </View>
+          <View style={styles.menuTexts}>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Identity & Contact</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+              Verified legal name & mobile phone
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        {/* 4. Customer Support */}
+        <TouchableOpacity
+          style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
           onPress={() => Linking.openURL("https://wa.me/12299494839?text=Hello%20Lorabiz%20Support")}
           activeOpacity={0.7}
         >
-          <View style={styles.menuIconBox}>
-            <Headphones size={19} color={colors.primary} />
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.10)" }]}>
+            <Headphones size={20} color={colors.primary} />
           </View>
           <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Customer Support</Text>
-            <Text style={styles.menuSub}>Live chat on WhatsApp & email help</Text>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Customer Support</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+              Live WhatsApp chat & assistance
+            </Text>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Regulatory Disclaimer */}
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() =>
-            setAlertConfig({
-              visible: true,
-              type: "info",
-              title: "Regulatory Notice",
-              message:
-                "Lorabiz is an independent corporate facilitation and business management platform. We are an accredited corporate services facilitator and strictly not an agency of the Corporate Affairs Commission (CAC) or any government department.",
-              confirmText: "Understood",
-              onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
-            })
-          }
-          activeOpacity={0.7}
-        >
-          <View style={styles.menuIconBox}>
-            <Info size={19} color={colors.gold} />
-          </View>
-          <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Regulatory Disclaimer</Text>
-            <Text style={styles.menuSub}>Corporate facilitation standing</Text>
-          </View>
-          <ChevronRight size={18} color={colors.textMuted} />
-        </TouchableOpacity>
-
-        {/* In-App Terms of Service */}
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => {
-            setDocumentType("TERMS");
-            setActiveModal("DOCUMENT_VIEWER");
-          }}
-          activeOpacity={0.7}
-        >
-          <View style={styles.menuIconBox}>
-            <FileText size={19} color={colors.cyan} />
-          </View>
-          <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Terms & Conditions</Text>
-            <Text style={styles.menuSub}>User service agreements</Text>
-          </View>
-          <ChevronRight size={18} color={colors.textMuted} />
-        </TouchableOpacity>
-
-        {/* In-App Privacy Policy */}
+        {/* 5. Legal & Compliance */}
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomWidth: 0 }]}
-          onPress={() => {
-            setDocumentType("PRIVACY");
-            setActiveModal("DOCUMENT_VIEWER");
-          }}
+          onPress={() => setActiveModal("LEGAL")}
           activeOpacity={0.7}
         >
-          <View style={styles.menuIconBox}>
-            <Lock size={19} color={colors.purple} />
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.10)" }]}>
+            <Scale size={20} color={colors.purple} />
           </View>
           <View style={styles.menuTexts}>
-            <Text style={styles.menuTitle}>Privacy Policy</Text>
-            <Text style={styles.menuSub}>Data protection & privacy rights</Text>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Legal & Compliance</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+              Terms of service, privacy & regulatory notice
+            </Text>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
-      {/* ---------------------------------------------------- */}
-      {/* SECTION 6: Account Actions */}
-      {/* ---------------------------------------------------- */}
-      <Text style={styles.sectionHeading}>Account Actions</Text>
-      <View style={styles.menuCard}>
+      {/* Account Actions */}
+      <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder, marginTop: 14 }]}>
         {/* Sign Out */}
-        <TouchableOpacity style={styles.menuItem} onPress={handleLogout} activeOpacity={0.7}>
-          <View style={[styles.menuIconBox, { backgroundColor: "#FEE2E2" }]}>
+        <TouchableOpacity
+          style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2" }]}>
             <LogOut size={19} color={colors.error} />
           </View>
           <View style={styles.menuTexts}>
             <Text style={[styles.menuTitle, { color: colors.error }]}>Sign Out</Text>
-            <Text style={styles.menuSub}>End current mobile session</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>End current mobile session</Text>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Deactivate / Delete Account */}
+        {/* Deactivate Account */}
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomWidth: 0 }]}
           onPress={handleCloseAccount}
           disabled={isDeactivating}
           activeOpacity={0.7}
         >
-          <View style={[styles.menuIconBox, { backgroundColor: "#FEE2E2" }]}>
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2" }]}>
             {isDeactivating ? (
               <ActivityIndicator size="small" color={colors.error} />
             ) : (
@@ -1149,7 +940,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.menuTexts}>
             <Text style={[styles.menuTitle, { color: colors.error }]}>Deactivate Account</Text>
-            <Text style={styles.menuSub}>Close profile & sign out</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Close profile & sign out</Text>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
@@ -1157,8 +948,502 @@ export default function ProfileScreen() {
 
       {/* App Version Stamp */}
       <View style={styles.versionContainer}>
-        <Text style={styles.versionText}>Lorabiz Mobile • v1.0</Text>
+        <Text style={[styles.versionText, { color: colors.textMuted }]}>Lorabiz Mobile • v1.0</Text>
       </View>
+
+      {/* ==================================================== */}
+      {/* SUB-SCREEN 1: SETTINGS & PREFERENCES MODAL          */}
+      {/* ==================================================== */}
+      <Modal
+        visible={activeModal === "SETTINGS"}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <View style={[styles.subScreenContainer, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 20) }]}>
+          <View style={[styles.subScreenHeader, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}>
+            <TouchableOpacity
+              onPress={() => setActiveModal(null)}
+              style={[styles.subScreenBackBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <ArrowLeft size={20} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Settings & Preferences</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+            {/* THEME SELECTOR CARD */}
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary }]}>Theme & Appearance</Text>
+            <View style={[styles.themeCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              <Text style={[styles.themeCardSub, { color: colors.textMuted }]}>
+                Choose an appearance theme or follow your system preferences.
+              </Text>
+              <View style={styles.themeOptionsGrid}>
+                {/* System Mode */}
+                <TouchableOpacity
+                  style={[
+                    styles.themeOptionBtn,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF",
+                      borderColor: themeMode === "system" ? colors.primary : colors.surfaceBorder,
+                    },
+                    themeMode === "system" && styles.themeOptionBtnActive,
+                  ]}
+                  onPress={() => setThemeMode("system")}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.themeIconCircle, themeMode === "system" && { backgroundColor: "rgba(200, 45, 117, 0.15)" }]}>
+                    <Smartphone size={22} color={themeMode === "system" ? colors.primary : colors.textMuted} />
+                  </View>
+                  <Text style={[styles.themeOptionTitle, { color: colors.text }]}>System</Text>
+                  <Text style={[styles.themeOptionDesc, { color: colors.textMuted }]}>Follows device</Text>
+                  {themeMode === "system" && (
+                    <View style={[styles.themeCheckBadge, { backgroundColor: colors.primary }]}>
+                      <Check size={11} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                {/* Light Mode (Default) */}
+                <TouchableOpacity
+                  style={[
+                    styles.themeOptionBtn,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF",
+                      borderColor: themeMode === "light" ? colors.primary : colors.surfaceBorder,
+                    },
+                    themeMode === "light" && styles.themeOptionBtnActive,
+                  ]}
+                  onPress={() => setThemeMode("light")}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.themeIconCircle, themeMode === "light" && { backgroundColor: "rgba(200, 45, 117, 0.15)" }]}>
+                    <Sun size={22} color={themeMode === "light" ? colors.primary : colors.textMuted} />
+                  </View>
+                  <Text style={[styles.themeOptionTitle, { color: colors.text }]}>Light</Text>
+                  <Text style={[styles.themeOptionDesc, { color: colors.textMuted }]}>Clean white</Text>
+                  {themeMode === "light" && (
+                    <View style={[styles.themeCheckBadge, { backgroundColor: colors.primary }]}>
+                      <Check size={11} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                {/* Dark Mode */}
+                <TouchableOpacity
+                  style={[
+                    styles.themeOptionBtn,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF",
+                      borderColor: themeMode === "dark" ? colors.primary : colors.surfaceBorder,
+                    },
+                    themeMode === "dark" && styles.themeOptionBtnActive,
+                  ]}
+                  onPress={() => setThemeMode("dark")}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.themeIconCircle, themeMode === "dark" && { backgroundColor: "rgba(200, 45, 117, 0.15)" }]}>
+                    <Moon size={22} color={themeMode === "dark" ? colors.primary : colors.textMuted} />
+                  </View>
+                  <Text style={[styles.themeOptionTitle, { color: colors.text }]}>Dark</Text>
+                  <Text style={[styles.themeOptionDesc, { color: colors.textMuted }]}>Deep slate</Text>
+                  {themeMode === "dark" && (
+                    <View style={[styles.themeCheckBadge, { backgroundColor: colors.primary }]}>
+                      <Check size={11} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* APP AUTO-LOCK */}
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary, marginTop: 22 }]}>Session Security</Text>
+            <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomWidth: 0 }]}
+                onPress={() => setActiveModal("AUTO_LOCK")}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.10)" }]}>
+                  <Clock size={19} color={colors.purple} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>App Auto-Lock</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Lock session when inactive</Text>
+                </View>
+                <View style={[styles.settingValueChip, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}>
+                  <Text style={[styles.settingValueText, { color: colors.textSecondary }]}>{getAutoLockLabel(autoLockTimeout)}</Text>
+                </View>
+                <ChevronRight size={18} color={colors.textMuted} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            </View>
+
+            {/* DISPLAY & PRIVACY */}
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary, marginTop: 22 }]}>Display & Privacy</Text>
+            <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              {/* Hide Balance Toggle */}
+              <View style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}>
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(100, 116, 139, 0.15)" : "#F1F5F9" }]}>
+                  <EyeClosed size={19} color={colors.textSecondary} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Hide Balances by Default</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Mask balances across dashboard tabs</Text>
+                </View>
+                <Switch
+                  value={hideBalance}
+                  onValueChange={handleToggleHideBalances}
+                  trackColor={{ false: isDark ? "#334155" : "#CBD5E1", true: colors.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              {/* Email Alerts */}
+              <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(2, 132, 199, 0.15)" : "#E0F2FE" }]}>
+                  <Mail size={19} color={colors.info} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Email Login Alerts</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Notify on new sign-ins</Text>
+                </View>
+                <Switch
+                  value={emailAlerts}
+                  onValueChange={handleToggleEmailAlerts}
+                  trackColor={{ false: isDark ? "#334155" : "#CBD5E1", true: colors.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* ==================================================== */}
+      {/* SUB-SCREEN 2: SECURITY & AUTHENTICATION MODAL       */}
+      {/* ==================================================== */}
+      <Modal
+        visible={activeModal === "SECURITY"}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <View style={[styles.subScreenContainer, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 20) }]}>
+          <View style={[styles.subScreenHeader, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}>
+            <TouchableOpacity
+              onPress={() => setActiveModal(null)}
+              style={[styles.subScreenBackBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <ArrowLeft size={20} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Security & Credentials</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary }]}>Access Control</Text>
+            <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              {/* Biometrics Toggle */}
+              {biometricAvailable ? (
+                <View style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}>
+                  <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.10)" }]}>
+                    <Fingerprint size={19} color={colors.primary} />
+                  </View>
+                  <View style={styles.menuTexts}>
+                    <Text style={[styles.menuTitle, { color: colors.text }]}>Biometric Unlock</Text>
+                    <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Face ID / Touch ID instant login</Text>
+                  </View>
+                  <Switch
+                    value={biometricEnabled}
+                    onValueChange={handleToggleBiometrics}
+                    trackColor={{ false: isDark ? "#334155" : "#CBD5E1", true: colors.primary }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+              ) : null}
+
+              {/* Two-Factor Authentication */}
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+                onPress={() => {
+                  if (!user?.twoFactorEnabled) {
+                    handleInit2FASetup("AUTHENTICATOR");
+                  }
+                  setActiveModal("TWO_FACTOR");
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.10)" }]}>
+                  <Shield size={19} color={colors.success} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Two-Factor Authentication</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+                    {user?.twoFactorEnabled ? "Active & Enforced" : "Disabled (Tap to setup)"}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusChip,
+                    { backgroundColor: user?.twoFactorEnabled ? "#10B98118" : "#64748B18" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusChipText,
+                      { color: user?.twoFactorEnabled ? colors.success : colors.textMuted },
+                    ]}
+                  >
+                    {user?.twoFactorEnabled ? "ON" : "OFF"}
+                  </Text>
+                </View>
+                <ChevronRight size={18} color={colors.textMuted} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+
+              {/* Change Password */}
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomWidth: 0 }]}
+                onPress={() => {
+                  setPasswordStep("CURRENT");
+                  setPasswordError(null);
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  setPasswordOtp("");
+                  setActiveModal("CHANGE_PASSWORD");
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7" }]}>
+                  <KeyRound size={19} color={colors.gold} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Change Password</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Update your account login password</Text>
+                </View>
+                <ChevronRight size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* ==================================================== */}
+      {/* SUB-SCREEN 3: IDENTITY & CONTACT MODAL             */}
+      {/* ==================================================== */}
+      <Modal
+        visible={activeModal === "IDENTITY"}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <View style={[styles.subScreenContainer, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 20) }]}>
+          <View style={[styles.subScreenHeader, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}>
+            <TouchableOpacity
+              onPress={() => setActiveModal(null)}
+              style={[styles.subScreenBackBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <ArrowLeft size={20} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Identity & Contact</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+            {/* Legal Identity Card */}
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary }]}>Legal Identity (CAC & NIMC Records)</Text>
+            <View style={[styles.legalCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              <View style={styles.legalCardHeader}>
+                <View style={styles.legalTitleRow}>
+                  <ShieldCheck size={18} color="#059669" />
+                  <Text style={[styles.legalCardTitle, { color: colors.text }]}>Verified Identity Name</Text>
+                </View>
+                <View style={styles.verifiedBadge}>
+                  <CheckCircle2 size={12} color="#059669" />
+                  <Text style={styles.verifiedBadgeText}>Verified</Text>
+                </View>
+              </View>
+
+              <View style={styles.legalFieldsRow}>
+                <View style={styles.legalFieldCol}>
+                  <Text style={[styles.legalFieldLabel, { color: colors.textMuted }]}>First Name</Text>
+                  <TouchableOpacity
+                    style={[styles.legalFieldBox, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9", borderColor: colors.surfaceBorder }]}
+                    onPress={handleLegalNamePress}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.legalFieldValue, { color: colors.text }]} numberOfLines={1}>
+                      {userFirstName}
+                    </Text>
+                    <Lock size={12} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.legalFieldCol}>
+                  <Text style={[styles.legalFieldLabel, { color: colors.textMuted }]}>Last Name</Text>
+                  <TouchableOpacity
+                    style={[styles.legalFieldBox, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9", borderColor: colors.surfaceBorder }]}
+                    onPress={handleLegalNamePress}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.legalFieldValue, { color: colors.text }]} numberOfLines={1}>
+                      {userLastName || "—"}
+                    </Text>
+                    <Lock size={12} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.legalEmailRow}>
+                <Text style={[styles.legalFieldLabel, { color: colors.textMuted }]}>Registered Email</Text>
+                <TouchableOpacity
+                  style={[styles.legalEmailBox, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9", borderColor: colors.surfaceBorder }]}
+                  onPress={handleEmailPress}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
+                    <Mail size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+                    <Text style={[styles.legalEmailText, { color: colors.text }]} numberOfLines={1}>
+                      {user?.email}
+                    </Text>
+                  </View>
+                  <Lock size={12} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Phone Verification Card */}
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary, marginTop: 22 }]}>Registered Phone</Text>
+            <View style={[styles.phoneCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              <View style={styles.phoneCardTop}>
+                <View style={[styles.phoneIconBox, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.10)" }]}>
+                  <Smartphone size={20} color={colors.primary} />
+                </View>
+                <View style={styles.phoneTexts}>
+                  <Text style={[styles.phoneCardLabel, { color: colors.textMuted }]}>Registered Mobile Number</Text>
+                  <Text style={[styles.phoneCardNumber, { color: colors.text }]}>{user?.phone || "No phone linked"}</Text>
+                </View>
+              </View>
+
+              {isPhoneLocked() ? (
+                <View style={styles.phoneLockNotice}>
+                  <AlertTriangle size={15} color="#D97706" style={{ marginRight: 8, marginTop: 1 }} />
+                  <Text style={styles.phoneLockNoticeText}>
+                    Security Lock: You updated your number recently. Wait 30 days before changing again. (Unlocks in {getPhoneDaysRemaining()} days)
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.changePhoneBtn, { borderColor: colors.primary }]}
+                  onPress={handleOpenPhoneChange}
+                  activeOpacity={0.8}
+                >
+                  <Phone size={15} color={colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={styles.changePhoneBtnText}>Change Phone Number</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* ==================================================== */}
+      {/* SUB-SCREEN 4: LEGAL & COMPLIANCE MODAL               */}
+      {/* ==================================================== */}
+      <Modal
+        visible={activeModal === "LEGAL"}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <View style={[styles.subScreenContainer, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 20) }]}>
+          <View style={[styles.subScreenHeader, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}>
+            <TouchableOpacity
+              onPress={() => setActiveModal(null)}
+              style={[styles.subScreenBackBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <ArrowLeft size={20} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Legal & Compliance</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary }]}>Terms & Disclaimers</Text>
+            <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              {/* Regulatory Disclaimer */}
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+                onPress={() =>
+                  setAlertConfig({
+                    visible: true,
+                    type: "info",
+                    title: "Regulatory Notice",
+                    message:
+                      "Lorabiz is an independent corporate facilitation and business management platform. We are an accredited corporate services facilitator and strictly not an agency of the Corporate Affairs Commission (CAC) or any government department.",
+                    confirmText: "Understood",
+                    onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+                  })
+                }
+                activeOpacity={0.7}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7" }]}>
+                  <Info size={19} color={colors.gold} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Regulatory Disclaimer</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Corporate facilitation standing</Text>
+                </View>
+                <ChevronRight size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              {/* In-App Terms of Service */}
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+                onPress={() => {
+                  setDocumentType("TERMS");
+                  setActiveModal("DOCUMENT_VIEWER");
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(6, 182, 212, 0.15)" : "#E0F2FE" }]}>
+                  <FileText size={19} color={colors.cyan} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Terms & Conditions</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>User service agreements</Text>
+                </View>
+                <ChevronRight size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              {/* In-App Privacy Policy */}
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomWidth: 0 }]}
+                onPress={() => {
+                  setDocumentType("PRIVACY");
+                  setActiveModal("DOCUMENT_VIEWER");
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.10)" }]}>
+                  <Lock size={19} color={colors.purple} />
+                </View>
+                <View style={styles.menuTexts}>
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Privacy Policy</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Data protection & privacy rights</Text>
+                </View>
+                <ChevronRight size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
 
       {/* ==================================================== */}
       {/* MODAL 1: Photo Options Bottom Sheet */}
@@ -1869,7 +2154,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
+  },
+  headerSettingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 26,
@@ -2810,4 +3105,98 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
+
+  // Sub-screen Modal Styles
+  subScreenContainer: {
+    flex: 1,
+  },
+  subScreenHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+  },
+  subScreenBackBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  subScreenTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  subSectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+
+  // Theme Selector Styles
+  themeCard: {
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+  },
+  themeCardSub: {
+    fontSize: 12.5,
+    marginBottom: 14,
+    lineHeight: 17,
+  },
+  themeOptionsGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  themeOptionBtn: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    position: "relative",
+  },
+  themeOptionBtnActive: {
+    shadowColor: defaultColors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  themeIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.04)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  themeOptionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  themeOptionDesc: {
+    fontSize: 10.5,
+    textAlign: "center",
+  },
+  themeCheckBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
+

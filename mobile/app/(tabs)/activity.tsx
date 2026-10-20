@@ -33,7 +33,8 @@ import {
   Calendar,
   Check,
 } from "lucide-react-native";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 
@@ -110,6 +111,7 @@ const INDIVIDUAL_SERVICES: { id: SpecificServiceKey; label: string }[] = [
 export default function ActivityScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   // Filter states
   const [selectedService, setSelectedService] = useState<SpecificServiceKey>("ALL");
@@ -236,7 +238,7 @@ export default function ActivityScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.txCard}
+        style={[styles.txCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}
         onPress={() =>
           router.push({
             pathname: "/wallet/transaction/[id]",
@@ -263,11 +265,11 @@ export default function ActivityScreen() {
             )}
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.txDesc} numberOfLines={1}>
+            <Text style={[styles.txDesc, { color: colors.text }]} numberOfLines={1}>
               {item.description || (isCredit ? "Wallet Funding" : "Service Order")}
             </Text>
             <View style={styles.txMetaRow}>
-              <Text style={styles.txDate}>
+              <Text style={[styles.txDate, { color: colors.textMuted }]}>
                 {formattedDate} {formattedTime ? `• ${formattedTime}` : ""}
               </Text>
               {hasDispute && (
@@ -327,11 +329,20 @@ export default function ActivityScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* 1. Calm, Centered Standard Top Bar with Back Button */}
-      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View
+        style={[
+          styles.topHeader,
+          {
+            paddingTop: Math.max(insets.top, 16) + 4,
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.surfaceBorder,
+          },
+        ]}
+      >
         <TouchableOpacity
           onPress={() => {
             if (router.canGoBack()) {
@@ -340,7 +351,10 @@ export default function ActivityScreen() {
               router.replace("/(tabs)");
             }
           }}
-          style={styles.backBtn}
+          style={[
+            styles.backBtn,
+            { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" },
+          ]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.7}
         >
@@ -348,13 +362,16 @@ export default function ActivityScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>Transactions</Text>
-          <Text style={styles.headerSubtitle}>History & Order Records</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Transactions</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>History & Order Records</Text>
         </View>
 
         <TouchableOpacity
           onPress={() => refetchTx()}
-          style={styles.refreshBtn}
+          style={[
+            styles.refreshBtn,
+            { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" },
+          ]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.7}
         >
@@ -365,10 +382,10 @@ export default function ActivityScreen() {
       {/* 2. Filters Section: Search & Service Dropdown */}
       <View style={styles.filterSection}>
         {/* Search Input */}
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
           <Search size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search description, reference, or amount..."
             placeholderTextColor={colors.textMuted}
             value={searchQuery}
@@ -387,24 +404,28 @@ export default function ActivityScreen() {
         {/* Row with Service Trigger & Date Trigger */}
         <View style={styles.triggerRow}>
           <TouchableOpacity
-            style={styles.serviceDropdownTrigger}
+            style={[styles.serviceDropdownTrigger, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}
             onPress={() => setShowServiceDropdown(true)}
             activeOpacity={0.8}
           >
             <Filter size={14} color={selectedService !== "ALL" ? colors.primary : colors.textSecondary} style={{ marginRight: 6 }} />
-            <Text style={styles.dropdownTriggerLabel} numberOfLines={1}>
+            <Text style={[styles.dropdownTriggerLabel, { color: colors.text }]} numberOfLines={1}>
               {selectedServiceObj?.label || "All Services"}
             </Text>
             <ChevronDown size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.dateTrigger, (startDate || endDate) && styles.dateTriggerActive]}
+            style={[
+              styles.dateTrigger,
+              { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+              (startDate || endDate) && styles.dateTriggerActive,
+            ]}
             onPress={() => setShowDateModal(true)}
             activeOpacity={0.8}
           >
             <Calendar size={14} color={startDate || endDate ? colors.primary : colors.textSecondary} style={{ marginRight: 6 }} />
-            <Text style={[styles.dateTriggerText, (startDate || endDate) && styles.dateTriggerTextActive]} numberOfLines={1}>
+            <Text style={[styles.dateTriggerText, { color: colors.text }, (startDate || endDate) && styles.dateTriggerTextActive]} numberOfLines={1}>
               {datePreset === "TODAY"
                 ? "Today"
                 : datePreset === "7DAYS"
@@ -420,6 +441,7 @@ export default function ActivityScreen() {
             <ChevronDown size={14} color={startDate || endDate ? colors.primary : colors.textSecondary} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
         </View>
+
 
         {/* Quick Date Pills Horizontal Scroll */}
         <ScrollView
