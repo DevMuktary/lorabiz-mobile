@@ -1,6 +1,6 @@
 /**
  * Unified Demographic Data Normalizer & Extractor for Mobile
- * Handles all variations from EaseID, DataVerify, SlipAPI, NIBSS, NIMC,
+ * Handles all variations from statutory backend responses (NIMC, NIBSS, CAC),
  * raw DB logs, nested objects, array responses, and stringified JSON.
  * Mirrors src/lib/demographics-parser.ts for full web-mobile parity.
  */
@@ -52,7 +52,7 @@ export function parseDemographics(rawInput: any, fallbackFullName?: string): Nor
     }
   }
 
-  // Handle nested EaseID/DataVerify response structures:
+  // Handle nested gateway response structures:
   // e.g. data.response[0], data.response.data, data.user_data, data.data, data.details, data.result
   let u: any = data;
   if (data && typeof data === "object") {

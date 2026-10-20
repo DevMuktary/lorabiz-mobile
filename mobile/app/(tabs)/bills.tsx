@@ -18,6 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
 import { colors as defaultColors } from "../../constants/theme";
+const colors = defaultColors;
 
 const NETWORKS = [
   { id: "MTN", name: "MTN", color: "#FBBF24", logo: require("../../assets/mtn.png") },

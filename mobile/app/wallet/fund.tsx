@@ -20,6 +20,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
 import { colors as defaultColors } from "../../constants/theme";
+const colors = defaultColors;
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 

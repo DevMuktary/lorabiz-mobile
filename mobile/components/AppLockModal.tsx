@@ -13,6 +13,7 @@ import {
 import { Lock, Fingerprint, LogOut, Eye, EyeOff, ShieldCheck } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import { colors as defaultColors } from "../constants/theme";
+const colors = defaultColors;
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
@@ -98,7 +99,7 @@ export default function AppLockModal() {
   return (
     <Modal
       visible={isAppLocked}
-      transparent={false}
+      transparent={true}
       animationType="fade"
       statusBarTranslucent
     >

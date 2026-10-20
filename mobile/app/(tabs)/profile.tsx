@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -66,6 +66,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark, themeMode, setThemeMode } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const {
     user,
     logout,
@@ -108,6 +109,7 @@ export default function ProfileScreen() {
   const [newPhone, setNewPhone] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
   const [isPhoneLoading, setIsPhoneLoading] = useState(false);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
   // Change Password Form State
@@ -1296,17 +1298,13 @@ export default function ProfileScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-            {/* Legal Identity Card */}
-            <Text style={[styles.subSectionTitle, { color: colors.textSecondary }]}>Legal Identity (CAC & NIMC Records)</Text>
+            {/* Registered Name Card */}
+            <Text style={[styles.subSectionTitle, { color: colors.textSecondary }]}>Registered Name</Text>
             <View style={[styles.legalCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.legalCardHeader}>
                 <View style={styles.legalTitleRow}>
-                  <ShieldCheck size={18} color="#059669" />
-                  <Text style={[styles.legalCardTitle, { color: colors.text }]}>Verified Identity Name</Text>
-                </View>
-                <View style={styles.verifiedBadge}>
-                  <CheckCircle2 size={12} color="#059669" />
-                  <Text style={styles.verifiedBadgeText}>Verified</Text>
+                  <User size={18} color={colors.primary} />
+                  <Text style={[styles.legalCardTitle, { color: colors.text }]}>Registered Name</Text>
                 </View>
               </View>
 
@@ -1356,9 +1354,13 @@ export default function ProfileScreen() {
                   <Lock size={12} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
+
+              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 12, lineHeight: 17 }}>
+                Registered names cannot be modified directly. Please reach out to customer support if you need a name update.
+              </Text>
             </View>
 
-            {/* Phone Verification Card */}
+            {/* Registered Phone Card with In-Place Phone Editing */}
             <Text style={[styles.subSectionTitle, { color: colors.textSecondary, marginTop: 22 }]}>Registered Phone</Text>
             <View style={[styles.phoneCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.phoneCardTop}>
@@ -1371,22 +1373,155 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              {isPhoneLocked() ? (
-                <View style={styles.phoneLockNotice}>
-                  <AlertTriangle size={15} color="#D97706" style={{ marginRight: 8, marginTop: 1 }} />
-                  <Text style={styles.phoneLockNoticeText}>
-                    Security Lock: You updated your number recently. Wait 30 days before changing again. (Unlocks in {getPhoneDaysRemaining()} days)
-                  </Text>
-                </View>
+              {!isEditingPhone ? (
+                <>
+                  {isPhoneLocked() ? (
+                    <View style={styles.phoneLockNotice}>
+                      <AlertTriangle size={15} color="#D97706" style={{ marginRight: 8, marginTop: 1 }} />
+                      <Text style={styles.phoneLockNoticeText}>
+                        Security Lock: You updated your number recently. Wait 30 days before changing again. (Unlocks in {getPhoneDaysRemaining()} days)
+                      </Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.changePhoneBtn, { borderColor: colors.primary }]}
+                      onPress={handleOpenPhoneChange}
+                      activeOpacity={0.8}
+                    >
+                      <Phone size={15} color={colors.primary} style={{ marginRight: 6 }} />
+                      <Text style={styles.changePhoneBtnText}>Change Phone Number</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
               ) : (
-                <TouchableOpacity
-                  style={[styles.changePhoneBtn, { borderColor: colors.primary }]}
-                  onPress={handleOpenPhoneChange}
-                  activeOpacity={0.8}
-                >
-                  <Phone size={15} color={colors.primary} style={{ marginRight: 6 }} />
-                  <Text style={styles.changePhoneBtnText}>Change Phone Number</Text>
-                </TouchableOpacity>
+                <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }}>
+                  {phoneError ? (
+                    <View style={[styles.errorBanner, { marginBottom: 12 }]}>
+                      <AlertCircle size={16} color={colors.error} style={{ marginRight: 8 }} />
+                      <Text style={styles.errorBannerText}>{phoneError}</Text>
+                    </View>
+                  ) : null}
+
+                  {phoneStep === "ENTER_PHONE" ? (
+                    <View>
+                      <Text style={{ fontSize: 12.5, color: colors.textSecondary, lineHeight: 18, marginBottom: 12 }}>
+                        Enter your new mobile phone number. We will send a 6-digit confirmation code to your registered email ({user?.email}) to verify ownership.
+                      </Text>
+                      <Text style={[styles.inputLabel, { color: colors.text }]}>New Phone Number</Text>
+                      <TextInput
+                        style={[
+                          styles.dialogInput,
+                          {
+                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                            borderColor: colors.surfaceBorder,
+                            color: colors.text,
+                          },
+                        ]}
+                        placeholder="e.g. 08012345678"
+                        placeholderTextColor={colors.textMuted}
+                        value={newPhone}
+                        onChangeText={setNewPhone}
+                        keyboardType="phone-pad"
+                        autoFocus
+                      />
+                      <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 4, marginBottom: 14 }}>
+                        Note: You can only update your phone number once every 30 days for account security.
+                      </Text>
+
+                      <View style={{ flexDirection: "row", gap: 10 }}>
+                        <TouchableOpacity
+                          style={[
+                            styles.dialogCancelBtn,
+                            { flex: 1, backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" },
+                          ]}
+                          onPress={handleCancelPhoneEdit}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.dialogCancelText, { color: colors.text }]}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.dialogSaveBtn,
+                            { flex: 1.4 },
+                            (!newPhone || isPhoneLoading) && styles.btnDisabled,
+                          ]}
+                          onPress={handleSendPhoneOtp}
+                          disabled={!newPhone || isPhoneLoading}
+                          activeOpacity={0.85}
+                        >
+                          {isPhoneLoading ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <Text style={styles.dialogSaveText}>Send Code</Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View>
+                      <Text style={{ fontSize: 12.5, color: colors.textSecondary, lineHeight: 18, marginBottom: 12 }}>
+                        Enter the 6-digit verification code sent to your registered email ({user?.email}) to confirm your new phone number ({newPhone}).
+                      </Text>
+                      <Text style={[styles.inputLabel, { color: colors.text }]}>6-Digit Verification Code</Text>
+                      <TextInput
+                        style={[
+                          styles.dialogInput,
+                          {
+                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                            borderColor: colors.surfaceBorder,
+                            color: colors.text,
+                            letterSpacing: 4,
+                            textAlign: "center",
+                            fontSize: 18,
+                            fontWeight: "700",
+                          },
+                        ]}
+                        placeholder="••••••"
+                        placeholderTextColor={colors.textMuted}
+                        value={phoneOtp}
+                        onChangeText={setPhoneOtp}
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        autoFocus
+                      />
+
+                      <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+                        <TouchableOpacity
+                          style={[
+                            styles.dialogCancelBtn,
+                            { flex: 1, backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" },
+                          ]}
+                          onPress={handleCancelPhoneEdit}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.dialogCancelText, { color: colors.text }]}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.dialogSaveBtn,
+                            { flex: 1.4 },
+                            (!phoneOtp || isPhoneLoading) && styles.btnDisabled,
+                          ]}
+                          onPress={handleVerifyPhoneOtp}
+                          disabled={!phoneOtp || isPhoneLoading}
+                          activeOpacity={0.85}
+                        >
+                          {isPhoneLoading ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <Text style={styles.dialogSaveText}>Verify & Save</Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                      <TouchableOpacity
+                        style={{ alignSelf: "center", marginTop: 12, paddingVertical: 6 }}
+                        onPress={() => setPhoneStep("ENTER_PHONE")}
+                      >
+                        <Text style={{ fontSize: 12, color: colors.primary, fontWeight: "600" }}>Change Number</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               )}
             </View>
           </ScrollView>
@@ -2233,10 +2368,11 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   contentContainer: {
     paddingHorizontal: 16,
@@ -2257,18 +2393,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.5,
   },
   userCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 18,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -2339,7 +2475,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.3,
   },
   tierPill: {
@@ -2359,12 +2495,12 @@ const styles = StyleSheet.create({
   },
   userEmail: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textSecondary,
     fontWeight: "500",
   },
   userPhone: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textSecondary,
     marginTop: 1,
   },
   refBadge: {
@@ -2386,7 +2522,7 @@ const styles = StyleSheet.create({
   sectionHeading: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -2395,10 +2531,10 @@ const styles = StyleSheet.create({
 
   // Legal Identity Section Card
   legalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     padding: 16,
     marginBottom: 20,
     shadowColor: "#000",
@@ -2423,7 +2559,7 @@ const styles = StyleSheet.create({
   legalCardTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     marginLeft: 6,
   },
   verifiedBadge: {
@@ -2453,15 +2589,15 @@ const styles = StyleSheet.create({
   legalFieldLabel: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748B",
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   legalFieldBox: {
     height: 44,
     borderRadius: 12,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -2470,7 +2606,7 @@ const styles = StyleSheet.create({
   legalFieldValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     flex: 1,
     marginRight: 6,
   },
@@ -2482,7 +2618,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -2491,15 +2627,15 @@ const styles = StyleSheet.create({
   legalEmailText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#475569",
+    color: colors.textSecondary,
   },
 
   // Phone Verification Card
   phoneCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     padding: 16,
     marginBottom: 20,
     shadowColor: "#000",
@@ -2528,12 +2664,12 @@ const styles = StyleSheet.create({
   phoneCardLabel: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748B",
+    color: colors.textSecondary,
   },
   phoneCardNumber: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: 0.5,
     marginTop: 2,
   },
@@ -2571,10 +2707,10 @@ const styles = StyleSheet.create({
 
   // Menu Items & Cards
   menuCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 20,
     overflow: "hidden",
     shadowColor: "#000",
@@ -2595,7 +2731,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2606,11 +2742,11 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   menuSub: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textSecondary,
     marginTop: 2,
   },
   statusChip: {
@@ -2631,7 +2767,7 @@ const styles = StyleSheet.create({
   settingValueText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textSecondary,
   },
   versionContainer: {
     alignItems: "center",
@@ -2641,7 +2777,7 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
 
   // Modals Styling
@@ -2662,7 +2798,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   bottomSheetCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 22,
@@ -2685,13 +2821,13 @@ const styles = StyleSheet.create({
   sheetModalTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     textAlign: "center",
     marginBottom: 4,
   },
   sheetModalSub: {
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: 20,
     paddingHorizontal: 16,
@@ -2704,14 +2840,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   sheetActionText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     marginLeft: 12,
   },
   sheetCancelBtn: {
@@ -2722,12 +2858,12 @@ const styles = StyleSheet.create({
   sheetCancelText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textSecondary,
   },
 
   // Form Dialog Cards
   formDialogCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 22,
@@ -2749,18 +2885,18 @@ const styles = StyleSheet.create({
   dialogTitle: {
     fontSize: 19,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   modalExplainer: {
     fontSize: 13,
-    color: "#475569",
+    color: colors.textSecondary,
     lineHeight: 19,
     marginBottom: 14,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 6,
     marginTop: 10,
   },
@@ -2769,11 +2905,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: "#CBD5E1",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     paddingHorizontal: 14,
     fontSize: 16,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
   otpInput: {
     textAlign: "center",
@@ -2783,7 +2919,7 @@ const styles = StyleSheet.create({
   },
   helperNote: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textSecondary,
     marginTop: 6,
     marginBottom: 10,
     lineHeight: 16,
@@ -2795,14 +2931,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: "#CBD5E1",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     paddingHorizontal: 14,
   },
   passwordInput: {
     flex: 1,
     fontSize: 16,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
   errorBanner: {
     flexDirection: "row",
@@ -2846,7 +2982,7 @@ const styles = StyleSheet.create({
   backStepText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748B",
+    color: colors.textSecondary,
   },
   destructiveBtn: {
     width: "100%",
@@ -2879,13 +3015,13 @@ const styles = StyleSheet.create({
   twoFactorActiveTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     textAlign: "center",
     marginBottom: 6,
   },
   twoFactorActiveSub: {
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 18,
     paddingHorizontal: 16,
@@ -2910,7 +3046,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   methodTabActive: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -2920,7 +3056,7 @@ const styles = StyleSheet.create({
   methodTabText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748B",
+    color: colors.textSecondary,
   },
   methodTabTextActive: {
     fontWeight: "800",
@@ -2928,10 +3064,10 @@ const styles = StyleSheet.create({
   },
   qrCodeBox: {
     padding: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
@@ -2977,7 +3113,7 @@ const styles = StyleSheet.create({
   // In-App Document Viewer Styles
   docViewerContainer: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   docViewerHeader: {
     flexDirection: "row",
@@ -2987,7 +3123,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   docViewerTitleRow: {
     flexDirection: "row",
@@ -2996,7 +3132,7 @@ const styles = StyleSheet.create({
   docViewerTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   docViewerCloseBtn: {
     width: 36,
@@ -3022,7 +3158,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   docTabActive: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -3032,7 +3168,7 @@ const styles = StyleSheet.create({
   docTabText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748B",
+    color: colors.textSecondary,
   },
   docTabTextActive: {
     fontWeight: "800",
@@ -3047,12 +3183,12 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   legalNoticeBanner: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   legalNoticeTag: {
     fontSize: 11,
@@ -3064,36 +3200,36 @@ const styles = StyleSheet.create({
   legalNoticeHeading: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 4,
   },
   legalNoticeSub: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textSecondary,
   },
   docSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   docSectionTitle: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 8,
   },
   docSectionBody: {
     fontSize: 13,
-    color: "#475569",
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   docSubsectionTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 4,
   },
   legalCalloutBox: {
@@ -3158,26 +3294,26 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12.5,
     lineHeight: 19,
-    color: "#475569",
+    color: colors.textSecondary,
   },
   docFooterBox: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginTop: 8,
     marginBottom: 8,
   },
   docFooterCompany: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 6,
   },
   docFooterItem: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textSecondary,
     marginTop: 2,
   },
   docViewerDoneBtn: {
@@ -3287,4 +3423,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-

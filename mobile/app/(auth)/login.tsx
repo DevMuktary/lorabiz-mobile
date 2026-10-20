@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { colors } from "../../constants/theme";
 import { BASE_URL } from "../../lib/api";
 
@@ -95,6 +96,7 @@ function AppleFaceIdIcon({ size = 28, color = "#0F172A" }: { size?: number; colo
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors: themeColors, isDark } = useTheme();
   const params = useLocalSearchParams<{ reason?: string }>();
   const {
     login,
@@ -442,7 +444,7 @@ export default function LoginScreen() {
           onPress={handleBackToWelcome}
           activeOpacity={0.7}
         >
-          <ChevronLeftIcon size={20} color="#0F172A" />
+          <ChevronLeftIcon size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
         </TouchableOpacity>
 
         <View style={styles.topRightOrb}>
@@ -581,7 +583,7 @@ export default function LoginScreen() {
                   activeOpacity={0.85}
                 >
                   <GoogleIcon size={20} />
-                  <Text style={styles.googleButtonText}>Continue with Google</Text>
+                  <Text style={[styles.googleButtonText, isDark && { color: "#F8FAFC" }]}>Continue with Google</Text>
                 </TouchableOpacity>
 
                 {/* Inline Toggle: Switch to Password */}
@@ -606,14 +608,14 @@ export default function LoginScreen() {
             ) : (
               /* Password Section for credentials users */
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Password</Text>
+                <Text style={[styles.fieldLabel, isDark && { color: "#94A3B8" }]}>Password</Text>
                 <Pressable
-                  style={[styles.alatInputCard, passwordFocused && styles.alatInputCardActive]}
+                  style={[styles.alatInputCard, isDark && { backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }, passwordFocused && [styles.alatInputCardActive, isDark && { backgroundColor: "rgba(255, 255, 255, 0.08)" }]]}
                   onPress={() => passwordInputRef.current?.focus()}
                 >
                   <TextInput
                     ref={passwordInputRef}
-                    style={styles.alatTextInput}
+                    style={[styles.alatTextInput, isDark && { color: "#F8FAFC" }]}
                     placeholder="Enter your password"
                     placeholderTextColor="#94A3B8"
                     value={password}
@@ -634,9 +636,9 @@ export default function LoginScreen() {
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   >
                     {showPassword ? (
-                      <EyeOff size={20} color="#0F172A" />
+                      <EyeOff size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
                     ) : (
-                      <Eye size={20} color="#0F172A" />
+                      <Eye size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
                     )}
                   </TouchableOpacity>
                 </Pressable>
@@ -710,7 +712,7 @@ export default function LoginScreen() {
                   activeOpacity={0.75}
                   disabled={isLoading}
                 >
-                  <AppleFaceIdIcon size={30} color="#0F172A" />
+                  <AppleFaceIdIcon size={30} color={isDark ? "#F8FAFC" : "#0F172A"} />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -730,7 +732,7 @@ export default function LoginScreen() {
 
             {/* Header: Left Avatar Orb + Right "Glad to have you!" & bold "Log in to your account" */}
             <View style={styles.standardHeaderRow}>
-              <View style={styles.headerOrbWrapper}>
+              <View style={[styles.headerOrbWrapper, isDark && { backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }]}>
                 <Image
                   source={require("../../assets/logo-pink.png")}
                   style={styles.headerOrbImage}
@@ -748,12 +750,12 @@ export default function LoginScreen() {
               {/* Field 1: Email */}
               <Text style={styles.fieldLabel}>Email</Text>
               <Pressable
-                style={[styles.alatInputCard, emailFocused && styles.alatInputCardActive]}
+                style={[styles.alatInputCard, isDark && { backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }, emailFocused && [styles.alatInputCardActive, isDark && { backgroundColor: "rgba(255, 255, 255, 0.08)" }]]}
                 onPress={() => emailInputRef.current?.focus()}
               >
                 <TextInput
                   ref={emailInputRef}
-                  style={styles.alatTextInput}
+                  style={[styles.alatTextInput, isDark && { color: "#F8FAFC" }]}
                   placeholder="Enter your email"
                   placeholderTextColor="#94A3B8"
                   value={email}
@@ -780,7 +782,7 @@ export default function LoginScreen() {
               >
                 <TextInput
                   ref={passwordInputRef}
-                  style={styles.alatTextInput}
+                  style={[styles.alatTextInput, isDark && { color: "#F8FAFC" }]}
                   placeholder="Enter your password"
                   placeholderTextColor="#94A3B8"
                   value={password}
@@ -801,9 +803,9 @@ export default function LoginScreen() {
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color="#0F172A" />
+                    <EyeOff size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
                   ) : (
-                    <Eye size={20} color="#0F172A" />
+                    <Eye size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
                   )}
                 </TouchableOpacity>
               </Pressable>
@@ -877,7 +879,7 @@ export default function LoginScreen() {
                     activeOpacity={0.75}
                     disabled={isLoading}
                   >
-                    <AppleFaceIdIcon size={30} color="#0F172A" />
+                    <AppleFaceIdIcon size={30} color={isDark ? "#F8FAFC" : "#0F172A"} />
                   </TouchableOpacity>
                 </View>
               ) : null}

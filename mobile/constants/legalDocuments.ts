@@ -331,7 +331,7 @@ export const PRIVACY_POLICY_DOC: LegalDocument = {
       body: "Your data is used strictly for legitimate, declared operational purposes:",
       bullets: [
         "Transmitting incorporation forms and statutory documents to the Corporate Affairs Commission (CAC).",
-        "Routing verification queries to accredited identity gateways (NIMC/DataVerify/NIBSS) to generate verification slip formats.",
+        "Routing verification queries to accredited identity gateways (NIMC/NIBSS) to generate verification slip formats.",
         "Managing your digital wallet, executing debit/credit settlements, and issuing transaction receipts.",
         "Enforcing multi-factor authentication (2FA) and mitigating fraudulent account takeovers.",
         "Short-Term Demographic Caching: Verification records generated on user request are retained in an encrypted, authenticated storage bucket for a limited operational window (enabling you to view and download your slip) and subsequent statutory audit trail preservation.",

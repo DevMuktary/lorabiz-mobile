@@ -35,6 +35,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { colors as defaultColors } from "../../constants/theme";
+const colors = defaultColors;
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
