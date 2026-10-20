@@ -36,6 +36,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { colors as defaultColors } from "../../constants/theme";
+const colors = defaultColors;
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import {
@@ -445,7 +446,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* =================================================================== */}
       {/* 1. TOP APP BAR: Left Avatar + Tier Name + Greeting (NO EMOJIS) */}

@@ -34,6 +34,7 @@ import {
   Check,
 } from "lucide-react-native";
 import { colors as defaultColors } from "../../constants/theme";
+const colors = defaultColors;
 import { useTheme } from "../../context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -330,7 +331,7 @@ export default function ActivityScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* 1. Calm, Centered Standard Top Bar with Back Button */}
       <View

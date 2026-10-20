@@ -18,6 +18,7 @@ import {
   Wifi,
 } from "lucide-react-native";
 import { colors as defaultColors } from "../../constants/theme";
+const colors = defaultColors;
 import { useTheme } from "../../context/ThemeContext";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 
@@ -224,7 +225,7 @@ export default function ServicesScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Stagnant / Fixed Top App Bar */}
       <View

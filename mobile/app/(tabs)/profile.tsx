@@ -36,7 +36,6 @@ import {
   Eye,
   EyeOff,
   Clock,
-  EyeClosed,
   Headphones,
   Mail,
   Smartphone,
@@ -57,6 +56,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
 import { colors as defaultColors } from "../../constants/theme";
+const colors = defaultColors;
 import { useQuery } from "@tanstack/react-query";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { uploadFileToServer } from "../../lib/upload";
@@ -613,7 +613,11 @@ export default function ProfileScreen() {
 
   function handleCopyReferral() {
     if (user?.referralCode) {
-      Clipboard.setString(user.referralCode);
+      try {
+        if (Clipboard && typeof (Clipboard as any).setString === "function") {
+          Clipboard.setString(user.referralCode);
+        }
+      } catch {}
       setCopiedReferral(true);
       setTimeout(() => setCopiedReferral(false), 2000);
     }
@@ -621,7 +625,11 @@ export default function ProfileScreen() {
 
   function handleCopySecret() {
     if (twoFactorSecret) {
-      Clipboard.setString(twoFactorSecret);
+      try {
+        if (Clipboard && typeof (Clipboard as any).setString === "function") {
+          Clipboard.setString(twoFactorSecret);
+        }
+      } catch {}
       setCopiedSecret(true);
       setTimeout(() => setCopiedSecret(false), 2000);
     }
@@ -1086,7 +1094,7 @@ export default function ProfileScreen() {
               {/* Hide Balance Toggle */}
               <View style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}>
                 <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(100, 116, 139, 0.15)" : "#F1F5F9" }]}>
-                  <EyeClosed size={19} color={colors.textSecondary} />
+                  <EyeOff size={19} color={colors.textSecondary} />
                 </View>
                 <View style={styles.menuTexts}>
                   <Text style={[styles.menuTitle, { color: colors.text }]}>Hide Balances by Default</Text>
