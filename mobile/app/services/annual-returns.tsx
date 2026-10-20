@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -40,6 +40,7 @@ import { api, BASE_URL } from "../../lib/api";
 import { getAuthToken } from "../../lib/storage";
 import { uploadFileToServer } from "../../lib/upload";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
@@ -76,6 +77,8 @@ const DESIGNEE_ROLES: Record<CompanyType, string[]> = {
 export default function AnnualReturnsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   // Loading & service status
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -344,7 +347,7 @@ export default function AnnualReturnsScreen() {
   if (isInitialLoading) {
     return (
       <View style={styles.screen}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={20} color={colors.text} />
@@ -359,7 +362,7 @@ export default function AnnualReturnsScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Top App Bar */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -1040,10 +1043,10 @@ export default function AnnualReturnsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
   topBar: {
     flexDirection: "row",
@@ -1051,15 +1054,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: colors.surfaceBorder,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F8FAFC",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1071,7 +1074,7 @@ const styles = StyleSheet.create({
   historyBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.08)",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
@@ -1083,18 +1086,18 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   contentContainer: {
     padding: 16,
     gap: 14,
   },
   heroCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   heroRow: {
     flexDirection: "row",
@@ -1102,19 +1105,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heroLogoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
     marginRight: 12,
   },
   heroLogo: {
-    width: 32,
-    height: 32,
+    width: 38,
+    height: 38,
+    borderRadius: 8,
   },
   heroTextCol: {
     flex: 1,
@@ -1127,7 +1132,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     lineHeight: 16,
   },
   heroBadgeRow: {
@@ -1138,25 +1143,25 @@ const styles = StyleSheet.create({
   turnaroundPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   turnaroundText: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#475569",
+    color: colors.textMuted,
   },
   pricePill: {
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.08)",
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: "rgba(200, 45, 117, 0.15)",
+    borderColor: "rgba(200, 45, 117, 0.2)",
   },
   pricePillText: {
     fontSize: 10,
@@ -1164,11 +1169,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   sectionHeader: {
     fontSize: 14,
@@ -1196,21 +1201,21 @@ const styles = StyleSheet.create({
   typeOptionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 14,
     padding: 12,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   typeOptionCardActive: {
     borderColor: colors.primary,
-    backgroundColor: "rgba(200, 45, 117, 0.04)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.04)",
   },
   typeIconBox: {
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -1245,15 +1250,15 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     paddingHorizontal: 12,
   },
   inputContainerError: {
     borderColor: colors.error,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
   },
   textInput: {
     flex: 1,
@@ -1272,9 +1277,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -1290,7 +1295,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1313,7 +1318,7 @@ const styles = StyleSheet.create({
   selectedYearPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.08)",
     borderColor: colors.primary,
     borderWidth: 1,
     paddingHorizontal: 10,
@@ -1321,7 +1326,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   selectedYearPillOverdue: {
-    backgroundColor: "rgba(217, 119, 6, 0.08)",
+    backgroundColor: isDark ? "rgba(217, 119, 6, 0.15)" : "rgba(217, 119, 6, 0.08)",
     borderColor: "#D97706",
   },
   selectedYearPillText: {
@@ -1345,13 +1350,13 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: "#CBD5E1",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1",
     borderRadius: 2,
     alignSelf: "center",
     marginBottom: 12,
   },
   yearPickerModalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
@@ -1373,9 +1378,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   quickActionBtnText: {
     fontSize: 11,
@@ -1390,13 +1395,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#F1F5F9",
-    backgroundColor: "#FAFAFA",
+    borderColor: colors.surfaceBorder,
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#FAFAFA",
     marginBottom: 8,
   },
   yearModalItemActive: {
     borderColor: colors.primary,
-    backgroundColor: "rgba(200, 45, 117, 0.04)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.04)",
   },
   yearModalItemLeft: {
     flexDirection: "row",
@@ -1407,10 +1412,10 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: "#CBD5E1",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   checkboxBoxActive: {
     backgroundColor: colors.primary,
@@ -1434,7 +1439,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: "rgba(217, 119, 6, 0.12)",
+    backgroundColor: isDark ? "rgba(217, 119, 6, 0.2)" : "rgba(217, 119, 6, 0.12)",
   },
   overdueBadgeText: {
     fontSize: 10,
@@ -1445,7 +1450,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)",
   },
   currentYearBadgeText: {
     fontSize: 10,
@@ -1457,7 +1462,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
+    borderTopColor: colors.surfaceBorder,
     paddingTop: 14,
     marginTop: 8,
   },
@@ -1487,10 +1492,10 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   costBreakdownBox: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     padding: 12,
   },
   costRow: {
@@ -1512,7 +1517,7 @@ const styles = StyleSheet.create({
   },
   costTotalRow: {
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
+    borderTopColor: colors.surfaceBorder,
     marginTop: 6,
     paddingTop: 8,
   },
@@ -1536,14 +1541,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
   },
   docTypeBtnActive: {
     borderColor: colors.primary,
-    backgroundColor: "rgba(200, 45, 117, 0.06)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.06)",
   },
   docTypeBtnText: {
     fontSize: 12,
@@ -1559,13 +1564,13 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     borderStyle: "dashed",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
   },
   uploadZoneError: {
     borderColor: colors.error,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
   },
   uploadZoneText: {
     fontSize: 12,
@@ -1581,11 +1586,11 @@ const styles = StyleSheet.create({
   uploadedFile: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
     gap: 10,
   },
   uploadedFileName: {
@@ -1598,9 +1603,9 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1608,9 +1613,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 28,
     borderRadius: 6,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -1628,13 +1633,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   roleChipActive: {
     borderColor: colors.primary,
-    backgroundColor: "rgba(200, 45, 117, 0.06)",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.06)",
   },
   roleChipText: {
     fontSize: 12,
@@ -1671,7 +1676,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 20,
@@ -1690,10 +1695,10 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   summaryBox: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     padding: 14,
     marginBottom: 14,
   },
@@ -1716,24 +1721,24 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.surfaceBorder,
     marginVertical: 10,
   },
   insufficientWarning: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
     marginBottom: 14,
   },
   insufficientWarningText: {
     flex: 1,
     fontSize: 11,
     fontWeight: "600",
-    color: "#DC2626",
+    color: isDark ? "#F87171" : "#DC2626",
     lineHeight: 15,
   },
   modalActionsRow: {
@@ -1744,7 +1749,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 12,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },

@@ -823,7 +823,25 @@ export default function ProfileScreen() {
 
       {/* Main Navigation Hub */}
       <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder, marginTop: 12 }]}>
-        {/* 1. Settings & Preferences */}
+        {/* 1. Personal Details (Top) */}
+        <TouchableOpacity
+          style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
+          onPress={() => setActiveModal("IDENTITY")}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.10)" }]}>
+            <UserCheck size={20} color="#3B82F6" />
+          </View>
+          <View style={styles.menuTexts}>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Personal Details</Text>
+            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+              Verified legal name & mobile phone
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        {/* 2. Settings & Preferences */}
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
           onPress={() => setActiveModal("SETTINGS")}
@@ -841,7 +859,7 @@ export default function ProfileScreen() {
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* 2. Security & Credentials */}
+        {/* 3. Security (Clean 'Security' title) */}
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
           onPress={() => setActiveModal("SECURITY")}
@@ -851,27 +869,9 @@ export default function ProfileScreen() {
             <Shield size={20} color={colors.success} />
           </View>
           <View style={styles.menuTexts}>
-            <Text style={[styles.menuTitle, { color: colors.text }]}>Security & Authentication</Text>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Security</Text>
             <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
               Biometrics, password, 2FA ({user?.twoFactorEnabled ? "Active" : "Off"})
-            </Text>
-          </View>
-          <ChevronRight size={18} color={colors.textMuted} />
-        </TouchableOpacity>
-
-        {/* 3. Identity & Verification */}
-        <TouchableOpacity
-          style={[styles.menuItem, { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}
-          onPress={() => setActiveModal("IDENTITY")}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.10)" }]}>
-            <UserCheck size={20} color="#3B82F6" />
-          </View>
-          <View style={styles.menuTexts}>
-            <Text style={[styles.menuTitle, { color: colors.text }]}>Identity & Contact</Text>
-            <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
-              Verified legal name & mobile phone
             </Text>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />
@@ -1066,26 +1066,60 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* APP AUTO-LOCK */}
+            {/* APP AUTO-LOCK INLINE SELECTOR */}
             <Text style={[styles.subSectionTitle, { color: colors.textSecondary, marginTop: 22 }]}>Session Security</Text>
             <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
-              <TouchableOpacity
-                style={[styles.menuItem, { borderBottomWidth: 0 }]}
-                onPress={() => setActiveModal("AUTO_LOCK")}
-                activeOpacity={0.7}
-              >
+              <View style={[styles.menuItem, { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}>
                 <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.10)" }]}>
                   <Clock size={19} color={colors.purple} />
                 </View>
                 <View style={styles.menuTexts}>
                   <Text style={[styles.menuTitle, { color: colors.text }]}>App Auto-Lock</Text>
-                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Lock session when inactive</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Lock session when inactive or minimized</Text>
                 </View>
-                <View style={[styles.settingValueChip, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}>
-                  <Text style={[styles.settingValueText, { color: colors.textSecondary }]}>{getAutoLockLabel(autoLockTimeout)}</Text>
-                </View>
-                <ChevronRight size={18} color={colors.textMuted} style={{ marginLeft: 6 }} />
-              </TouchableOpacity>
+              </View>
+
+              {/* In-Place Selectable Timeout Options (No modal redirect) */}
+              <View style={{ padding: 10, gap: 6 }}>
+                {[
+                  { id: "immediately", label: "Immediately upon leaving" },
+                  { id: "1m", label: "1 Minute of inactivity" },
+                  { id: "5m", label: "5 Minutes of inactivity" },
+                  { id: "15m", label: "15 Minutes of inactivity" },
+                  { id: "1h", label: "1 Hour of inactivity" },
+                  { id: "2h", label: "2 Hours of inactivity" },
+                  { id: "never", label: "Never (Disabled)" },
+                ].map((item) => {
+                  const isSelected = autoLockTimeout === item.id;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        styles.inlineTimeoutRow,
+                        {
+                          backgroundColor: isSelected
+                            ? (isDark ? "rgba(200, 45, 117, 0.18)" : "rgba(200, 45, 117, 0.08)")
+                            : (isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)"),
+                          borderColor: isSelected ? colors.primary : (isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder),
+                        },
+                      ]}
+                      onPress={() => setAutoLockSetting(item.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.inlineTimeoutText,
+                          { color: isSelected ? colors.primary : colors.text },
+                          isSelected && { fontWeight: "700" },
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                      {isSelected ? <Check size={16} color={colors.primary} /> : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
             {/* DISPLAY & PRIVACY */}
@@ -1147,7 +1181,7 @@ export default function ProfileScreen() {
             >
               <ArrowLeft size={20} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Security & Credentials</Text>
+            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Security</Text>
             <View style={{ width: 36 }} />
           </View>
 
@@ -1257,7 +1291,7 @@ export default function ProfileScreen() {
             >
               <ArrowLeft size={20} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Identity & Contact</Text>
+            <Text style={[styles.subScreenTitle, { color: colors.text }]}>Personal Details</Text>
             <View style={{ width: 36 }} />
           </View>
 
@@ -1464,32 +1498,32 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalBackdrop}>
           <Pressable style={styles.modalDismissOverlay} onPress={() => setActiveModal(null)} />
-          <View style={styles.bottomSheetCard}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetModalTitle}>Profile Photo</Text>
-            <Text style={styles.sheetModalSub}>Choose how you want to update your profile photo</Text>
+          <View style={[styles.bottomSheetCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0" }]} />
+            <Text style={[styles.sheetModalTitle, { color: colors.text }]}>Profile Photo</Text>
+            <Text style={[styles.sheetModalSub, { color: colors.textSecondary }]}>Choose how you want to update your profile photo</Text>
 
             <TouchableOpacity
-              style={styles.sheetActionBtn}
+              style={[styles.sheetActionBtn, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}
               onPress={() => handlePickImage("camera")}
               activeOpacity={0.7}
             >
               <Camera size={20} color={colors.primary} />
-              <Text style={styles.sheetActionText}>Take Photo</Text>
+              <Text style={[styles.sheetActionText, { color: colors.text }]}>Take Photo</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.sheetActionBtn}
+              style={[styles.sheetActionBtn, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}
               onPress={() => handlePickImage("library")}
               activeOpacity={0.7}
             >
               <Smartphone size={20} color={colors.primary} />
-              <Text style={styles.sheetActionText}>Choose from Library</Text>
+              <Text style={[styles.sheetActionText, { color: colors.text }]}>Choose from Library</Text>
             </TouchableOpacity>
 
             {user?.image ? (
               <TouchableOpacity
-                style={[styles.sheetActionBtn, { borderColor: "#FEE2E2" }]}
+                style={[styles.sheetActionBtn, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.10)" : "#FEF2F2", borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FEE2E2" }]}
                 onPress={handleRemovePhoto}
                 activeOpacity={0.7}
               >
@@ -1503,7 +1537,7 @@ export default function ProfileScreen() {
               onPress={() => setActiveModal(null)}
               activeOpacity={0.7}
             >
-              <Text style={styles.sheetCancelText}>Cancel</Text>
+              <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1516,18 +1550,18 @@ export default function ProfileScreen() {
         visible={activeModal === "PHONE_CHANGE"}
         transparent
         animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onRequestClose={() => setActiveModal("IDENTITY")}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoidingModal}
         >
           <View style={styles.modalBackdropCenter}>
-            <View style={styles.formDialogCard}>
+            <View style={[styles.formDialogCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
               <View style={styles.dialogHeader}>
-                <Text style={styles.dialogTitle}>Change Phone Number</Text>
-                <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                  <X size={20} color="#64748B" />
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>Change Phone Number</Text>
+                <TouchableOpacity onPress={() => setActiveModal("IDENTITY")} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <X size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -1545,23 +1579,30 @@ export default function ProfileScreen() {
               >
                 {phoneStep === "ENTER_PHONE" ? (
                   <View>
-                    <Text style={styles.modalExplainer}>
+                    <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
                       Enter your new Nigerian mobile phone number. We will send a 6-digit confirmation code to your registered email ({user?.email}) to verify ownership.
                     </Text>
 
-                    <Text style={styles.inputLabel}>New Phone Number</Text>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>New Phone Number</Text>
                     <TextInput
-                      style={styles.highContrastInput}
+                      style={[
+                        styles.highContrastInput,
+                        {
+                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                          borderColor: colors.surfaceBorder,
+                          color: colors.text,
+                        },
+                      ]}
                       value={newPhone}
                       onChangeText={setNewPhone}
                       placeholder="e.g. 08012345678"
                       keyboardType="phone-pad"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textMuted}
                       selectionColor={colors.primary}
                       autoFocus
                     />
 
-                    <Text style={styles.helperNote}>
+                    <Text style={[styles.helperNote, { color: colors.textMuted }]}>
                       Note: You can only update your phone number once every 30 days for account security.
                     </Text>
 
@@ -1580,19 +1621,27 @@ export default function ProfileScreen() {
                   </View>
                 ) : (
                   <View>
-                    <Text style={styles.modalExplainer}>
+                    <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
                       Enter the 6-digit verification code sent to your registered email ({user?.email}) to confirm your new phone number ({newPhone}).
                     </Text>
 
-                    <Text style={styles.inputLabel}>6-Digit Verification Code</Text>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>6-Digit Verification Code</Text>
                     <TextInput
-                      style={[styles.highContrastInput, styles.otpInput]}
+                      style={[
+                        styles.highContrastInput,
+                        styles.otpInput,
+                        {
+                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                          borderColor: colors.surfaceBorder,
+                          color: colors.text,
+                        },
+                      ]}
                       value={phoneOtp}
                       onChangeText={setPhoneOtp}
                       placeholder="123456"
                       keyboardType="number-pad"
                       maxLength={6}
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textMuted}
                       selectionColor={colors.primary}
                       autoFocus
                     />
@@ -1631,18 +1680,18 @@ export default function ProfileScreen() {
         visible={activeModal === "CHANGE_PASSWORD"}
         transparent
         animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onRequestClose={() => setActiveModal("SECURITY")}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoidingModal}
         >
           <View style={styles.modalBackdropCenter}>
-            <View style={styles.formDialogCard}>
+            <View style={[styles.formDialogCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
               <View style={styles.dialogHeader}>
-                <Text style={styles.dialogTitle}>Change Password</Text>
-                <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                  <X size={20} color="#64748B" />
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>Change Password</Text>
+                <TouchableOpacity onPress={() => setActiveModal("SECURITY")} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <X size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -1660,24 +1709,24 @@ export default function ProfileScreen() {
               >
                 {passwordStep === "CURRENT" ? (
                   <View>
-                    <Text style={styles.modalExplainer}>
+                    <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
                       For your security, enter your current password. We will send a 6-digit confirmation code to your email.
                     </Text>
 
-                    <Text style={styles.inputLabel}>Current Password</Text>
-                    <View style={styles.passwordInputWrapper}>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>Current Password</Text>
+                    <View style={[styles.passwordInputWrapper, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
                       <TextInput
-                        style={styles.passwordInput}
+                        style={[styles.passwordInput, { color: colors.text }]}
                         value={currentPassword}
                         onChangeText={setCurrentPassword}
                         placeholder="Enter current password"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textMuted}
                         secureTextEntry={!showCurrentPass}
                         selectionColor={colors.primary}
                         autoFocus
                       />
                       <TouchableOpacity onPress={() => setShowCurrentPass(!showCurrentPass)}>
-                        {showCurrentPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
+                        {showCurrentPass ? <EyeOff size={19} color={colors.textMuted} /> : <Eye size={19} color={colors.textMuted} />}
                       </TouchableOpacity>
                     </View>
 
@@ -1696,51 +1745,59 @@ export default function ProfileScreen() {
                   </View>
                 ) : (
                   <View>
-                    <Text style={styles.modalExplainer}>
+                    <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
                       Enter the 6-digit code sent to {user?.email} and your new password.
                     </Text>
 
-                    <Text style={styles.inputLabel}>6-Digit Verification Code</Text>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>6-Digit Verification Code</Text>
                     <TextInput
-                      style={[styles.highContrastInput, styles.otpInput]}
+                      style={[
+                        styles.highContrastInput,
+                        styles.otpInput,
+                        {
+                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                          borderColor: colors.surfaceBorder,
+                          color: colors.text,
+                        },
+                      ]}
                       value={passwordOtp}
                       onChangeText={setPasswordOtp}
                       placeholder="123456"
                       keyboardType="number-pad"
                       maxLength={6}
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textMuted}
                       selectionColor={colors.primary}
                     />
 
-                    <Text style={styles.inputLabel}>New Password</Text>
-                    <View style={styles.passwordInputWrapper}>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>New Password</Text>
+                    <View style={[styles.passwordInputWrapper, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
                       <TextInput
-                        style={styles.passwordInput}
+                        style={[styles.passwordInput, { color: colors.text }]}
                         value={newPassword}
                         onChangeText={setNewPassword}
                         placeholder="At least 8 characters"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textMuted}
                         secureTextEntry={!showNewPass}
                         selectionColor={colors.primary}
                       />
                       <TouchableOpacity onPress={() => setShowNewPass(!showNewPass)}>
-                        {showNewPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
+                        {showNewPass ? <EyeOff size={19} color={colors.textMuted} /> : <Eye size={19} color={colors.textMuted} />}
                       </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.inputLabel}>Confirm New Password</Text>
-                    <View style={styles.passwordInputWrapper}>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>Confirm New Password</Text>
+                    <View style={[styles.passwordInputWrapper, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
                       <TextInput
-                        style={styles.passwordInput}
+                        style={[styles.passwordInput, { color: colors.text }]}
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
                         placeholder="Confirm new password"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textMuted}
                         secureTextEntry={!showConfirmPass}
                         selectionColor={colors.primary}
                       />
                       <TouchableOpacity onPress={() => setShowConfirmPass(!showConfirmPass)}>
-                        {showConfirmPass ? <EyeOff size={19} color="#64748B" /> : <Eye size={19} color="#64748B" />}
+                        {showConfirmPass ? <EyeOff size={19} color={colors.textMuted} /> : <Eye size={19} color={colors.textMuted} />}
                       </TouchableOpacity>
                     </View>
 
@@ -1767,22 +1824,34 @@ export default function ProfileScreen() {
       {/* ==================================================== */}
       {/* MODAL 4: Two-Factor Authentication Modal (With Keyboard Avoidance) */}
       {/* ==================================================== */}
+      {/* ==================================================== */}
+      {/* MODAL 4: Two-Factor Authentication Modal (With Keyboard Avoidance) */}
+      {/* ==================================================== */}
       <Modal
         visible={activeModal === "TWO_FACTOR"}
         transparent
         animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onRequestClose={() => {
+          setActiveModal(null);
+          setActiveSubScreen("SECURITY");
+        }}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoidingModal}
         >
           <View style={styles.modalBackdropCenter}>
-            <View style={styles.formDialogCard}>
+            <View style={[styles.formDialogCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
               <View style={styles.dialogHeader}>
-                <Text style={styles.dialogTitle}>Two-Factor Authentication</Text>
-                <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                  <X size={20} color="#64748B" />
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>Two-Factor Authentication</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setActiveModal(null);
+                    setActiveSubScreen("SECURITY");
+                  }}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <X size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -1803,21 +1872,28 @@ export default function ProfileScreen() {
                     <View style={styles.shieldActiveOrb}>
                       <Shield size={36} color={colors.success} />
                     </View>
-                    <Text style={styles.twoFactorActiveTitle}>2FA is Active & Protecting Your Account</Text>
-                    <Text style={styles.twoFactorActiveSub}>
+                    <Text style={[styles.twoFactorActiveTitle, { color: colors.text }]}>2FA is Active & Protecting Your Account</Text>
+                    <Text style={[styles.twoFactorActiveSub, { color: colors.textSecondary }]}>
                       Every sign-in requires a verification code from your authenticator app or email.
                     </Text>
 
-                    <View style={styles.dividerSpacing} />
+                    <View style={[styles.dividerSpacing, { backgroundColor: colors.surfaceBorder }]} />
 
-                    <Text style={styles.inputLabel}>Enter Account Password to Disable 2FA</Text>
+                    <Text style={[styles.inputLabel, { color: colors.text }]}>Enter Account Password to Disable 2FA</Text>
                     <TextInput
-                      style={styles.highContrastInput}
+                      style={[
+                        styles.highContrastInput,
+                        {
+                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                          borderColor: colors.surfaceBorder,
+                          color: colors.text,
+                        },
+                      ]}
                       value={disablePassword}
                       onChangeText={setDisablePassword}
                       placeholder="Enter account password"
                       secureTextEntry
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textMuted}
                       selectionColor={colors.primary}
                     />
 
@@ -1836,24 +1912,48 @@ export default function ProfileScreen() {
                   </View>
                 ) : (
                   <View>
-                    <Text style={styles.modalExplainer}>
+                    <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
                       Add an extra layer of security. Choose an authenticator app (Google Authenticator, Microsoft Authenticator) or Email OTP.
                     </Text>
 
-                    <View style={styles.methodTabRow}>
+                    <View style={[styles.methodTabRow, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" }]}>
                       <TouchableOpacity
-                        style={[styles.methodTab, twoFactorMethod === "AUTHENTICATOR" && styles.methodTabActive]}
+                        style={[
+                          styles.methodTab,
+                          twoFactorMethod === "AUTHENTICATOR" && [
+                            styles.methodTabActive,
+                            { backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF" },
+                          ],
+                        ]}
                         onPress={() => handleInit2FASetup("AUTHENTICATOR")}
                       >
-                        <Text style={[styles.methodTabText, twoFactorMethod === "AUTHENTICATOR" && styles.methodTabTextActive]}>
+                        <Text
+                          style={[
+                            styles.methodTabText,
+                            { color: colors.textSecondary },
+                            twoFactorMethod === "AUTHENTICATOR" && styles.methodTabTextActive,
+                          ]}
+                        >
                           Authenticator App
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.methodTab, twoFactorMethod === "EMAIL" && styles.methodTabActive]}
+                        style={[
+                          styles.methodTab,
+                          twoFactorMethod === "EMAIL" && [
+                            styles.methodTabActive,
+                            { backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF" },
+                          ],
+                        ]}
                         onPress={() => handleInit2FASetup("EMAIL")}
                       >
-                        <Text style={[styles.methodTabText, twoFactorMethod === "EMAIL" && styles.methodTabTextActive]}>
+                        <Text
+                          style={[
+                            styles.methodTabText,
+                            { color: colors.textSecondary },
+                            twoFactorMethod === "EMAIL" && styles.methodTabTextActive,
+                          ]}
+                        >
                           Email Passkey
                         </Text>
                       </TouchableOpacity>
@@ -1862,11 +1962,11 @@ export default function ProfileScreen() {
                     {twoFactorMethod === "AUTHENTICATOR" ? (
                       <View style={{ alignItems: "center" }}>
                         {twoFactorQrCode ? (
-                          <View style={styles.qrCodeBox}>
+                          <View style={[styles.qrCodeBox, { borderColor: colors.surfaceBorder, backgroundColor: "#FFFFFF" }]}>
                             <Image source={{ uri: twoFactorQrCode }} style={{ width: 150, height: 150 }} />
                           </View>
                         ) : (
-                          <View style={[styles.qrCodeBox, { height: 150, width: 150, justifyContent: "center" }]}>
+                          <View style={[styles.qrCodeBox, { height: 150, width: 150, justifyContent: "center", borderColor: colors.surfaceBorder, backgroundColor: "#FFFFFF" }]}>
                             <ActivityIndicator color={colors.primary} size="small" />
                           </View>
                         )}
@@ -1886,32 +1986,48 @@ export default function ProfileScreen() {
                           </TouchableOpacity>
                         ) : null}
 
-                        <Text style={styles.inputLabel}>Enter 6-Digit Authenticator Code</Text>
+                        <Text style={[styles.inputLabel, { color: colors.text }]}>Enter 6-Digit Authenticator Code</Text>
                         <TextInput
-                          style={[styles.highContrastInput, styles.otpInput]}
+                          style={[
+                            styles.highContrastInput,
+                            styles.otpInput,
+                            {
+                              backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                              borderColor: colors.surfaceBorder,
+                              color: colors.text,
+                            },
+                          ]}
                           value={twoFactorOtp}
                           onChangeText={setTwoFactorOtp}
                           placeholder="123456"
                           keyboardType="number-pad"
                           maxLength={6}
-                          placeholderTextColor="#94A3B8"
+                          placeholderTextColor={colors.textMuted}
                           selectionColor={colors.primary}
                         />
                       </View>
                     ) : (
                       <View>
-                        <Text style={[styles.modalExplainer, { marginTop: 8 }]}>
+                        <Text style={[styles.modalExplainer, { marginTop: 8, color: colors.textSecondary }]}>
                           A 6-digit verification code has been dispatched to {user?.email}.
                         </Text>
-                        <Text style={styles.inputLabel}>Enter 6-Digit Email Code</Text>
+                        <Text style={[styles.inputLabel, { color: colors.text }]}>Enter 6-Digit Email Code</Text>
                         <TextInput
-                          style={[styles.highContrastInput, styles.otpInput]}
+                          style={[
+                            styles.highContrastInput,
+                            styles.otpInput,
+                            {
+                              backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                              borderColor: colors.surfaceBorder,
+                              color: colors.text,
+                            },
+                          ]}
                           value={twoFactorOtp}
                           onChangeText={setTwoFactorOtp}
                           placeholder="123456"
                           keyboardType="number-pad"
                           maxLength={6}
-                          placeholderTextColor="#94A3B8"
+                          placeholderTextColor={colors.textMuted}
                           selectionColor={colors.primary}
                         />
                       </View>
@@ -1938,104 +2054,65 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* ==================================================== */}
-      {/* MODAL 5: Auto-Lock Inactivity Timeout Selector */}
-      {/* ==================================================== */}
-      <Modal
-        visible={activeModal === "AUTO_LOCK"}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setActiveModal(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable style={styles.modalDismissOverlay} onPress={() => setActiveModal(null)} />
-          <View style={styles.bottomSheetCard}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetModalTitle}>App Auto-Lock Timeout</Text>
-            <Text style={styles.sheetModalSub}>
-              Automatically lock the session when the app is inactive or sent to the background.
-            </Text>
-
-            {[
-              { id: "immediately", label: "Immediately" },
-              { id: "1m", label: "1 Minute" },
-              { id: "5m", label: "5 Minutes" },
-              { id: "15m", label: "15 Minutes" },
-              { id: "1h", label: "1 Hour" },
-              { id: "2h", label: "2 Hours" },
-              { id: "never", label: "Never (Disabled)" },
-            ].map((item) => {
-              const isSelected = autoLockTimeout === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[styles.timeoutRow, isSelected && styles.timeoutRowSelected]}
-                  onPress={async () => {
-                    await setAutoLockSetting(item.id);
-                    setActiveModal(null);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.timeoutLabel, isSelected && styles.timeoutLabelSelected]}>
-                    {item.label}
-                  </Text>
-                  {isSelected ? <Check size={18} color={colors.primary} /> : null}
-                </TouchableOpacity>
-              );
-            })}
-
-            <TouchableOpacity
-              style={styles.sheetCancelBtn}
-              onPress={() => setActiveModal(null)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.sheetCancelText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* ==================================================== */}
       {/* MODAL 6: In-App Terms & Privacy Document Viewer */}
       {/* ==================================================== */}
       <Modal
         visible={activeModal === "DOCUMENT_VIEWER"}
         transparent={false}
         animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onRequestClose={() => {
+          setActiveModal(null);
+          setActiveSubScreen("LEGAL");
+        }}
       >
-        <View style={[styles.docViewerContainer, { paddingTop: Math.max(insets.top, 20) }]}>
+        <View style={[styles.docViewerContainer, { paddingTop: Math.max(insets.top, 20), backgroundColor: colors.background }]}>
           {/* Header */}
-          <View style={styles.docViewerHeader}>
+          <View style={[styles.docViewerHeader, { backgroundColor: colors.surfaceElevated, borderBottomColor: colors.surfaceBorder }]}>
             <View style={styles.docViewerTitleRow}>
               <Scale size={20} color={colors.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.docViewerTitle}>
+              <Text style={[styles.docViewerTitle, { color: colors.text }]}>
                 {documentType === "TERMS" ? "Terms & Conditions" : "Privacy Policy"}
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => setActiveModal(null)}
-              style={styles.docViewerCloseBtn}
+              onPress={() => {
+                setActiveModal(null);
+                setActiveSubScreen("LEGAL");
+              }}
+              style={[styles.docViewerCloseBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <X size={20} color="#0F172A" />
+              <X size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {/* Segmented Switcher */}
-          <View style={styles.docTabSwitcher}>
+          <View style={[styles.docTabSwitcher, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0" }]}>
             <TouchableOpacity
-              style={[styles.docTab, documentType === "TERMS" && styles.docTabActive]}
+              style={[styles.docTab, documentType === "TERMS" && [styles.docTabActive, { backgroundColor: colors.surfaceElevated }]]}
               onPress={() => setDocumentType("TERMS")}
             >
-              <Text style={[styles.docTabText, documentType === "TERMS" && styles.docTabTextActive]}>
+              <Text
+                style={[
+                  styles.docTabText,
+                  { color: colors.textSecondary },
+                  documentType === "TERMS" && styles.docTabTextActive,
+                ]}
+              >
                 Terms of Service
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.docTab, documentType === "PRIVACY" && styles.docTabActive]}
+              style={[styles.docTab, documentType === "PRIVACY" && [styles.docTabActive, { backgroundColor: colors.surfaceElevated }]]}
               onPress={() => setDocumentType("PRIVACY")}
             >
-              <Text style={[styles.docTabText, documentType === "PRIVACY" && styles.docTabTextActive]}>
+              <Text
+                style={[
+                  styles.docTabText,
+                  { color: colors.textSecondary },
+                  documentType === "PRIVACY" && styles.docTabTextActive,
+                ]}
+              >
                 Privacy Policy
               </Text>
             </TouchableOpacity>
@@ -2051,35 +2128,35 @@ export default function ProfileScreen() {
               const doc = documentType === "TERMS" ? TERMS_OF_SERVICE_DOC : PRIVACY_POLICY_DOC;
               return (
                 <View>
-                  <View style={styles.legalNoticeBanner}>
+                  <View style={[styles.legalNoticeBanner, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
                     <Text style={styles.legalNoticeTag}>{doc.tag}</Text>
-                    <Text style={styles.legalNoticeHeading}>{doc.title}</Text>
-                    <Text style={styles.legalNoticeSub}>
+                    <Text style={[styles.legalNoticeHeading, { color: colors.text }]}>{doc.title}</Text>
+                    <Text style={[styles.legalNoticeSub, { color: colors.textSecondary }]}>
                       Effective Date: {doc.effectiveDate} • {doc.regulatoryStandard}
                     </Text>
                   </View>
 
                   {doc.preambleCallout ? (
-                    <View style={styles.legalCalloutBox}>
+                    <View style={[styles.legalCalloutBox, isDark && { backgroundColor: "rgba(217, 119, 6, 0.15)", borderColor: "rgba(217, 119, 6, 0.3)" }]}>
                       <View style={styles.legalCalloutHeader}>
                         <AlertTriangle size={15} color="#D97706" style={{ marginRight: 6 }} />
-                        <Text style={styles.legalCalloutTitle}>{doc.preambleCallout.title}</Text>
+                        <Text style={[styles.legalCalloutTitle, isDark && { color: "#FBBF24" }]}>{doc.preambleCallout.title}</Text>
                       </View>
-                      <Text style={styles.legalCalloutText}>{doc.preambleCallout.text}</Text>
+                      <Text style={[styles.legalCalloutText, isDark && { color: "#FDE68A" }]}>{doc.preambleCallout.text}</Text>
                     </View>
                   ) : null}
 
                   {doc.intro ? (
-                    <Text style={styles.legalIntroText}>{doc.intro}</Text>
+                    <Text style={[styles.legalIntroText, { color: colors.text }]}>{doc.intro}</Text>
                   ) : null}
 
                   {doc.sections.map((sec) => (
-                    <View key={sec.id} style={styles.docSection}>
-                      <Text style={styles.docSectionTitle}>{sec.title}</Text>
+                    <View key={sec.id} style={[styles.docSection, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
+                      <Text style={[styles.docSectionTitle, { color: colors.text }]}>{sec.title}</Text>
 
                       {sec.callout ? (
-                        <View style={styles.sectionCallout}>
-                          <Text style={styles.sectionCalloutText}>{sec.callout}</Text>
+                        <View style={[styles.sectionCallout, isDark && { backgroundColor: "rgba(255, 255, 255, 0.05)" }]}>
+                          <Text style={[styles.sectionCalloutText, { color: colors.textSecondary }]}>{sec.callout}</Text>
                         </View>
                       ) : null}
 
@@ -2087,15 +2164,15 @@ export default function ProfileScreen() {
                         sec.subsections.map((sub, idx) => (
                           <View key={idx} style={{ marginBottom: 10 }}>
                             {sub.subtitle ? (
-                              <Text style={styles.docSubsectionTitle}>{sub.subtitle}</Text>
+                              <Text style={[styles.docSubsectionTitle, { color: colors.text }]}>{sub.subtitle}</Text>
                             ) : null}
-                            <Text style={styles.docSectionBody}>{sub.text}</Text>
+                            <Text style={[styles.docSectionBody, { color: colors.textSecondary }]}>{sub.text}</Text>
                           </View>
                         ))
                       ) : null}
 
                       {sec.body ? (
-                        <Text style={[styles.docSectionBody, { marginBottom: sec.bullets ? 8 : 0 }]}>
+                        <Text style={[styles.docSectionBody, { marginBottom: sec.bullets ? 8 : 0, color: colors.textSecondary }]}>
                           {sec.body}
                         </Text>
                       ) : null}
@@ -2105,7 +2182,7 @@ export default function ProfileScreen() {
                           {sec.bullets.map((b, bIdx) => (
                             <View key={bIdx} style={styles.legalBulletRow}>
                               <Text style={styles.legalBulletDot}>•</Text>
-                              <Text style={styles.legalBulletText}>{b}</Text>
+                              <Text style={[styles.legalBulletText, { color: colors.textSecondary }]}>{b}</Text>
                             </View>
                           ))}
                         </View>
@@ -2114,10 +2191,10 @@ export default function ProfileScreen() {
                   ))}
 
                   {/* Document Footer */}
-                  <View style={styles.docFooterBox}>
-                    <Text style={styles.docFooterCompany}>{doc.footer.company}</Text>
+                  <View style={[styles.docFooterBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
+                    <Text style={[styles.docFooterCompany, { color: colors.text }]}>{doc.footer.company}</Text>
                     {doc.footer.items.map((item, idx) => (
-                      <Text key={idx} style={styles.docFooterItem}>
+                      <Text key={idx} style={[styles.docFooterItem, { color: colors.textSecondary }]}>
                         {item.label}: <Text style={{ color: colors.primary, fontWeight: "600" }}>{item.value}</Text>
                       </Text>
                     ))}
@@ -2128,7 +2205,10 @@ export default function ProfileScreen() {
 
             <TouchableOpacity
               style={styles.docViewerDoneBtn}
-              onPress={() => setActiveModal(null)}
+              onPress={() => {
+                setActiveModal(null);
+                setActiveSubScreen("LEGAL");
+              }}
               activeOpacity={0.88}
             >
               <Text style={styles.docViewerDoneText}>Close Document</Text>

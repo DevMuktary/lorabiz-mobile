@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  StatusBar,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,6 +39,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
@@ -104,6 +106,8 @@ function BvnDatePickerModal({
   onClose,
   onConfirm,
 }: DatePickerModalProps) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const [selectedYear, setSelectedYear] = useState<number>(1995);
   const [selectedMonth, setSelectedMonth] = useState<number>(6);
   const [selectedDay, setSelectedDay] = useState<number>(15);
@@ -342,6 +346,8 @@ export const MODIFICATION_OPTIONS = [
 export default function BvnModificationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { user, wallet, refreshWallet } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -740,9 +746,10 @@ export default function BvnModificationScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
         <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <ArrowLeft size={20} color="#0F172A" />
+            <ArrowLeft size={20} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
             <Text style={styles.headerTitle}>BVN Record Modification</Text>
@@ -756,6 +763,7 @@ export default function BvnModificationScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
@@ -763,7 +771,7 @@ export default function BvnModificationScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <ArrowLeft size={20} color="#0F172A" />
+          <ArrowLeft size={20} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleWrap}>
@@ -859,11 +867,13 @@ export default function BvnModificationScreen() {
             <>
               {/* Agency Banner */}
               <View style={styles.agencyBanner}>
-                <Image
-                  source={require("../../assets/nibss.png")}
-                  style={styles.agencyLogo}
-                  resizeMode="contain"
-                />
+                <View style={styles.agencyLogoBox}>
+                  <Image
+                    source={require("../../assets/nibss.png")}
+                    style={styles.agencyLogo}
+                    resizeMode="contain"
+                  />
+                </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.agencyBadge}>NIBSS BVN SERVICE</Text>
                   <Text style={styles.agencyTitle}>BVN Record Modification</Text>
@@ -1605,10 +1615,10 @@ export default function BvnModificationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -1616,15 +1626,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: colors.surfaceBorder,
   },
   backBtn: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1635,22 +1645,22 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.2,
   },
   headerSubtitle: {
     fontSize: 11,
     fontWeight: "500",
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 1,
   },
   historyBtn: {
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 20,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: isDark ? "rgba(200, 45, 117, 0.3)" : "#BFDBFE",
   },
   historyBtnText: {
     fontSize: 12,
@@ -1663,11 +1673,11 @@ const styles = StyleSheet.create({
   agencyBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 10,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
@@ -1675,10 +1685,21 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
+  agencyLogoBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   agencyLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 8,
   },
   agencyBadge: {
     fontSize: 10,
@@ -1690,12 +1711,12 @@ const styles = StyleSheet.create({
   agencyTitle: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
     marginTop: 1,
   },
   agencyDesc: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 2,
     lineHeight: 16,
   },
@@ -1703,9 +1724,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(5, 150, 105, 0.12)" : "#ECFDF5",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: isDark ? "rgba(5, 150, 105, 0.3)" : "#A7F3D0",
     paddingVertical: 9,
     paddingHorizontal: 14,
     borderRadius: 14,
@@ -1718,7 +1739,7 @@ const styles = StyleSheet.create({
   },
   policyPillText: {
     fontSize: 12,
-    color: "#065F46",
+    color: isDark ? "#34D399" : "#065F46",
   },
   policyPillRight: {
     flexDirection: "row",
@@ -1727,7 +1748,7 @@ const styles = StyleSheet.create({
   policyPillAction: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#059669",
+    color: isDark ? "#34D399" : "#059669",
   },
   fontBold: {
     fontWeight: "700",
@@ -1739,11 +1760,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 14,
   },
   pricingLeft: {
@@ -1752,17 +1773,17 @@ const styles = StyleSheet.create({
   pricingLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.textMuted,
     letterSpacing: 0.5,
   },
   currentPriceText: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#059669",
+    color: colors.success,
   },
   discountBadgeWrap: {
     alignSelf: "flex-start",
-    backgroundColor: "#DCFCE7",
+    backgroundColor: isDark ? "rgba(22, 163, 74, 0.2)" : "#DCFCE7",
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 6,
@@ -1771,7 +1792,7 @@ const styles = StyleSheet.create({
   discountBadgeText: {
     fontSize: 9,
     fontWeight: "800",
-    color: "#15803D",
+    color: isDark ? "#4ADE80" : "#15803D",
   },
   balanceRight: {
     alignItems: "flex-end",
@@ -1779,13 +1800,13 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.textMuted,
     letterSpacing: 0.5,
   },
   balanceValue: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   fundWalletLink: {
     fontSize: 11,
@@ -1796,9 +1817,9 @@ const styles = StyleSheet.create({
   errorBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
     padding: 12,
     borderRadius: 14,
     marginBottom: 14,
@@ -1806,57 +1827,57 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#DC2626",
+    color: isDark ? "#F87171" : "#DC2626",
     flex: 1,
     lineHeight: 16,
   },
   formSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 14,
   },
   sectionLabel: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#64748B",
+    color: colors.textMuted,
     letterSpacing: 0.6,
     marginBottom: 12,
   },
   pickerTrigger: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     borderRadius: 14,
     padding: 12,
   },
   pickerValue: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   pickerSub: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 1,
   },
   inputLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#64748B",
+    color: colors.textMuted,
     letterSpacing: 0.4,
     marginBottom: 6,
   },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.08)",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
@@ -1867,7 +1888,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     fontSize: 14,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
 
   /* Date Selector Trigger on Form */
@@ -1875,16 +1896,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.08)",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
   },
   dateSelectorBtnActive: {
     borderColor: colors.primary,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
   },
   dateSelectorInner: {
     flexDirection: "row",
@@ -1894,7 +1915,7 @@ const styles = StyleSheet.create({
   dateSelectorText: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   dateSelectorPlaceholder: {
     fontWeight: "500",
@@ -1908,7 +1929,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   datePickerModalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -1925,39 +1946,39 @@ const styles = StyleSheet.create({
   datePickerModalTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   datePreviewBox: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(59, 130, 246, 0.12)" : "#EFF6FF",
     borderRadius: 14,
     padding: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#BFDBFE",
     marginBottom: 14,
   },
   datePreviewSub: {
     fontSize: 9.5,
     fontWeight: "800",
-    color: "#3B82F6",
+    color: isDark ? "#60A5FA" : "#3B82F6",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   datePreviewMain: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#1E3A8A",
+    color: isDark ? "#93C5FD" : "#1E3A8A",
   },
   datePreviewIso: {
     fontSize: 11,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#60A5FA",
+    color: isDark ? "#60A5FA" : "#60A5FA",
     fontWeight: "700",
     marginTop: 2,
   },
   dateTabRow: {
     flexDirection: "row",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
     borderRadius: 12,
     padding: 4,
     marginBottom: 14,
@@ -1976,7 +1997,7 @@ const styles = StyleSheet.create({
   dateTabBtnText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   dateTabBtnTextActive: {
     color: "#FFFFFF",
@@ -1994,12 +2015,12 @@ const styles = StyleSheet.create({
   yearPill: {
     width: "23%",
     paddingVertical: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   yearPillActive: {
     backgroundColor: colors.primary,
@@ -2008,7 +2029,7 @@ const styles = StyleSheet.create({
   yearPillText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#334155",
+    color: colors.text,
   },
   yearPillTextActive: {
     color: "#FFFFFF",
@@ -2023,12 +2044,12 @@ const styles = StyleSheet.create({
   monthPill: {
     width: "31%",
     paddingVertical: 14,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   monthPillActive: {
     backgroundColor: colors.primary,
@@ -2037,7 +2058,7 @@ const styles = StyleSheet.create({
   monthPillText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#334155",
+    color: colors.text,
   },
   monthPillTextActive: {
     color: "#FFFFFF",
@@ -2051,12 +2072,12 @@ const styles = StyleSheet.create({
   dayPill: {
     width: "12.5%",
     aspectRatio: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   dayPillActive: {
     backgroundColor: colors.primary,
@@ -2065,7 +2086,7 @@ const styles = StyleSheet.create({
   dayPillText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#334155",
+    color: colors.text,
   },
   dayPillTextActive: {
     color: "#FFFFFF",
@@ -2086,32 +2107,32 @@ const styles = StyleSheet.create({
   dobPolicyWarning: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
     padding: 10,
     borderRadius: 12,
   },
   dobPolicyWarningText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#DC2626",
+    color: isDark ? "#F87171" : "#DC2626",
     flex: 1,
     lineHeight: 15,
   },
   dobPolicySuccess: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
     padding: 10,
     borderRadius: 12,
   },
   dobPolicySuccessText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#065F46",
+    color: isDark ? "#34D399" : "#065F46",
     flex: 1,
     lineHeight: 15,
   },
@@ -2144,7 +2165,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
@@ -2155,30 +2176,30 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: colors.surfaceBorder,
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   modalSub: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 1,
   },
   modalHeaderIconWrap: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#ECFDF5",
     alignItems: "center",
     justifyContent: "center",
   },
   modalSearchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 40,
@@ -2187,7 +2208,7 @@ const styles = StyleSheet.create({
   modalSearchInput: {
     flex: 1,
     fontSize: 13,
-    color: "#0F172A",
+    color: colors.text,
   },
   bankOptionRow: {
     flexDirection: "row",
@@ -2195,20 +2216,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: colors.surfaceBorder,
   },
   bankOptionRowSelected: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
     borderRadius: 12,
   },
   bankOptionName: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   bankOptionDesc: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 2,
   },
   categoryOptionRow: {
@@ -2217,46 +2238,46 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: colors.surfaceBorder,
   },
   categoryOptionRowSelected: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
     borderRadius: 12,
   },
   categoryOptionLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   categoryOptionPrice: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#059669",
+    color: colors.success,
     marginTop: 2,
   },
   policyItem: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   policyTitle: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 3,
   },
   policyDesc: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     lineHeight: 16,
   },
   reviewSummaryGrid: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     padding: 12,
     gap: 8,
   },
@@ -2268,19 +2289,19 @@ const styles = StyleSheet.create({
   reviewSummaryLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   reviewSummaryValue: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   affirmationCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     padding: 12,
     gap: 10,
@@ -2290,7 +2311,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: "#CBD5E1",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 1,
@@ -2301,7 +2322,7 @@ const styles = StyleSheet.create({
   },
   affirmationText: {
     fontSize: 11,
-    color: "#334155",
+    color: colors.textMuted,
     flex: 1,
     lineHeight: 16,
   },
@@ -2310,14 +2331,15 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.surface,
   },
   modalCancelBtnText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   modalConfirmBtn: {
     flex: 1,
@@ -2349,24 +2371,24 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 46,
     borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   secondaryActionText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.text,
   },
   successCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 24,
     padding: 24,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -2377,7 +2399,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
@@ -2385,24 +2407,24 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
     textAlign: "center",
   },
   successSubtitle: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     textAlign: "center",
     marginTop: 4,
     lineHeight: 18,
   },
   summaryBox: {
     width: "100%",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 16,
     padding: 14,
     marginTop: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   summaryRow: {
     flexDirection: "row",
@@ -2410,31 +2432,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: colors.surfaceBorder,
   },
   summaryLabel: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   summaryValue: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   timelineNoteBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
     padding: 10,
     borderRadius: 12,
     marginTop: 14,
   },
   timelineNoteText: {
     fontSize: 11,
-    color: "#065F46",
+    color: isDark ? "#34D399" : "#065F46",
     flex: 1,
     lineHeight: 15,
   },

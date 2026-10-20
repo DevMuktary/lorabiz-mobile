@@ -44,6 +44,7 @@ import { api, BASE_URL } from "../../lib/api";
 import { getAuthToken } from "../../lib/storage";
 import { uploadFileToServer } from "../../lib/upload";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
@@ -154,6 +155,8 @@ const DEFAULT_PROPRIETOR: ProprietorItem = {
 export default function BusinessNameScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const params = useLocalSearchParams<{ draftId?: string }>();
 
   // Current Step (0: Name Check, 1: Company Info, 2: Proprietors, 3: Documents, 4: Preview)
@@ -805,7 +808,7 @@ export default function BusinessNameScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Top Header */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -2280,6 +2283,8 @@ function DatePickerComponent({
   onClose: () => void;
   onConfirmDate: (dateStr: string) => void;
 }) {
+  const { colors, isDark } = useTheme();
+  const dateStyles = useMemo(() => getDateStyles(colors, isDark), [colors, isDark]);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(1995);
   const [selectedMonth, setSelectedMonth] = useState<number>(1);
@@ -2416,26 +2421,26 @@ function DatePickerComponent({
 // =========================================================================
 // STYLES
 // =========================================================================
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.background,
   },
   loadingScreen: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
   },
   topBar: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     paddingHorizontal: 16,
     paddingBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.surfaceBorder,
   },
   backBtn: {
     width: 36,
@@ -2443,7 +2448,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder,
   },
   headerCenter: {
     alignItems: "center",
@@ -2462,21 +2467,21 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 12,
     fontWeight: "600",
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   savePill: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.surfaceBorder,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 6,
   },
   savePillActive: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.2)" : "#DBEAFE",
   },
   savePillText: {
     fontSize: 10,
     fontWeight: "700",
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   historyBtn: {
     width: 36,
@@ -2484,15 +2489,15 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
   },
   stepTrackContainer: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     paddingVertical: 10,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: colors.surfaceBorder,
     justifyContent: "space-between",
   },
   stepTrackItem: {
@@ -2503,7 +2508,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F3F4F6",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -2535,16 +2540,16 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   stepContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
   },
   sectionHeader: {
     marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.surfaceBorder,
     paddingBottom: 12,
   },
   sectionHeaderBetween: {
@@ -2553,7 +2558,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.surfaceBorder,
     paddingBottom: 12,
   },
   sectionTitle: {
@@ -2563,7 +2568,7 @@ const styles = StyleSheet.create({
   },
   sectionDesc: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginTop: 4,
     lineHeight: 18,
   },
@@ -2581,9 +2586,9 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 48,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 14,
@@ -2672,9 +2677,9 @@ const styles = StyleSheet.create({
   },
   pickerTrigger: {
     height: 48,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     paddingHorizontal: 14,
     flexDirection: "row",
@@ -2682,7 +2687,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   pickerTriggerDisabled: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F9FAFB",
     opacity: 0.6,
   },
   pickerTriggerText: {
@@ -2698,15 +2703,15 @@ const styles = StyleSheet.create({
   ownershipCard: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     borderRadius: 14,
     padding: 14,
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   ownershipCardSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
   },
   ownershipRadio: {
     width: 18,
@@ -2773,9 +2778,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surfaceBorder,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
   },
   secondaryBtnText: {
     color: colors.text,
@@ -2789,14 +2794,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.surfaceBorder,
   },
   refInfoCard: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface,
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     marginBottom: 16,
   },
   refInfoLabel: {
@@ -2813,7 +2818,7 @@ const styles = StyleSheet.create({
   },
   refInfoNature: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   refInfoRef: {
@@ -2842,9 +2847,9 @@ const styles = StyleSheet.create({
   },
   proprietorCard: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     marginBottom: 12,
     overflow: "hidden",
   },
@@ -2853,7 +2858,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F9FAFB",
   },
   proprietorHeaderLeft: {
     flexDirection: "row",
@@ -2881,7 +2886,7 @@ const styles = StyleSheet.create({
   },
   proprietorSub: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   proprietorHeaderRight: {
     flexDirection: "row",
@@ -2894,17 +2899,17 @@ const styles = StyleSheet.create({
   proprietorBody: {
     padding: 14,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.surfaceBorder,
   },
   phoneInputRow: {
     flexDirection: "row",
   },
   countryCodeBtn: {
     height: 48,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F3F4F6",
     borderWidth: 1,
     borderRightWidth: 0,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     borderTopLeftRadius: 12,
     borderBottomLeftRadius: 12,
     paddingHorizontal: 10,
@@ -2925,15 +2930,15 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
   },
   genderPillActive: {
     borderColor: colors.primary,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
   },
   genderPillText: {
     fontSize: 13,
@@ -2946,7 +2951,7 @@ const styles = StyleSheet.create({
   minorNotice: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFBEB",
+    backgroundColor: isDark ? "rgba(245, 158, 11, 0.12)" : "#FFFBEB",
     padding: 10,
     borderRadius: 8,
     gap: 8,
@@ -2954,7 +2959,7 @@ const styles = StyleSheet.create({
   },
   minorNoticeText: {
     fontSize: 11,
-    color: "#92400E",
+    color: isDark ? "#FCD34D" : "#92400E",
     flex: 1,
     lineHeight: 16,
   },
@@ -2962,7 +2967,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.surfaceBorder,
   },
   docProprietorTitle: {
     fontSize: 15,
@@ -2972,11 +2977,11 @@ const styles = StyleSheet.create({
   },
   uploadBox: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   uploadBoxHeader: {
     flexDirection: "row",
@@ -2991,7 +2996,7 @@ const styles = StyleSheet.create({
   },
   uploadBoxSubtitle: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   viewDocLink: {
@@ -3005,7 +3010,7 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     borderColor: colors.primary,
     borderRadius: 10,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "#EFF6FF",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -3019,7 +3024,7 @@ const styles = StyleSheet.create({
   uploadedStateRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0FDF4",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#F0FDF4",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -3028,11 +3033,11 @@ const styles = StyleSheet.create({
   uploadedFileName: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#166534",
+    color: isDark ? "#34D399" : "#166534",
     flex: 1,
   },
   replaceBtn: {
-    backgroundColor: "#DCFCE7",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.25)" : "#DCFCE7",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
@@ -3040,14 +3045,14 @@ const styles = StyleSheet.create({
   replaceBtnText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#166534",
+    color: isDark ? "#34D399" : "#166534",
   },
   summaryCard: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     marginBottom: 14,
   },
   summaryCardHeader: {
@@ -3056,7 +3061,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: colors.surfaceBorder,
     paddingBottom: 6,
   },
   summaryCardTitle: {
@@ -3076,7 +3081,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontWeight: "600",
   },
   summaryValue: {
@@ -3092,7 +3097,7 @@ const styles = StyleSheet.create({
   },
   propSummaryItemBorder: {
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: colors.surfaceBorder,
     marginTop: 6,
     paddingTop: 8,
   },
@@ -3103,7 +3108,7 @@ const styles = StyleSheet.create({
   },
   propSummaryDetails: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   docsSummaryPillRow: {
@@ -3112,28 +3117,28 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   docStatusBadge: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surfaceBorder,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
   },
   docStatusBadgeOk: {
-    backgroundColor: "#DCFCE7",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7",
   },
   docStatusBadgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#166534",
+    color: isDark ? "#34D399" : "#166534",
   },
   tatCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(2, 132, 199, 0.12)" : "#EFF6FF",
     padding: 12,
     borderRadius: 12,
     gap: 12,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: isDark ? "rgba(2, 132, 199, 0.3)" : "#BFDBFE",
     marginBottom: 8,
   },
   tatTitle: {
@@ -3153,7 +3158,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   pickerModalContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
@@ -3165,7 +3170,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.surfaceBorder,
   },
   pickerModalTitle: {
     fontSize: 16,
@@ -3174,13 +3179,13 @@ const styles = StyleSheet.create({
   },
   pickerModalSub: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   modalSearchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F3F4F6",
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 40,
@@ -3202,10 +3207,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F9FAFB",
+    borderBottomColor: colors.surfaceBorder,
   },
   pickerListItemActive: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
     borderRadius: 8,
   },
   pickerListItemText: {
@@ -3236,18 +3241,18 @@ const styles = StyleSheet.create({
     height: "75%",
   },
   checkoutModalContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
   },
   checkoutPricingBox: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
   },
   pricingRow: {
     flexDirection: "row",
@@ -3257,7 +3262,7 @@ const styles = StyleSheet.create({
   },
   pricingLabel: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontWeight: "600",
   },
   pricingAmount: {
@@ -3266,14 +3271,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   deficitBox: {
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
     padding: 12,
     borderRadius: 10,
     marginBottom: 14,
   },
   deficitText: {
     fontSize: 12,
-    color: "#B91C1C",
+    color: isDark ? "#F87171" : "#B91C1C",
     lineHeight: 18,
   },
   paymentActionsContainer: {
@@ -3306,7 +3311,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "#EFF6FF",
   },
   fundWalletBtnText: {
     color: colors.primary,
@@ -3330,7 +3335,7 @@ const styles = StyleSheet.create({
   payOnlineSecondaryBtn: {
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surfaceBorder,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -3345,7 +3350,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const dateStyles = StyleSheet.create({
+const getDateStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -3354,11 +3359,13 @@ const dateStyles = StyleSheet.create({
     padding: 20,
   },
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     width: "100%",
     maxWidth: 340,
     padding: 16,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
   },
   header: {
     flexDirection: "row",
@@ -3373,7 +3380,7 @@ const dateStyles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: "row",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F3F4F6",
     borderRadius: 10,
     padding: 3,
     marginBottom: 12,
@@ -3385,7 +3392,7 @@ const dateStyles = StyleSheet.create({
     borderRadius: 8,
   },
   tabBtnActive: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   tabBtnText: {
     fontSize: 11,
@@ -3411,9 +3418,9 @@ const dateStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F9FAFB",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.surfaceBorder,
     minWidth: 60,
     alignItems: "center",
   },
@@ -3432,7 +3439,7 @@ const dateStyles = StyleSheet.create({
   footer: {
     marginTop: 14,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.surfaceBorder,
     paddingTop: 10,
   },
   confirmBtn: {

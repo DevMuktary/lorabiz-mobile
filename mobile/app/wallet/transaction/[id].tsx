@@ -29,7 +29,8 @@ import {
   ExternalLink,
 } from "lucide-react-native";
 import { useQuery } from "@tanstack/react-query";
-import { colors } from "../../../constants/theme";
+import { colors as defaultColors } from "../../../constants/theme";
+import { useTheme } from "../../../context/ThemeContext";
 import { api, BASE_URL } from "../../../lib/api";
 import { downloadAndSharePdf } from "../../../lib/pdf";
 import { getAuthToken } from "../../../lib/storage";
@@ -38,6 +39,7 @@ import { useAuth } from "../../../context/AuthContext";
 export default function TransactionDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const { token } = useAuth();
   const { id, reference } = useLocalSearchParams<{ id: string; reference?: string }>();
   const [copiedRef, setCopiedRef] = useState(false);
@@ -121,11 +123,11 @@ export default function TransactionDetailsScreen() {
     : "";
 
   return (
-    <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Top Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) + 4, backgroundColor: colors.surface, borderBottomColor: colors.surfaceBorder }]}>
         <TouchableOpacity
           onPress={() => {
             if (router.canGoBack()) {
@@ -134,7 +136,7 @@ export default function TransactionDetailsScreen() {
               router.replace("/(tabs)/activity");
             }
           }}
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           activeOpacity={0.7}
         >
@@ -142,15 +144,15 @@ export default function TransactionDetailsScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>Transaction Details</Text>
-          <Text style={styles.headerSubtitle} numberOfLines={1}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Transaction Details</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
             {tx?.reference ? `Ref: ${tx.reference}` : "Viewing Order Ledger"}
           </Text>
         </View>
 
         <TouchableOpacity
           onPress={handleShareReceipt}
-          style={styles.shareHeaderBtn}
+          style={[styles.shareHeaderBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           activeOpacity={0.7}
           disabled={!tx}
@@ -163,13 +165,13 @@ export default function TransactionDetailsScreen() {
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading transaction...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading transaction...</Text>
         </View>
       ) : !tx ? (
         <View style={styles.errorContainer}>
           <AlertCircle size={44} color={colors.error} />
-          <Text style={styles.errorTitle}>Transaction Not Found</Text>
-          <Text style={styles.errorDesc}>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Transaction Not Found</Text>
+          <Text style={[styles.errorDesc, { color: colors.textSecondary }]}>
             The requested transaction could not be loaded or may not exist on this account.
           </Text>
           <TouchableOpacity
@@ -195,7 +197,7 @@ export default function TransactionDetailsScreen() {
           }
         >
           {/* Hero Status Card */}
-          <View style={styles.heroCard}>
+          <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
             <View
               style={[
                 styles.heroIconCircle,
@@ -225,7 +227,7 @@ export default function TransactionDetailsScreen() {
               })}
             </Text>
 
-            <Text style={styles.heroDesc} numberOfLines={2}>
+            <Text style={[styles.heroDesc, { color: colors.text }]} numberOfLines={2}>
               {tx.description || (isCredit ? "Wallet Funding" : "Service Payment")}
             </Text>
 
@@ -271,18 +273,18 @@ export default function TransactionDetailsScreen() {
               </Text>
             </View>
 
-            <Text style={styles.heroTimestamp}>
+            <Text style={[styles.heroTimestamp, { color: colors.textMuted }]}>
               {formattedDate} {formattedTime ? `at ${formattedTime}` : ""}
             </Text>
           </View>
 
           {/* ACTIVE DISPUTE CARD (if present) */}
           {hasDispute && (
-            <View style={styles.disputeStatusCard}>
+            <View style={[styles.disputeStatusCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.disputeHeaderRow}>
                 <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                  <ShieldAlert size={18} color="#0F172A" style={{ marginRight: 8 }} />
-                  <Text style={styles.disputeTitle}>Dispute Case</Text>
+                  <ShieldAlert size={18} color={colors.text} style={{ marginRight: 8 }} />
+                  <Text style={[styles.disputeTitle, { color: colors.text }]}>Dispute Case</Text>
                 </View>
                 <View
                   style={[
@@ -293,13 +295,15 @@ export default function TransactionDetailsScreen() {
                           ? "#ECFDF5"
                           : tx.dispute?.status === "REJECTED"
                           ? "#FEF2F2"
+                          : isDark
+                          ? "rgba(255, 255, 255, 0.08)"
                           : "#F1F5F9",
                       borderColor:
                         tx.dispute?.status === "RESOLVED"
                           ? "#A7F3D0"
                           : tx.dispute?.status === "REJECTED"
                           ? "#FECACA"
-                          : "#E2E8F0",
+                          : colors.surfaceBorder,
                     },
                   ]}
                 >
@@ -312,7 +316,7 @@ export default function TransactionDetailsScreen() {
                             ? "#059669"
                             : tx.dispute?.status === "REJECTED"
                             ? "#DC2626"
-                            : "#334155",
+                            : colors.textSecondary,
                       },
                     ]}
                   >
@@ -326,32 +330,32 @@ export default function TransactionDetailsScreen() {
               </View>
 
               <View style={styles.disputeRow}>
-                <Text style={styles.disputeLabel}>Reason:</Text>
-                <Text style={styles.disputeValue}>{tx.dispute?.issueType}</Text>
+                <Text style={[styles.disputeLabel, { color: colors.textSecondary }]}>Reason:</Text>
+                <Text style={[styles.disputeValue, { color: colors.text }]}>{tx.dispute?.issueType}</Text>
               </View>
 
               {tx.dispute?.notes ? (
-                <View style={styles.disputeNotesBox}>
-                  <Text style={styles.disputeNotesLabel}>Your Submitted Note:</Text>
-                  <Text style={styles.disputeNotesText}>{tx.dispute.notes}</Text>
+                <View style={[styles.disputeNotesBox, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
+                  <Text style={[styles.disputeNotesLabel, { color: colors.textSecondary }]}>Your Submitted Note:</Text>
+                  <Text style={[styles.disputeNotesText, { color: colors.text }]}>{tx.dispute.notes}</Text>
                 </View>
               ) : null}
 
               {tx.dispute?.adminResponse ? (
-                <View style={styles.disputeAdminBox}>
-                  <Text style={styles.disputeAdminLabel}>Response from Review Team:</Text>
-                  <Text style={styles.disputeAdminText}>{tx.dispute.adminResponse}</Text>
+                <View style={[styles.disputeAdminBox, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.1)" : "#FFF1F2", borderColor: colors.surfaceBorderLight }]}>
+                  <Text style={[styles.disputeAdminLabel, { color: colors.primary }]}>Response from Review Team:</Text>
+                  <Text style={[styles.disputeAdminText, { color: colors.text }]}>{tx.dispute.adminResponse}</Text>
                 </View>
               ) : null}
 
-              <Text style={styles.disputeTurnaroundNotice}>
+              <Text style={[styles.disputeTurnaroundNotice, { color: colors.textSecondary }]}>
                 {isDisputePending
                   ? "Investigation window: 1 – 48 Working Hours."
                   : "Case recorded in audit logs."}
               </Text>
 
               <TouchableOpacity
-                style={styles.openCaseTimelineBtn}
+                style={[styles.openCaseTimelineBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" }]}
                 onPress={() =>
                   router.push({
                     pathname: "/wallet/transaction/dispute/[id]",
@@ -360,25 +364,25 @@ export default function TransactionDetailsScreen() {
                 }
                 activeOpacity={0.8}
               >
-                <Text style={styles.openCaseTimelineText}>View Dispute Discussion & Updates</Text>
-                <ExternalLink size={14} color="#0F172A" style={{ marginLeft: 6 }} />
+                <Text style={[styles.openCaseTimelineText, { color: colors.text }]}>View Dispute Discussion & Updates</Text>
+                <ExternalLink size={14} color={colors.text} style={{ marginLeft: 6 }} />
               </TouchableOpacity>
             </View>
           )}
 
           {/* Detailed Ledger Card */}
-          <View style={styles.ledgerCard}>
-            <Text style={styles.sectionHeaderTitle}>Transaction Information</Text>
+          <View style={[styles.ledgerCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+            <Text style={[styles.sectionHeaderTitle, { color: colors.text }]}>Transaction Information</Text>
 
             {/* Reference with Tap-to-Copy */}
-            <View style={styles.ledgerRow}>
-              <Text style={styles.ledgerLabel}>Reference</Text>
+            <View style={[styles.ledgerRow, { borderBottomColor: colors.surfaceBorder }]}>
+              <Text style={[styles.ledgerLabel, { color: colors.textSecondary }]}>Reference</Text>
               <TouchableOpacity
-                style={styles.copyPill}
+                style={[styles.copyPill, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" }]}
                 onPress={() => handleCopy(tx.reference)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.copyPillText} numberOfLines={1}>
+                <Text style={[styles.copyPillText, { color: colors.text }]} numberOfLines={1}>
                   {tx.reference}
                 </Text>
                 {copiedRef ? (
@@ -391,8 +395,8 @@ export default function TransactionDetailsScreen() {
 
             {/* Service Category */}
             {tx.serviceCategory ? (
-              <View style={styles.ledgerRow}>
-                <Text style={styles.ledgerLabel}>Category</Text>
+              <View style={[styles.ledgerRow, { borderBottomColor: colors.surfaceBorder }]}>
+                <Text style={[styles.ledgerLabel, { color: colors.textSecondary }]}>Category</Text>
                 <View style={styles.serviceCatPill}>
                   <Text style={styles.serviceCatText}>{tx.serviceCategory}</Text>
                 </View>
@@ -400,23 +404,23 @@ export default function TransactionDetailsScreen() {
             ) : null}
 
             {/* Type */}
-            <View style={styles.ledgerRow}>
-              <Text style={styles.ledgerLabel}>Payment Flow</Text>
-              <Text style={styles.ledgerValue}>
+            <View style={[styles.ledgerRow, { borderBottomColor: colors.surfaceBorder }]}>
+              <Text style={[styles.ledgerLabel, { color: colors.textSecondary }]}>Payment Flow</Text>
+              <Text style={[styles.ledgerValue, { color: colors.text }]}>
                 {isCredit ? "Wallet Credit" : "Wallet Debit"}
               </Text>
             </View>
 
             {/* Balances Before & After */}
-            <View style={styles.ledgerRow}>
-              <Text style={styles.ledgerLabel}>Balance Before</Text>
-              <Text style={styles.ledgerValue}>
+            <View style={[styles.ledgerRow, { borderBottomColor: colors.surfaceBorder }]}>
+              <Text style={[styles.ledgerLabel, { color: colors.textSecondary }]}>Balance Before</Text>
+              <Text style={[styles.ledgerValue, { color: colors.text }]}>
                 ₦{Number(tx.balanceBefore || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
               </Text>
             </View>
 
             <View style={[styles.ledgerRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.ledgerLabel}>Balance After</Text>
+              <Text style={[styles.ledgerLabel, { color: colors.textSecondary }]}>Balance After</Text>
               <Text style={[styles.ledgerValue, { fontWeight: "800", color: colors.text }]}>
                 ₦{Number(tx.balanceAfter || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
               </Text>
@@ -424,41 +428,41 @@ export default function TransactionDetailsScreen() {
           </View>
 
           {/* IN-APP DIGITAL RECEIPT CARD */}
-          <View style={styles.receiptCard}>
+          <View style={[styles.receiptCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
             <View style={styles.receiptTop}>
               <Receipt size={20} color={colors.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.receiptHeaderTitle}>Digital Receipt</Text>
+              <Text style={[styles.receiptHeaderTitle, { color: colors.text }]}>Digital Receipt</Text>
             </View>
 
-            <View style={styles.receiptDashedLine} />
+            <View style={[styles.receiptDashedLine, { borderColor: colors.surfaceBorder }]} />
 
             <View style={styles.receiptLineRow}>
-              <Text style={styles.receiptLineLabel}>Item / Description</Text>
-              <Text style={styles.receiptLineVal} numberOfLines={1}>
+              <Text style={[styles.receiptLineLabel, { color: colors.textSecondary }]}>Item / Description</Text>
+              <Text style={[styles.receiptLineVal, { color: colors.text }]} numberOfLines={1}>
                 {tx.description || (isCredit ? "Deposit" : "Service Order")}
               </Text>
             </View>
 
             <View style={styles.receiptLineRow}>
-              <Text style={styles.receiptLineLabel}>Channel</Text>
-              <Text style={styles.receiptLineVal}>Lorabiz Secure Wallet</Text>
+              <Text style={[styles.receiptLineLabel, { color: colors.textSecondary }]}>Channel</Text>
+              <Text style={[styles.receiptLineVal, { color: colors.text }]}>Lorabiz Secure Wallet</Text>
             </View>
 
             <View style={styles.receiptLineRow}>
-              <Text style={styles.receiptLineLabel}>Date & Time</Text>
-              <Text style={styles.receiptLineVal}>
+              <Text style={[styles.receiptLineLabel, { color: colors.textSecondary }]}>Date & Time</Text>
+              <Text style={[styles.receiptLineVal, { color: colors.text }]}>
                 {formattedDate} {formattedTime}
               </Text>
             </View>
 
             <View style={styles.receiptLineRow}>
-              <Text style={styles.receiptLineLabel}>Amount Paid</Text>
+              <Text style={[styles.receiptLineLabel, { color: colors.textSecondary }]}>Amount Paid</Text>
               <Text style={[styles.receiptLineVal, { fontWeight: "800", color: colors.text }]}>
                 ₦{Number(tx.amount || 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
               </Text>
             </View>
 
-            <View style={styles.receiptDashedLine} />
+            <View style={[styles.receiptDashedLine, { borderColor: colors.surfaceBorder }]} />
 
             {/* Action Buttons */}
             <View style={styles.receiptActionsRow}>

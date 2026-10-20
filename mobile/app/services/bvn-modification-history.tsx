@@ -12,6 +12,7 @@ import {
   Platform,
   Image,
   Dimensions,
+  StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -39,6 +40,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
@@ -105,6 +107,8 @@ type FilterTab = "ALL" | "PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED";
 export default function BvnModificationHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [records, setRecords] = useState<BvnModificationRecord[]>([]);
   const [stats, setStats] = useState<{
@@ -324,6 +328,10 @@ export default function BvnModificationHistoryScreen() {
 
   return (
     <View style={styles.screen}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
       {/* Top Navigation Bar */}
       <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
@@ -973,747 +981,750 @@ export default function BvnModificationHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
-    zIndex: 10,
-  },
-  backBtn: {
-    padding: 6,
-    borderRadius: 10,
-  },
-  headerTitle: {
-    fontSize: 16.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  refreshBtn: {
-    padding: 6,
-    borderRadius: 10,
-  },
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+      zIndex: 10,
+    },
+    backBtn: {
+      padding: 6,
+      borderRadius: 10,
+    },
+    headerTitle: {
+      fontSize: 16.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    refreshBtn: {
+      padding: 6,
+      borderRadius: 10,
+    },
 
-  /* Banner Card */
-  bannerWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  bannerCard: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  bannerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  badgeAgency: {
-    backgroundColor: "rgba(10, 49, 97, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeAgencyText: {
-    fontSize: 9.5,
-    fontWeight: "800",
-    color: colors.primary,
-    letterSpacing: 0.4,
-  },
-  turnaroundPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#DBEAFE",
-  },
-  turnaroundPillText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#1E3A8A",
-  },
-  bannerTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  bannerSubtitle: {
-    fontSize: 11.5,
-    color: colors.textMuted,
-    lineHeight: 16,
-  },
+    /* Banner Card */
+    bannerWrap: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 4,
+    },
+    bannerCard: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+    },
+    bannerHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 6,
+    },
+    badgeAgency: {
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.15)" : "rgba(10, 49, 97, 0.08)",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    badgeAgencyText: {
+      fontSize: 9.5,
+      fontWeight: "800",
+      color: colors.primary,
+      letterSpacing: 0.4,
+    },
+    turnaroundPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(30, 58, 138, 0.25)" : "#EFF6FF",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#DBEAFE",
+    },
+    turnaroundPillText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: isDark ? "#93C5FD" : "#1E3A8A",
+    },
+    bannerTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    bannerSubtitle: {
+      fontSize: 11.5,
+      color: colors.textMuted,
+      lineHeight: 16,
+    },
 
-  /* Search */
-  searchBarWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 42,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    paddingVertical: 0,
-  },
+    /* Search */
+    searchBarWrap: {
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      height: 42,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.text,
+      paddingVertical: 0,
+    },
 
-  /* Filter Pills */
-  filterPillsRow: {
-    paddingBottom: 8,
-  },
-  filterPillsScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterPill: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-  },
-  filterPillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterPillText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  filterPillTextActive: {
-    color: "#FFFFFF",
-  },
+    /* Filter Pills */
+    filterPillsRow: {
+      paddingBottom: 8,
+    },
+    filterPillsScroll: {
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    filterPill: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+    },
+    filterPillActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterPillText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textMuted,
+    },
+    filterPillTextActive: {
+      color: "#FFFFFF",
+    },
 
-  /* List & Cards */
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    gap: 12,
-  },
-  orderCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.07)",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1.5 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 1.5,
-      },
-    }),
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  enrollingBankBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(10, 49, 97, 0.06)",
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 6,
-    maxWidth: "65%",
-  },
-  enrollingBankBadgeText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  trackingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  trackingPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  trackingText: {
-    fontSize: 11,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    fontWeight: "700",
-    color: colors.text,
-  },
-  dateText: {
-    fontSize: 10.5,
-    color: colors.textMuted,
-  },
-  categoryWrap: {
-    marginBottom: 8,
-  },
-  categoryTitle: {
-    fontSize: 13.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  cardBody: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    padding: 10,
-    gap: 5,
-    marginBottom: 10,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  detailLabel: {
-    fontSize: 11.5,
-    color: colors.textMuted,
-  },
-  detailValue: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  applicantNameText: {
-    maxWidth: "65%",
-  },
-  fontMono: {
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  notesBox: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 6,
-    padding: 6,
-    marginTop: 4,
-    borderLeftWidth: 3,
-    borderLeftColor: "#3B82F6",
-  },
-  notesLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#1E40AF",
-    marginBottom: 1,
-  },
-  notesText: {
-    fontSize: 11,
-    color: "#1E3A8A",
-    lineHeight: 14,
-  },
-  rejectionBox: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 6,
-    padding: 6,
-    marginTop: 4,
-    borderLeftWidth: 3,
-    borderLeftColor: "#DC2626",
-  },
-  rejectionLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#991B1B",
-    marginBottom: 1,
-  },
-  rejectionText: {
-    fontSize: 11,
-    color: "#B91C1C",
-    lineHeight: 14,
-  },
+    /* List & Cards */
+    listContent: {
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      gap: 12,
+    },
+    orderCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.07)",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1.5 },
+          shadowOpacity: isDark ? 0.2 : 0.05,
+          shadowRadius: 3,
+        },
+        android: {
+          elevation: 1.5,
+        },
+      }),
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    enrollingBankBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.15)" : "rgba(10, 49, 97, 0.06)",
+      paddingHorizontal: 8,
+      paddingVertical: 3.5,
+      borderRadius: 6,
+      maxWidth: "65%",
+    },
+    enrollingBankBadgeText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    trackingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    trackingPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    trackingText: {
+      fontSize: 11,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      fontWeight: "700",
+      color: colors.text,
+    },
+    dateText: {
+      fontSize: 10.5,
+      color: colors.textMuted,
+    },
+    categoryWrap: {
+      marginBottom: 8,
+    },
+    categoryTitle: {
+      fontSize: 13.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    cardBody: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 10,
+      padding: 10,
+      gap: 5,
+      marginBottom: 10,
+    },
+    detailRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    detailLabel: {
+      fontSize: 11.5,
+      color: colors.textMuted,
+    },
+    detailValue: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    applicantNameText: {
+      maxWidth: "65%",
+    },
+    fontMono: {
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+    notesBox: {
+      backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
+      borderRadius: 6,
+      padding: 6,
+      marginTop: 4,
+      borderLeftWidth: 3,
+      borderLeftColor: "#3B82F6",
+    },
+    notesLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: isDark ? "#93C5FD" : "#1E40AF",
+      marginBottom: 1,
+    },
+    notesText: {
+      fontSize: 11,
+      color: isDark ? "#BFDBFE" : "#1E3A8A",
+      lineHeight: 14,
+    },
+    rejectionBox: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+      borderRadius: 6,
+      padding: 6,
+      marginTop: 4,
+      borderLeftWidth: 3,
+      borderLeftColor: "#DC2626",
+    },
+    rejectionLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: isDark ? "#F87171" : "#991B1B",
+      marginBottom: 1,
+    },
+    rejectionText: {
+      fontSize: 11,
+      color: isDark ? "#FCA5A5" : "#B91C1C",
+      lineHeight: 14,
+    },
 
-  /* Card Actions */
-  cardActionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 4,
-    gap: 8,
-  },
-  viewDetailsBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 6,
-  },
-  viewDetailsBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.primary,
-    marginRight: 2,
-  },
-  downloadSlipBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#059669",
-    paddingHorizontal: 12,
-    paddingVertical: 6.5,
-    borderRadius: 8,
-  },
-  downloadSlipBtnText: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
+    /* Card Actions */
+    cardActionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingTop: 4,
+      gap: 8,
+    },
+    viewDetailsBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 6,
+    },
+    viewDetailsBtnText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.primary,
+      marginRight: 2,
+    },
+    downloadSlipBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#059669",
+      paddingHorizontal: 12,
+      paddingVertical: 6.5,
+      borderRadius: 8,
+    },
+    downloadSlipBtnText: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
 
-  /* Status Badges */
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    fontSize: 9.5,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-  statusBadgeCompleted: {
-    backgroundColor: "#ECFDF5",
-  },
-  statusTextCompleted: {
-    color: "#059669",
-  },
-  statusBadgeProcessing: {
-    backgroundColor: "#F0F9FF",
-  },
-  statusTextProcessing: {
-    color: "#0284C7",
-  },
-  statusBadgePending: {
-    backgroundColor: "#FFFBEB",
-  },
-  statusTextPending: {
-    color: "#D97706",
-  },
-  statusBadgeRejected: {
-    backgroundColor: "#FEF2F2",
-  },
-  statusTextRejected: {
-    color: "#DC2626",
-  },
+    /* Status Badges */
+    statusBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 7,
+      paddingVertical: 2.5,
+      borderRadius: 12,
+    },
+    statusBadgeText: {
+      fontSize: 9.5,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+    },
+    statusBadgeCompleted: {
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
+    },
+    statusTextCompleted: {
+      color: isDark ? "#34D399" : "#059669",
+    },
+    statusBadgeProcessing: {
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.15)" : "#F0F9FF",
+    },
+    statusTextProcessing: {
+      color: isDark ? "#38BDF8" : "#0284C7",
+    },
+    statusBadgePending: {
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FFFBEB",
+    },
+    statusTextPending: {
+      color: isDark ? "#FBBF24" : "#D97706",
+    },
+    statusBadgeRejected: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+    },
+    statusTextRejected: {
+      color: isDark ? "#F87171" : "#DC2626",
+    },
 
-  /* Empty State */
-  emptyWrap: {
-    alignItems: "center",
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-  },
-  emptyIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#F1F5F9",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 12.5,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  newRequestBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  newRequestBtnText: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
+    /* Empty State */
+    emptyWrap: {
+      alignItems: "center",
+      paddingVertical: 48,
+      paddingHorizontal: 24,
+    },
+    emptyIconBox: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    emptySubtitle: {
+      fontSize: 12.5,
+      color: colors.textMuted,
+      textAlign: "center",
+      lineHeight: 18,
+      marginBottom: 16,
+    },
+    newRequestBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: 10,
+    },
+    newRequestBtnText: {
+      fontSize: 12.5,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
 
-  /* Offline Center Container */
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  offlineIconBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#F1F5F9",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  offlineTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  offlineSubtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 18,
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
+    /* Offline Center Container */
+    centerContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+    offlineIconBox: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 14,
+    },
+    offlineTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    offlineSubtitle: {
+      fontSize: 13,
+      color: colors.textMuted,
+      textAlign: "center",
+      lineHeight: 18,
+      marginBottom: 18,
+    },
+    retryBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: 10,
+    },
+    retryBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
 
-  /* Details Modal */
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "90%",
-    paddingBottom: Platform.OS === "ios" ? 36 : 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.06)",
-  },
-  modalTitle: {
-    fontSize: 16.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  modalSubtitle: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  modalCloseBtn: {
-    padding: 6,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 16,
-  },
-  modalScroll: {
-    paddingHorizontal: 20,
-    paddingTop: 14,
-  },
-  modalStatusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  modalTrackingPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  modalTrackingId: {
-    fontSize: 12.5,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    fontWeight: "700",
-    color: colors.text,
-  },
+    /* Details Modal */
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      justifyContent: "flex-end",
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      maxHeight: "90%",
+      paddingBottom: Platform.OS === "ios" ? 36 : 20,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+    },
+    modalTitle: {
+      fontSize: 16.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    modalSubtitle: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    modalCloseBtn: {
+      padding: 6,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      borderRadius: 16,
+    },
+    modalScroll: {
+      paddingHorizontal: 20,
+      paddingTop: 14,
+    },
+    modalStatusRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    modalTrackingPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+    },
+    modalTrackingId: {
+      fontSize: 12.5,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      fontWeight: "700",
+      color: colors.text,
+    },
 
-  /* Status Alerts */
-  statusAlertBox: {
-    flexDirection: "row",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  statusAlertPending: {
-    backgroundColor: "#FFFBEB",
-    borderLeftWidth: 4,
-    borderLeftColor: "#D97706",
-  },
-  statusAlertProcessing: {
-    backgroundColor: "#F0F9FF",
-    borderLeftWidth: 4,
-    borderLeftColor: "#0284C7",
-  },
-  statusAlertCompleted: {
-    backgroundColor: "#ECFDF5",
-    borderLeftWidth: 4,
-    borderLeftColor: "#059669",
-  },
-  statusAlertRejected: {
-    backgroundColor: "#FEF2F2",
-    borderLeftWidth: 4,
-    borderLeftColor: "#DC2626",
-  },
-  statusAlertTitle: {
-    fontSize: 12.5,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  statusAlertText: {
-    fontSize: 11.5,
-    color: "#475569",
-    lineHeight: 16,
-  },
+    /* Status Alerts */
+    statusAlertBox: {
+      flexDirection: "row",
+      padding: 12,
+      borderRadius: 10,
+      marginBottom: 16,
+    },
+    statusAlertPending: {
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FFFBEB",
+      borderLeftWidth: 4,
+      borderLeftColor: "#D97706",
+    },
+    statusAlertProcessing: {
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.15)" : "#F0F9FF",
+      borderLeftWidth: 4,
+      borderLeftColor: "#0284C7",
+    },
+    statusAlertCompleted: {
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
+      borderLeftWidth: 4,
+      borderLeftColor: "#059669",
+    },
+    statusAlertRejected: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+      borderLeftWidth: 4,
+      borderLeftColor: "#DC2626",
+    },
+    statusAlertTitle: {
+      fontSize: 12.5,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    statusAlertText: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      lineHeight: 16,
+    },
 
-  sectionHeader: {
-    marginBottom: 8,
-    marginTop: 6,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: colors.text,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
+    sectionHeader: {
+      marginBottom: 8,
+      marginTop: 6,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.text,
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
 
-  modalSummaryBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 14,
-  },
-  summaryItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 6,
-  },
-  summaryItemLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  summaryItemValue: {
-    fontSize: 12.5,
-    color: colors.text,
-  },
-  summaryItemDivider: {
-    height: 1,
-    backgroundColor: "#E2E8F0",
-  },
-  bankTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  bankTagText: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  inlineCopyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+    modalSummaryBox: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#E2E8F0",
+      marginBottom: 14,
+    },
+    summaryItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 6,
+    },
+    summaryItemLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    summaryItemValue: {
+      fontSize: 12.5,
+      color: colors.text,
+    },
+    summaryItemDivider: {
+      height: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#E2E8F0",
+    },
+    bankTag: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.15)" : "#EFF6FF",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    bankTagText: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    inlineCopyRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
 
-  /* Comparison Section */
-  comparisonContainer: {
-    gap: 10,
-    marginBottom: 14,
-  },
-  comparisonBlock: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    overflow: "hidden",
-  },
-  comparisonBlockHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  comparisonBlockTitle: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  comparisonGrid: {
-    flexDirection: "row",
-    padding: 10,
-    gap: 8,
-  },
-  comparisonColOld: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  comparisonColTagOld: {
-    fontSize: 8.5,
-    fontWeight: "800",
-    color: "#64748B",
-    marginBottom: 3,
-    letterSpacing: 0.4,
-  },
-  comparisonOldText: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "600",
-  },
-  comparisonColNew: {
-    flex: 1,
-    backgroundColor: "#F0FDF4",
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-  },
-  comparisonColTagNew: {
-    fontSize: 8.5,
-    fontWeight: "800",
-    color: "#16A34A",
-    marginBottom: 3,
-    letterSpacing: 0.4,
-  },
-  comparisonNewText: {
-    fontSize: 12,
-    color: "#15803D",
-    fontWeight: "700",
-  },
-  yearsDiffRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingBottom: 8,
-  },
-  yearsDiffText: {
-    fontSize: 10.5,
-    color: "#64748B",
-    fontWeight: "500",
-  },
+    /* Comparison Section */
+    comparisonContainer: {
+      gap: 10,
+      marginBottom: 14,
+    },
+    comparisonBlock: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+      overflow: "hidden",
+    },
+    comparisonBlockHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9",
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+    },
+    comparisonBlockTitle: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    comparisonGrid: {
+      flexDirection: "row",
+      padding: 10,
+      gap: 8,
+    },
+    comparisonColOld: {
+      flex: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      padding: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#E2E8F0",
+    },
+    comparisonColTagOld: {
+      fontSize: 8.5,
+      fontWeight: "800",
+      color: colors.textMuted,
+      marginBottom: 3,
+      letterSpacing: 0.4,
+    },
+    comparisonOldText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "600",
+    },
+    comparisonColNew: {
+      flex: 1,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.1)" : "#F0FDF4",
+      padding: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.25)" : "#BBF7D0",
+    },
+    comparisonColTagNew: {
+      fontSize: 8.5,
+      fontWeight: "800",
+      color: "#16A34A",
+      marginBottom: 3,
+      letterSpacing: 0.4,
+    },
+    comparisonNewText: {
+      fontSize: 12,
+      color: isDark ? "#34D399" : "#15803D",
+      fontWeight: "700",
+    },
+    yearsDiffRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingBottom: 8,
+    },
+    yearsDiffText: {
+      fontSize: 10.5,
+      color: colors.textMuted,
+      fontWeight: "500",
+    },
 
-  modalNoteCard: {
-    backgroundColor: "#F0F9FF",
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#BAE6FD",
-    marginBottom: 14,
-  },
-  modalNoteCardTitle: {
-    fontSize: 11.5,
-    fontWeight: "800",
-    color: "#0369A1",
-    marginBottom: 3,
-  },
-  modalNoteCardText: {
-    fontSize: 12,
-    color: "#0C4A6E",
-    lineHeight: 16,
-  },
+    modalNoteCard: {
+      backgroundColor: isDark ? "rgba(3, 105, 161, 0.15)" : "#F0F9FF",
+      borderRadius: 10,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(3, 105, 161, 0.3)" : "#BAE6FD",
+      marginBottom: 14,
+    },
+    modalNoteCardTitle: {
+      fontSize: 11.5,
+      fontWeight: "800",
+      color: isDark ? "#38BDF8" : "#0369A1",
+      marginBottom: 3,
+    },
+    modalNoteCardText: {
+      fontSize: 12,
+      color: isDark ? "#BAE6FD" : "#0C4A6E",
+      lineHeight: 16,
+    },
 
-  /* Slip / Snapshot Download Card */
-  slipDownloadCard: {
-    backgroundColor: "#F0FDF4",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-    marginBottom: 16,
-  },
-  slipDownloadHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    gap: 10,
-  },
-  slipIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#DCFCE7",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  slipCardTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#15803D",
-  },
-  slipCardSubtitle: {
-    fontSize: 11,
-    color: "#166534",
-    marginTop: 1,
-  },
-  modalDownloadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#059669",
-    paddingVertical: 11,
-    borderRadius: 10,
-  },
-  modalDownloadBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-});
+    /* Slip / Snapshot Download Card */
+    slipDownloadCard: {
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.1)" : "#F0FDF4",
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.25)" : "#BBF7D0",
+      marginBottom: 16,
+    },
+    slipDownloadHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 12,
+      gap: 10,
+    },
+    slipIconBox: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    slipCardTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: isDark ? "#34D399" : "#15803D",
+    },
+    slipCardSubtitle: {
+      fontSize: 11,
+      color: isDark ? "#6EE7B7" : "#166534",
+      marginTop: 1,
+    },
+    modalDownloadBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#059669",
+      paddingVertical: 11,
+      borderRadius: 10,
+    },
+    modalDownloadBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
+  });

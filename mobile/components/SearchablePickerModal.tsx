@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, X, Check } from "lucide-react-native";
-import { colors } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
 
 interface SearchablePickerModalProps {
   visible: boolean;
@@ -35,6 +35,8 @@ export default function SearchablePickerModal({
   onClose,
 }: SearchablePickerModalProps) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Clear search on open/close
@@ -85,17 +87,17 @@ export default function SearchablePickerModal({
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <X size={20} color="#64748B" />
+              <X size={18} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {/* Search Box */}
           <View style={styles.searchBox}>
-            <Search size={18} color="#94A3B8" style={styles.searchIcon} />
+            <Search size={18} color={colors.textMuted} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder={searchPlaceholder}
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -107,7 +109,7 @@ export default function SearchablePickerModal({
                 onPress={() => setSearchQuery("")}
                 style={styles.clearBtn}
               >
-                <X size={16} color="#94A3B8" />
+                <X size={16} color={colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -163,128 +165,131 @@ export default function SearchablePickerModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
-    justifyContent: "flex-end",
-  },
-  dismissOverlay: {
-    flex: 1,
-  },
-  sheetContainer: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    maxHeight: "82%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 24,
-  },
-  handleContainer: {
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  dragHandle: {
-    width: 44,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "#E2E8F0",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0F172A",
-    letterSpacing: -0.3,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 14,
-    marginHorizontal: 20,
-    marginVertical: 14,
-    paddingHorizontal: 14,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: "#0F172A",
-    fontWeight: "500",
-    height: "100%",
-  },
-  clearBtn: {
-    padding: 4,
-  },
-  list: {
-    flexShrink: 1,
-    maxHeight: "72%",
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 15,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 4,
-  },
-  itemRowSelected: {
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
-  },
-  itemText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#1E293B",
-  },
-  itemTextSelected: {
-    fontWeight: "800",
-    color: colors.primary,
-  },
-  checkIconWrapper: {
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#94A3B8",
-    fontWeight: "500",
-  },
-});
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: "rgba(15, 23, 42, 0.55)",
+      justifyContent: "flex-end",
+    },
+    dismissOverlay: {
+      flex: 1,
+    },
+    sheetContainer: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      maxHeight: "82%",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 16,
+      elevation: 24,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
+    },
+    handleContainer: {
+      alignItems: "center",
+      paddingTop: 12,
+      paddingBottom: 8,
+    },
+    dragHandle: {
+      width: 44,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#E2E8F0",
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 22,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+    },
+    titleText: {
+      fontSize: 18,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.3,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    searchBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+      borderRadius: 14,
+      marginHorizontal: 20,
+      marginVertical: 14,
+      paddingHorizontal: 14,
+      height: 48,
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 15,
+      color: colors.text,
+      fontWeight: "500",
+      height: "100%",
+    },
+    clearBtn: {
+      padding: 4,
+    },
+    list: {
+      flexShrink: 1,
+      maxHeight: "72%",
+    },
+    listContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 10,
+    },
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 15,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      marginBottom: 4,
+    },
+    itemRowSelected: {
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.14)" : "rgba(200, 45, 117, 0.08)",
+    },
+    itemText: {
+      fontSize: 15,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    itemTextSelected: {
+      fontWeight: "800",
+      color: colors.primary,
+    },
+    checkIconWrapper: {
+      width: 24,
+      height: 24,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyContainer: {
+      paddingVertical: 40,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyText: {
+      fontSize: 14,
+      color: colors.textMuted,
+      fontWeight: "500",
+    },
+  });

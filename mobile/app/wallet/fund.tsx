@@ -17,8 +17,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ShieldCheck, X, CheckCircle2 } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 
@@ -34,6 +35,7 @@ export default function FundWalletScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, wallet, updateWalletBalance, refreshWallet, refreshProfile } = useAuth();
+  const { colors, isDark } = useTheme();
 
   const [amount, setAmount] = useState("5000");
   const [isLoading, setIsLoading] = useState(false);
@@ -352,7 +354,7 @@ export default function FundWalletScreen() {
   // =========================================================================
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* BrandLoader for payment checkout initialization */}
         <BrandLoader visible={isLoading} message="Initializing secure checkout..." />
 
@@ -363,21 +365,21 @@ export default function FundWalletScreen() {
         />
 
         {/* Modal Grabber */}
-        <View style={[styles.grabberWrap, { paddingTop: Math.max(insets.top, Platform.OS === "ios" ? 8 : 14) }]}>
-          <View style={styles.modalGrabber} />
+        <View style={[styles.grabberWrap, { paddingTop: Math.max(insets.top, Platform.OS === "ios" ? 8 : 14), backgroundColor: colors.surface }]}>
+          <View style={[styles.modalGrabber, { backgroundColor: colors.surfaceBorder }]} />
         </View>
 
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.surfaceBorder }]}>
           <TouchableOpacity
-            style={styles.closeBtn}
+            style={[styles.closeBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}
             onPress={() => router.back()}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <X size={20} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Fund Wallet</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Fund Wallet</Text>
           <View style={{ width: 36 }} />
         </View>
 
@@ -393,9 +395,9 @@ export default function FundWalletScreen() {
             showsVerticalScrollIndicator={false}
           >
             {/* Current Balance */}
-            <View style={styles.balanceBox}>
-              <Text style={styles.balanceLabel}>Current Available Balance</Text>
-              <Text style={styles.balanceValue}>
+            <View style={[styles.balanceBox, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Current Available Balance</Text>
+              <Text style={[styles.balanceValue, { color: colors.text }]}>
                 ₦
                 {currentBalance.toLocaleString("en-NG", {
                   minimumFractionDigits: 2,
@@ -404,9 +406,9 @@ export default function FundWalletScreen() {
             </View>
 
             {/* Amount Input */}
-            <View style={styles.inputCard}>
+            <View style={[styles.inputCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.cardLabelRow}>
-                <Text style={styles.cardLabel}>Enter Amount (NGN)</Text>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Enter Amount (NGN)</Text>
                 <TouchableOpacity
                   onPress={Keyboard.dismiss}
                   style={styles.doneBtn}
@@ -419,7 +421,7 @@ export default function FundWalletScreen() {
               <View style={styles.amountInputRow}>
                 <Text style={styles.nairaPrefix}>₦</Text>
                 <TextInput
-                  style={styles.amountInput}
+                  style={[styles.amountInput, { color: colors.text }]}
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="number-pad"
@@ -432,14 +434,21 @@ export default function FundWalletScreen() {
             </View>
 
             {/* Preset Amounts */}
-            <Text style={styles.presetHeading}>Quick Select</Text>
+            <Text style={[styles.presetHeading, { color: colors.text }]}>Quick Select</Text>
             <View style={styles.presetGrid}>
               {PRESET_AMOUNTS.map((val) => {
                 const isSelected = amount === String(val);
                 return (
                   <TouchableOpacity
                     key={val}
-                    style={[styles.presetBtn, isSelected && styles.presetBtnActive]}
+                    style={[
+                      styles.presetBtn,
+                      {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : colors.surface,
+                        borderColor: colors.surfaceBorder,
+                      },
+                      isSelected && styles.presetBtnActive,
+                    ]}
                     onPress={() => {
                       setAmount(String(val));
                       Keyboard.dismiss();
@@ -449,6 +458,7 @@ export default function FundWalletScreen() {
                     <Text
                       style={[
                         styles.presetBtnText,
+                        { color: colors.textSecondary },
                         isSelected && styles.presetBtnTextActive,
                       ]}
                     >
@@ -460,9 +470,9 @@ export default function FundWalletScreen() {
             </View>
 
             {/* Security Info */}
-            <View style={styles.securityBadge}>
+            <View style={[styles.securityBadge, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <ShieldCheck size={18} color={colors.success} style={{ marginRight: 8 }} />
-              <Text style={styles.securityText}>
+              <Text style={[styles.securityText, { color: colors.textSecondary }]}>
                 Processed securely via KoraPay Gateway.
               </Text>
             </View>

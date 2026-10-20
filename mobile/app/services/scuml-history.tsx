@@ -35,7 +35,7 @@ import {
   Wallet,
 } from "lucide-react-native";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
@@ -63,6 +63,8 @@ type FilterStatus = "ALL" | "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 export default function ScumlHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [history, setHistory] = useState<ScumlRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -216,7 +218,10 @@ export default function ScumlHistoryScreen() {
   if (isLoading) {
     return (
       <View style={styles.screen}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={colors.surface}
+        />
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={20} color={colors.text} />
@@ -231,7 +236,10 @@ export default function ScumlHistoryScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
 
       {/* Top App Bar */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -692,449 +700,452 @@ export default function ScumlHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topBarTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  newAppBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  newAppBtnText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  listContent: {
-    padding: 16,
-  },
-  bannerCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  bannerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  bannerLogoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  bannerLogo: {
-    width: 32,
-    height: 32,
-  },
-  bannerTextCol: {
-    flex: 1,
-  },
-  bannerTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  bannerSubtitle: {
-    fontSize: 11,
-    color: colors.textMuted,
-    lineHeight: 15,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingHorizontal: 12,
-    height: 44,
-    marginBottom: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    fontWeight: "600",
-  },
-  clearSearchBtn: {
-    padding: 4,
-  },
-  filterScroll: {
-    marginBottom: 16,
-  },
-  filterScrollContent: {
-    gap: 8,
-  },
-  filterPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  filterPillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterPillText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textMuted,
-  },
-  filterPillTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-  },
-  recordCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  companyName: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  typeBadgeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  typeBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textMuted,
-    marginLeft: 4,
-  },
-  statusPending: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusPendingText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#D97706",
-  },
-  statusProcessing: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusProcessingText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#2563EB",
-  },
-  statusCompleted: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ECFDF5",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusCompletedText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#059669",
-  },
-  statusFailed: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF2F2",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusFailedText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#DC2626",
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#F1F5F9",
-    marginVertical: 12,
-  },
-  cardMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  dateText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  feeText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  cardActionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  viewDocsBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingVertical: 8,
-  },
-  viewDocsBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  downloadBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 8,
-  },
-  downloadBtnText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  viewReasonBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    borderRadius: 10,
-    paddingVertical: 8,
-  },
-  viewReasonBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#DC2626",
-  },
-  emptyStateContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 16,
-    marginBottom: 16,
-  },
-  emptyActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  emptyActionBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.6)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    maxHeight: "85%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  docsListContainer: {
-    gap: 10,
-    marginBottom: 16,
-  },
-  docItemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  docItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  docItemTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  docItemMeta: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  openFileBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: "#EEF2FF",
-  },
-  openFileBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  failedBox: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    marginBottom: 12,
-  },
-  failedReasonLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#991B1B",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  failedReasonText: {
-    fontSize: 13,
-    color: "#7F1D1D",
-    lineHeight: 18,
-    fontWeight: "600",
-  },
-  refundNoticeBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ECFDF5",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#A7F3D0",
-    marginBottom: 16,
-  },
-  refundNoticeText: {
-    flex: 1,
-    fontSize: 12,
-    color: "#065F46",
-    fontWeight: "600",
-    lineHeight: 16,
-  },
-  modalCloseBtn: {
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalCloseBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.text,
-  },
-});
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surfaceVariant,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    topBarTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    newAppBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+    },
+    newAppBtnText: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    listContent: {
+      padding: 16,
+    },
+    bannerCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    bannerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    bannerLogoBox: {
+      width: 50,
+      height: 50,
+      borderRadius: 16,
+      backgroundColor: "#FFFFFF",
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    bannerLogo: {
+      width: 38,
+      height: 38,
+      borderRadius: 8,
+    },
+    bannerTextCol: {
+      flex: 1,
+    },
+    bannerTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    bannerSubtitle: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      lineHeight: 15,
+    },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 12,
+      height: 44,
+      marginBottom: 12,
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.text,
+      fontWeight: "600",
+    },
+    clearSearchBtn: {
+      padding: 4,
+    },
+    filterScroll: {
+      marginBottom: 16,
+    },
+    filterScrollContent: {
+      gap: 8,
+    },
+    filterPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceVariant,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterPillActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterPillText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    filterPillTextActive: {
+      color: "#FFFFFF",
+      fontWeight: "800",
+    },
+    recordCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+    },
+    companyName: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    typeBadgeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    typeBadgeText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textSecondary,
+      marginLeft: 4,
+    },
+    statusPending: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(217, 119, 6, 0.2)" : "#FEF3C7",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    statusPendingText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: isDark ? "#FBBF24" : "#D97706",
+    },
+    statusProcessing: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(37, 99, 235, 0.2)" : "#EFF6FF",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    statusProcessingText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: isDark ? "#60A5FA" : "#2563EB",
+    },
+    statusCompleted: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(5, 150, 105, 0.2)" : "#ECFDF5",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    statusCompletedText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: isDark ? "#34D399" : "#059669",
+    },
+    statusFailed: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.2)" : "#FEF2F2",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    statusFailedText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: isDark ? "#F87171" : "#DC2626",
+    },
+    cardDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 12,
+    },
+    cardMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
+    dateText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textTertiary,
+    },
+    feeText: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    cardActionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    viewDocsBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.surfaceVariant,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingVertical: 8,
+    },
+    viewDocsBtnText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    downloadBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingVertical: 8,
+    },
+    downloadBtnText: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    viewReasonBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEF2F2",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(220, 38, 38, 0.3)" : "#FECACA",
+      borderRadius: 10,
+      paddingVertical: 8,
+    },
+    viewReasonBtnText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: isDark ? "#F87171" : "#DC2626",
+    },
+    emptyStateContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 48,
+      paddingHorizontal: 24,
+    },
+    emptyTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    emptySubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 16,
+      marginBottom: 16,
+    },
+    emptyActionBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 12,
+    },
+    emptyActionBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(15, 23, 42, 0.6)",
+      justifyContent: "flex-end",
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 20,
+      paddingHorizontal: 20,
+      maxHeight: "85%",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    modalSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    docsListContainer: {
+      gap: 10,
+      marginBottom: 16,
+    },
+    docItemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    docItemLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+    },
+    docItemTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    docItemMeta: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    openFileBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EEF2FF",
+    },
+    openFileBtnText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    failedBox: {
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEF2F2",
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(220, 38, 38, 0.3)" : "#FECACA",
+      marginBottom: 12,
+    },
+    failedReasonLabel: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: isDark ? "#F87171" : "#991B1B",
+      marginBottom: 4,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    failedReasonText: {
+      fontSize: 13,
+      color: isDark ? "#FCA5A5" : "#7F1D1D",
+      lineHeight: 18,
+      fontWeight: "600",
+    },
+    refundNoticeBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(5, 150, 105, 0.15)" : "#ECFDF5",
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(5, 150, 105, 0.3)" : "#A7F3D0",
+      marginBottom: 16,
+    },
+    refundNoticeText: {
+      flex: 1,
+      fontSize: 12,
+      color: isDark ? "#34D399" : "#065F46",
+      fontWeight: "600",
+      lineHeight: 16,
+    },
+    modalCloseBtn: {
+      height: 48,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceVariant,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalCloseBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+  });

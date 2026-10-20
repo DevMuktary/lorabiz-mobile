@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -38,6 +38,7 @@ import { api, BASE_URL } from "../../lib/api";
 import { getAuthToken } from "../../lib/storage";
 import { uploadFileToServer } from "../../lib/upload";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
@@ -75,6 +76,8 @@ const REG_OPTIONS: RegistrationOption[] = [
 export default function ScumlScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   // Loading & service status
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -391,7 +394,7 @@ export default function ScumlScreen() {
   if (isInitialLoading) {
     return (
       <View style={styles.screen}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={20} color={colors.text} />
@@ -407,7 +410,7 @@ export default function ScumlScreen() {
   if (!isActive) {
     return (
       <View style={styles.screen}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={20} color={colors.text} />
@@ -416,11 +419,13 @@ export default function ScumlScreen() {
           <View style={{ width: 36 }} />
         </View>
         <View style={styles.unavailableContainer}>
-          <Image
-            source={require("../../assets/scuml.png")}
-            style={[styles.unavailableLogo, { opacity: 0.5 }]}
-            resizeMode="contain"
-          />
+          <View style={styles.unavailableLogoBox}>
+            <Image
+              source={require("../../assets/scuml.png")}
+              style={[styles.unavailableLogo, { opacity: 0.8 }]}
+              resizeMode="contain"
+            />
+          </View>
           <Text style={styles.unavailableTitle}>Service Temporarily Unavailable</Text>
           <Text style={styles.unavailableText}>
             {maintenanceMsg ||
@@ -441,7 +446,7 @@ export default function ScumlScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Top App Bar */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -987,10 +992,10 @@ export default function ScumlScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   topBar: {
     flexDirection: "row",
@@ -998,15 +1003,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: colors.surfaceBorder,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1021,7 +1026,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EEF2FF",
   },
   historyBtnText: {
     fontSize: 12,
@@ -1035,12 +1040,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   heroCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   heroRow: {
     flexDirection: "row",
@@ -1048,19 +1053,21 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   heroLogoBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
   },
   heroLogo: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
+    borderRadius: 8,
   },
   heroTextCol: {
     flex: 1,
@@ -1081,26 +1088,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
+    borderTopColor: colors.surfaceBorder,
     paddingTop: 12,
   },
   turnaroundPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   turnaroundText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#334155",
+    color: colors.textMuted,
   },
   pricePill: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EEF2FF",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1111,12 +1118,12 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   sectionHeader: {
     fontSize: 14,
@@ -1138,21 +1145,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     borderRadius: 14,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   typeOptionCardActive: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "#EEF2FF",
     borderColor: colors.primary,
   },
   typeIconBox: {
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -1188,9 +1195,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   inputContainer: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     paddingHorizontal: 14,
     height: 48,
@@ -1198,7 +1205,7 @@ const styles = StyleSheet.create({
   },
   inputContainerError: {
     borderColor: "#EF4444",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
   },
   textInput: {
     fontSize: 13,
@@ -1235,15 +1242,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.5,
     borderStyle: "dashed",
-    borderColor: "#CBD5E1",
-    backgroundColor: "#F8FAFC",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#CBD5E1",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,
   },
   uploadBoxError: {
     borderColor: "#EF4444",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
   },
   uploadIdleRow: {
     flexDirection: "row",
@@ -1268,8 +1275,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#A7F3D0",
-    backgroundColor: "#ECFDF5",
+    borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
@@ -1278,39 +1285,39 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: "700",
-    color: "#065F46",
+    color: isDark ? "#34D399" : "#065F46",
   },
   replaceBtn: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
     marginLeft: 8,
   },
   replaceBtnText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#059669",
+    color: isDark ? "#34D399" : "#059669",
   },
   consentCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 14,
     padding: 14,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   checkbox: {
     width: 20,
     height: 20,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: "#CBD5E1",
-    backgroundColor: "#FFFFFF",
+    borderColor: colors.surfaceBorder,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
@@ -1357,7 +1364,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 20,
@@ -1376,10 +1383,10 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   summaryBox: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     padding: 14,
     marginBottom: 14,
   },
@@ -1400,24 +1407,24 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.surfaceBorder,
     marginVertical: 10,
   },
   insufficientWarning: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
     marginBottom: 14,
   },
   insufficientWarningText: {
     flex: 1,
     fontSize: 11,
     fontWeight: "600",
-    color: "#DC2626",
+    color: isDark ? "#F87171" : "#DC2626",
     lineHeight: 15,
   },
   modalActionsRow: {
@@ -1428,7 +1435,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 12,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1457,10 +1464,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  unavailableLogo: {
-    width: 64,
-    height: 64,
+  unavailableLogoBox: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 16,
+  },
+  unavailableLogo: {
+    width: 54,
+    height: 54,
+    borderRadius: 10,
   },
   unavailableTitle: {
     fontSize: 18,

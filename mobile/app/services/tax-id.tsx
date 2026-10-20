@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -33,6 +33,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
@@ -81,6 +82,8 @@ function TaxDatePickerModal({
   onClose: () => void;
   onSelectDate: (formattedDate: string) => void;
 }) {
+  const { colors, isDark } = useTheme();
+  const datePickerStyles = useMemo(() => getDatePickerStyles(colors, isDark), [colors, isDark]);
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1939 }, (_, i) => currentYear - i);
 
@@ -260,6 +263,9 @@ function CategoryPickerModal({
   onClose: () => void;
   onSelectCategory: (cat: string) => void;
 }) {
+  const { colors, isDark } = useTheme();
+  const datePickerStyles = useMemo(() => getDatePickerStyles(colors, isDark), [colors, isDark]);
+  const categoryPickerStyles = useMemo(() => getCategoryPickerStyles(colors, isDark), [colors, isDark]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={datePickerStyles.backdrop}>
@@ -311,6 +317,8 @@ export default function TaxIdScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   // Screen Initial Loading State (BrandLoader until prices are resolved)
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -539,7 +547,7 @@ export default function TaxIdScreen() {
   if (isInitialLoading) {
     return (
       <View style={styles.screen}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={20} color={colors.text} />
@@ -554,7 +562,7 @@ export default function TaxIdScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Top App Bar */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -1051,10 +1059,10 @@ export default function TaxIdScreen() {
 // ==========================================
 // STYLES
 // ==========================================
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   topBar: {
     flexDirection: "row",
@@ -1062,22 +1070,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: colors.surfaceBorder,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
   topBarTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   historyBtn: {
     flexDirection: "row",
@@ -1085,7 +1093,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EEF2FF",
   },
   historyBtnText: {
     fontSize: 12,
@@ -1100,11 +1108,11 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   heroCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.03,
@@ -1118,19 +1126,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heroLogoBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
   },
   heroLogo: {
-    width: 34,
-    height: 34,
+    width: 38,
+    height: 38,
+    borderRadius: 8,
   },
   heroTextCol: {
     flex: 1,
@@ -1138,12 +1148,12 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 2,
   },
   heroSubtitle: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     lineHeight: 16,
   },
   turnaroundPill: {
@@ -1153,21 +1163,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   turnaroundText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#334155",
+    color: colors.textMuted,
   },
   passCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: isDark ? "rgba(234, 88, 12, 0.12)" : "#FFF7ED",
     borderWidth: 1,
-    borderColor: "#FED7AA",
+    borderColor: isDark ? "rgba(234, 88, 12, 0.3)" : "#FED7AA",
     borderRadius: 14,
     padding: 12,
     marginBottom: 16,
@@ -1176,7 +1186,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "#FFEDD5",
+    backgroundColor: isDark ? "rgba(234, 88, 12, 0.25)" : "#FFEDD5",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
@@ -1193,7 +1203,7 @@ const styles = StyleSheet.create({
   passTitle: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#9A3412",
+    color: isDark ? "#FB923C" : "#9A3412",
     marginRight: 6,
   },
   passTag: {
@@ -1210,14 +1220,14 @@ const styles = StyleSheet.create({
   },
   passDesc: {
     fontSize: 11,
-    color: "#C2410C",
+    color: isDark ? "#FDBA74" : "#C2410C",
     lineHeight: 14,
   },
   toggleTrack: {
     width: 36,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#CBD5E1",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#CBD5E1",
     padding: 2,
     justifyContent: "center",
   },
@@ -1239,13 +1249,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#475569",
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: "#E2E8F0",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#E2E8F0",
     borderRadius: 14,
     padding: 3,
     marginBottom: 14,
@@ -1259,7 +1269,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
   },
   tabButtonActive: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -1268,7 +1278,7 @@ const styles = StyleSheet.create({
   tabButtonText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   tabButtonTextActive: {
     color: colors.primary,
@@ -1278,11 +1288,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 16,
   },
   feeLeft: {
@@ -1291,7 +1301,7 @@ const styles = StyleSheet.create({
   feeLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -1303,7 +1313,7 @@ const styles = StyleSheet.create({
   feeAmount: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
     marginRight: 6,
   },
   freePassPill: {
@@ -1331,24 +1341,24 @@ const styles = StyleSheet.create({
   walletBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   walletLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textMuted,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.02,
@@ -1358,12 +1368,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 2,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     marginBottom: 16,
   },
   fieldGroup: {
@@ -1378,46 +1388,46 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#334155",
+    color: colors.text,
     marginBottom: 6,
   },
   fieldCounter: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   inputContainer: {
     height: 48,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     paddingHorizontal: 12,
     justifyContent: "center",
   },
   inputContainerError: {
     borderColor: "#EF4444",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
   },
   textInput: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
   pickerTrigger: {
     height: 48,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     borderRadius: 12,
     paddingHorizontal: 12,
   },
   pickerTriggerText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
   errorText: {
     fontSize: 11,
@@ -1429,11 +1439,11 @@ const styles = StyleSheet.create({
   consentCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 8,
   },
   checkbox: {
@@ -1441,7 +1451,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: "#CBD5E1",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
@@ -1454,7 +1464,7 @@ const styles = StyleSheet.create({
   consentText: {
     flex: 1,
     fontSize: 12,
-    color: "#475569",
+    color: colors.textMuted,
     lineHeight: 18,
   },
   submitBtn: {
@@ -1484,7 +1494,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -1504,14 +1514,14 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   summaryBox: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 16,
   },
   summaryRow: {
@@ -1522,17 +1532,17 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   summaryValue: {
     fontSize: 12,
-    color: "#0F172A",
+    color: colors.text,
     fontWeight: "600",
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.surfaceBorder,
     marginVertical: 4,
   },
   confirmModalActions: {
@@ -1544,15 +1554,15 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   modalCancelBtnText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textMuted,
   },
   modalConfirmBtn: {
     flex: 2,
@@ -1572,7 +1582,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const datePickerStyles = StyleSheet.create({
+const getDatePickerStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(15, 23, 42, 0.65)",
@@ -1583,27 +1593,29 @@ const datePickerStyles = StyleSheet.create({
   container: {
     width: "100%",
     maxWidth: 380,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 24,
     padding: 20,
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: colors.surfaceBorder,
     paddingBottom: 12,
     marginBottom: 12,
   },
   title: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   subtitle: {
     fontSize: 12,
@@ -1615,13 +1627,13 @@ const datePickerStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
   tabRow: {
     flexDirection: "row",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
     borderRadius: 12,
     padding: 3,
     marginBottom: 14,
@@ -1633,7 +1645,7 @@ const datePickerStyles = StyleSheet.create({
     borderRadius: 9,
   },
   tabBtnActive: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -1642,7 +1654,7 @@ const datePickerStyles = StyleSheet.create({
   tabBtnText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   tabBtnTextActive: {
     color: colors.primary,
@@ -1674,9 +1686,9 @@ const datePickerStyles = StyleSheet.create({
     width: "31%",
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     marginBottom: 8,
   },
@@ -1684,9 +1696,9 @@ const datePickerStyles = StyleSheet.create({
     width: "48%",
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     marginBottom: 8,
   },
@@ -1694,9 +1706,9 @@ const datePickerStyles = StyleSheet.create({
     width: "18%",
     aspectRatio: 1,
     borderRadius: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
@@ -1708,7 +1720,7 @@ const datePickerStyles = StyleSheet.create({
   pillItemText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   pillItemTextActive: {
     color: "#FFFFFF",
@@ -1729,7 +1741,7 @@ const datePickerStyles = StyleSheet.create({
   },
 });
 
-const categoryPickerStyles = StyleSheet.create({
+const getCategoryPickerStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   itemRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1737,29 +1749,29 @@ const categoryPickerStyles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     marginBottom: 6,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   itemRowActive: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EEF2FF",
     borderColor: colors.primary,
   },
   iconBox: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   itemText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   itemTextActive: {
     color: colors.primary,

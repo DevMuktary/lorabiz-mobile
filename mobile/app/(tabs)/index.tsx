@@ -720,8 +720,17 @@ export default function HomeScreen() {
               <View
                 style={[
                   styles.gridIconBox,
-                  { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)" },
-                  svc.isMore && styles.moreIconBox,
+                  svc.logo
+                    ? {
+                        backgroundColor: "#FFFFFF",
+                        borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.06)",
+                      }
+                    : svc.isMore
+                    ? styles.moreIconBox
+                    : {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+                        borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                      },
                 ]}
               >
                 {svc.isMore ? (
@@ -1143,9 +1152,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(200, 45, 117, 0.25)",
   },
   gridAgencyLogo: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   gridLabel: {
     fontSize: 11,

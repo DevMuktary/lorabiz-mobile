@@ -31,7 +31,7 @@ import {
   ShieldAlert,
 } from "lucide-react-native";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
@@ -60,6 +60,8 @@ type FilterStatus = "ALL" | "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 export default function TaxIdHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [history, setHistory] = useState<TaxIdRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -343,7 +345,10 @@ export default function TaxIdHistoryScreen() {
   if (isLoading) {
     return (
       <View style={styles.screen}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={colors.surface}
+        />
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={20} color={colors.text} />
@@ -358,7 +363,10 @@ export default function TaxIdHistoryScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
 
       {/* Top Header */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -505,397 +513,398 @@ export default function TaxIdHistoryScreen() {
 // ==========================================
 // STYLES
 // ==========================================
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topBarTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  newBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-  },
-  newBtnText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  bannerWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  bannerCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  bannerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  badgeAgency: {
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  badgeAgencyText: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: "#475569",
-    letterSpacing: 0.5,
-  },
-  turnaroundPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  turnaroundPillText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#334155",
-  },
-  bannerTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: 2,
-  },
-  bannerSubtitle: {
-    fontSize: 12,
-    color: "#64748B",
-    lineHeight: 16,
-  },
-  searchBarWrap: {
-    paddingHorizontal: 16,
-    marginTop: 10,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    height: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
-  filterPillsRow: {
-    marginVertical: 10,
-  },
-  filterPillsScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterPill: {
-    paddingHorizontal: 13,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  filterPillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterPillText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#64748B",
-  },
-  filterPillTextActive: {
-    color: "#FFFFFF",
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  typeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  typeIconBox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 6,
-  },
-  typeIconBoxInd: {
-    backgroundColor: "#E0F2FE",
-  },
-  typeIconBoxCorp: {
-    backgroundColor: "#EEF2FF",
-  },
-  typeLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#475569",
-    letterSpacing: 0.5,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeCompleted: {
-    backgroundColor: "#ECFDF5",
-  },
-  badgeProcessing: {
-    backgroundColor: "#EFF6FF",
-  },
-  badgePending: {
-    backgroundColor: "#FEF3C7",
-  },
-  badgeFailed: {
-    backgroundColor: "#FEF2F2",
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  badgeTextCompleted: {
-    color: "#059669",
-  },
-  badgeTextProcessing: {
-    color: "#2563EB",
-  },
-  badgeTextPending: {
-    color: "#D97706",
-  },
-  badgeTextFailed: {
-    color: "#DC2626",
-  },
-  entityRow: {
-    marginBottom: 8,
-  },
-  entityName: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: 2,
-  },
-  entitySub: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "500",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
-  },
-  refButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  refText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#64748B",
-  },
-  dateText: {
-    fontSize: 11,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-  resultBox: {
-    marginTop: 10,
-    backgroundColor: "#F0FDF4",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-  },
-  resultTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 4,
-  },
-  resultLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#166534",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  copyPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-  },
-  copyPillText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: colors.primary,
-  },
-  copyPillTextCopied: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#059669",
-  },
-  tinNumberText: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#15803D",
-    letterSpacing: 1.5,
-    marginVertical: 4,
-  },
-  directDownloadBtn: {
-    height: 40,
-    backgroundColor: "#15803D",
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  directDownloadBtnText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  failedBox: {
-    marginTop: 10,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  failedTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#B91C1C",
-  },
-  failedText: {
-    fontSize: 11,
-    color: "#991B1B",
-    lineHeight: 15,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    paddingTop: 60,
-    paddingHorizontal: 24,
-  },
-  emptyIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: 4,
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  emptyBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  emptyBtnText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-});
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surfaceVariant,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    topBarTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    newBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 10,
+      backgroundColor: colors.primary,
+    },
+    newBtnText: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    bannerWrap: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
+    bannerCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOpacity: 0.02,
+      shadowRadius: 6,
+      elevation: 1,
+    },
+    bannerHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    badgeAgency: {
+      backgroundColor: colors.surfaceVariant,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    badgeAgencyText: {
+      fontSize: 9,
+      fontWeight: "800",
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+    },
+    turnaroundPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surfaceVariant,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    turnaroundPillText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    bannerTitle: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    bannerSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      lineHeight: 16,
+    },
+    searchBarWrap: {
+      paddingHorizontal: 16,
+      marginTop: 10,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      height: 42,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    filterPillsRow: {
+      marginVertical: 10,
+    },
+    filterPillsScroll: {
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    filterPill: {
+      paddingHorizontal: 13,
+      paddingVertical: 6,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceVariant,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterPillActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterPillText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    filterPillTextActive: {
+      color: "#FFFFFF",
+    },
+    listContent: {
+      paddingHorizontal: 16,
+      paddingTop: 4,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOpacity: 0.03,
+      shadowRadius: 6,
+      elevation: 1,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 10,
+    },
+    typeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    typeIconBox: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 6,
+    },
+    typeIconBoxInd: {
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.2)" : "#E0F2FE",
+    },
+    typeIconBoxCorp: {
+      backgroundColor: isDark ? "rgba(99, 102, 241, 0.2)" : "#EEF2FF",
+    },
+    typeLabel: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+    },
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    badgeCompleted: {
+      backgroundColor: isDark ? "rgba(5, 150, 105, 0.2)" : "#ECFDF5",
+    },
+    badgeProcessing: {
+      backgroundColor: isDark ? "rgba(37, 99, 235, 0.2)" : "#EFF6FF",
+    },
+    badgePending: {
+      backgroundColor: isDark ? "rgba(217, 119, 6, 0.2)" : "#FEF3C7",
+    },
+    badgeFailed: {
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.2)" : "#FEF2F2",
+    },
+    badgeText: {
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+    },
+    badgeTextCompleted: {
+      color: isDark ? "#34D399" : "#059669",
+    },
+    badgeTextProcessing: {
+      color: isDark ? "#60A5FA" : "#2563EB",
+    },
+    badgeTextPending: {
+      color: isDark ? "#FBBF24" : "#D97706",
+    },
+    badgeTextFailed: {
+      color: isDark ? "#F87171" : "#DC2626",
+    },
+    entityRow: {
+      marginBottom: 8,
+    },
+    entityName: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    entitySub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    refButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surfaceVariant,
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    refText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    dateText: {
+      fontSize: 11,
+      color: colors.textTertiary,
+      fontWeight: "600",
+    },
+    resultBox: {
+      marginTop: 10,
+      backgroundColor: isDark ? "rgba(21, 128, 61, 0.15)" : "#F0FDF4",
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(21, 128, 61, 0.3)" : "#BBF7D0",
+    },
+    resultTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 4,
+    },
+    resultLabel: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: isDark ? "#4ADE80" : "#166534",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    copyPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? colors.surfaceVariant : "#FFFFFF",
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(21, 128, 61, 0.3)" : "#BBF7D0",
+    },
+    copyPillText: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.primary,
+    },
+    copyPillTextCopied: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: isDark ? "#34D399" : "#059669",
+    },
+    tinNumberText: {
+      fontSize: 18,
+      fontWeight: "900",
+      color: isDark ? "#4ADE80" : "#15803D",
+      letterSpacing: 1.5,
+      marginVertical: 4,
+    },
+    directDownloadBtn: {
+      height: 40,
+      backgroundColor: "#15803D",
+      borderRadius: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    directDownloadBtnText: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    failedBox: {
+      marginTop: 10,
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEF2F2",
+      borderRadius: 12,
+      padding: 10,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(220, 38, 38, 0.3)" : "#FECACA",
+    },
+    failedTitle: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: isDark ? "#F87171" : "#B91C1C",
+    },
+    failedText: {
+      fontSize: 11,
+      color: isDark ? "#FCA5A5" : "#991B1B",
+      lineHeight: 15,
+    },
+    emptyContainer: {
+      alignItems: "center",
+      paddingTop: 60,
+      paddingHorizontal: 24,
+    },
+    emptyIconBox: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.surfaceVariant,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 12,
+    },
+    emptyTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    emptySubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 18,
+      marginBottom: 16,
+    },
+    emptyBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 12,
+    },
+    emptyBtnText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+  });

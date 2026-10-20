@@ -36,6 +36,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
@@ -80,6 +81,7 @@ const CATEGORIES = [
 export default function NinValidationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
   const ninInputRef = useRef<TextInput>(null);
 
@@ -274,20 +276,20 @@ export default function NinValidationScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Stagnant Fixed Top Bar */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12, backgroundColor: colors.surface, borderBottomColor: colors.surfaceBorder }]}>
         <TouchableOpacity
           onPress={() => router.back()}
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.7}
         >
           <ArrowLeft size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>NIN Validation</Text>
+        <Text style={[styles.topBarTitle, { color: colors.text }]}>NIN Validation</Text>
         <TouchableOpacity
           onPress={() => router.push("/services/nin-validation-history" as any)}
           style={styles.historyBtn}
@@ -310,11 +312,11 @@ export default function NinValidationScreen() {
       ) : initialError ? (
         /* Dedicated Full-Screen No Internet / Offline View */
         <View style={styles.centerContainer}>
-          <View style={styles.offlineIconBox}>
+          <View style={[styles.offlineIconBox, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" }]}>
             <WifiOff size={38} color="#94A3B8" />
           </View>
-          <Text style={styles.offlineTitle}>No Internet Connection</Text>
-          <Text style={styles.offlineSubtitle}>
+          <Text style={[styles.offlineTitle, { color: colors.text }]}>No Internet Connection</Text>
+          <Text style={[styles.offlineSubtitle, { color: colors.textSecondary }]}>
             Unable to connect to LoraBiz servers. Please check your mobile data or Wi-Fi connection and try again.
           </Text>
           <TouchableOpacity
@@ -333,7 +335,7 @@ export default function NinValidationScreen() {
         >
           <ScrollView
             ref={scrollViewRef}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
           contentContainerStyle={[
             styles.contentContainer,
             { paddingBottom: Math.max(insets.bottom, 16) + 32 },
@@ -344,46 +346,46 @@ export default function NinValidationScreen() {
         >
               {/* Post-Submission Success State */}
               {submittedResult ? (
-                <View style={styles.successCard}>
+                <View style={[styles.successCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
                   <View style={styles.successIconWrap}>
                     <CheckCircle2 size={40} color="#10B981" />
                   </View>
-                  <Text style={styles.successTitle}>Validation Request Submitted</Text>
-                  <Text style={styles.successSubtitle}>
+                  <Text style={[styles.successTitle, { color: colors.text }]}>Validation Request Submitted</Text>
+                  <Text style={[styles.successSubtitle, { color: colors.textSecondary }]}>
                     Your validation request has been received and queued with the National Identity Management Commission.
                   </Text>
 
-                  <View style={styles.summaryBox}>
+                  <View style={[styles.summaryBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
                     <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Category:</Text>
-                      <Text style={styles.summaryValue}>{submittedResult.category}</Text>
+                      <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Category:</Text>
+                      <Text style={[styles.summaryValue, { color: colors.text }]}>{submittedResult.category}</Text>
                     </View>
-                    <View style={styles.summaryDivider} />
+                    <View style={[styles.summaryDivider, { backgroundColor: colors.surfaceBorder }]} />
                     <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Submitted NIN:</Text>
-                      <Text style={[styles.summaryValue, styles.fontMono]}>
+                      <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Submitted NIN:</Text>
+                      <Text style={[styles.summaryValue, styles.fontMono, { color: colors.text }]}>
                         {submittedResult.nin}
                       </Text>
                     </View>
-                    <View style={styles.summaryDivider} />
+                    <View style={[styles.summaryDivider, { backgroundColor: colors.surfaceBorder }]} />
                     <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Reference:</Text>
-                      <Text style={[styles.summaryValue, styles.fontMono]}>
+                      <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Reference:</Text>
+                      <Text style={[styles.summaryValue, styles.fontMono, { color: colors.text }]}>
                         {submittedResult.reference}
                       </Text>
                     </View>
-                    <View style={styles.summaryDivider} />
+                    <View style={[styles.summaryDivider, { backgroundColor: colors.surfaceBorder }]} />
                     <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Status:</Text>
+                      <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Status:</Text>
                       <View style={styles.statusBadgeProcessing}>
                         <Clock size={12} color="#D97706" style={{ marginRight: 4 }} />
                         <Text style={styles.statusBadgeTextProcessing}>In Processing</Text>
                       </View>
                     </View>
-                    <View style={styles.summaryDivider} />
+                    <View style={[styles.summaryDivider, { backgroundColor: colors.surfaceBorder }]} />
                     <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Processing Time:</Text>
-                      <Text style={styles.summaryValue}>24 – 48 Working Hours</Text>
+                      <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Processing Time:</Text>
+                      <Text style={[styles.summaryValue, { color: colors.text }]}>24 – 48 Working Hours</Text>
                     </View>
                   </View>
 
@@ -402,7 +404,7 @@ export default function NinValidationScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={styles.secondarySubmitBtn}
+                      style={[styles.secondarySubmitBtn, { backgroundColor: colors.surfaceElevated }]}
                       onPress={() => {
                         setSubmittedResult(null);
                         setNin("");
@@ -413,23 +415,25 @@ export default function NinValidationScreen() {
                       }}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.secondarySubmitBtnText}>Submit Another Validation</Text>
+                      <Text style={[styles.secondarySubmitBtnText, { color: colors.text }]}>Submit Another Validation</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               ) : (
                 <>
                   {/* National Identity Banner */}
-                  <View style={styles.agencyBanner}>
-                    <Image
-                      source={require("../../assets/nimc.png")}
-                      style={styles.agencyLogo}
-                      resizeMode="contain"
-                    />
+                  <View style={[styles.agencyBanner, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+                    <View style={{ width: 50, height: 50, borderRadius: 16, backgroundColor: "#FFFFFF", overflow: "hidden", borderWidth: 1, borderColor: "rgba(0, 0, 0, 0.08)", alignItems: "center", justifyContent: "center" }}>
+                      <Image
+                        source={require("../../assets/nimc.png")}
+                        style={{ width: 42, height: 42, borderRadius: 8 }}
+                        resizeMode="contain"
+                      />
+                    </View>
                     <View style={{ flex: 1, marginLeft: 14 }}>
                       <Text style={styles.agencyBadge}>NIMC RECORD SYNCHRONIZATION</Text>
-                      <Text style={styles.agencyTitle}>National Identity Validation</Text>
-                      <Text style={styles.agencyDesc}>
+                      <Text style={[styles.agencyTitle, { color: colors.text }]}>National Identity Validation</Text>
+                      <Text style={[styles.agencyDesc, { color: colors.textSecondary }]}>
                         Validate no-record errors, VNIN synchronization, and modification updates.
                       </Text>
                     </View>
@@ -437,7 +441,7 @@ export default function NinValidationScreen() {
 
                   {/* Option A: Sleek Compact Policy Pill (Replaces Bulky Card) */}
                   <TouchableOpacity
-                    style={styles.policyPillBanner}
+                    style={[styles.policyPillBanner, { backgroundColor: isDark ? "rgba(2, 132, 199, 0.12)" : "#F0F9FF", borderColor: isDark ? "rgba(2, 132, 199, 0.25)" : "#BAE6FD" }]}
                     onPress={() => setIsPolicyModalOpen(true)}
                     activeOpacity={0.85}
                   >
@@ -454,16 +458,16 @@ export default function NinValidationScreen() {
 
                   {/* Free Pass Reward Banner */}
                   {availablePasses > 0 && (
-                    <View style={styles.voucherCard}>
+                    <View style={[styles.voucherCard, { backgroundColor: isDark ? "rgba(5, 150, 105, 0.15)" : "#ECFDF5", borderColor: isDark ? "rgba(5, 150, 105, 0.25)" : "rgba(5, 150, 105, 0.2)" }]}>
                       <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
                         <View style={styles.voucherIconBox}>
                           <Gift size={18} color="#059669" />
                         </View>
                         <View style={{ marginLeft: 12, flex: 1 }}>
-                          <Text style={styles.voucherTitle}>
+                          <Text style={[styles.voucherTitle, { color: isDark ? "#34D399" : "#065F46" }]}>
                             {availablePasses} Free Pass{availablePasses > 1 ? "es" : ""} Available
                           </Text>
-                          <Text style={styles.voucherDesc}>
+                          <Text style={[styles.voucherDesc, { color: isDark ? "#6EE7B7" : "#047857" }]}>
                             {useRewardCredit ? "Pass applied · Fee slashed to ₦0.00" : "Toggle switch to apply pass"}
                           </Text>
                         </View>
@@ -481,20 +485,20 @@ export default function NinValidationScreen() {
                   )}
 
                   {/* Step 1: 11-Digit National Identification Number (NIN) */}
-                  <View style={styles.inputCard}>
+                  <View style={[styles.inputCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
                     <View style={styles.inputLabelRow}>
-                      <Text style={styles.inputLabel}>1. 11-Digit NIN Number</Text>
-                      <Text style={styles.inputCounter}>{sanitizedNin.length}/11</Text>
+                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>1. 11-Digit NIN Number</Text>
+                      <Text style={[styles.inputCounter, { color: colors.textMuted }]}>{sanitizedNin.length}/11</Text>
                     </View>
 
                     <TouchableOpacity
-                      style={styles.inputWrap}
+                      style={[styles.inputWrap, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}
                       activeOpacity={1}
                       onPress={() => ninInputRef.current?.focus()}
                     >
                       <TextInput
                         ref={ninInputRef}
-                        style={styles.textInput}
+                        style={[styles.textInput, { color: colors.text }]}
                         keyboardType="number-pad"
                         maxLength={11}
                         value={sanitizedNin}
@@ -513,7 +517,7 @@ export default function NinValidationScreen() {
                   {/* Step 2: Select Validation Category */}
                   <View style={styles.formatSection}>
                     <View style={styles.formatHeaderRow}>
-                      <Text style={styles.sectionLabel}>2. Select Validation Category</Text>
+                      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>2. Select Validation Category</Text>
                       <View style={{ flexDirection: "row", alignItems: "center" }}>
                         {selectedCategory && isCategoryExpanded && (
                           <TouchableOpacity
@@ -542,7 +546,7 @@ export default function NinValidationScreen() {
                       /* Compact Collapsed Card When Selected */
                       currentCategoryConfig && (
                         <TouchableOpacity
-                          style={styles.selectedCategoryBox}
+                          style={[styles.selectedCategoryBox, { backgroundColor: colors.surface, borderColor: colors.primary }]}
                           onPress={() => setIsCategoryExpanded(true)}
                           activeOpacity={0.8}
                         >
@@ -554,10 +558,10 @@ export default function NinValidationScreen() {
                               />
                             </View>
                             <View style={{ marginLeft: 12, flex: 1 }}>
-                              <Text style={styles.selectedCatTitle}>
+                              <Text style={[styles.selectedCatTitle, { color: colors.text }]}>
                                 {currentCategoryConfig.label}
                               </Text>
-                              <Text style={styles.selectedCatDesc} numberOfLines={1}>
+                              <Text style={[styles.selectedCatDesc, { color: colors.textSecondary }]} numberOfLines={1}>
                                 {currentCategoryConfig.desc}
                               </Text>
                             </View>
@@ -589,6 +593,7 @@ export default function NinValidationScreen() {
                               key={cat.id}
                               style={[
                                 styles.formatCard,
+                                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
                                 isSelected && styles.formatCardSelected,
                                 !isAvailable && styles.formatCardDisabled,
                               ]}
@@ -622,6 +627,7 @@ export default function NinValidationScreen() {
                                     <Text
                                       style={[
                                         styles.formatTitle,
+                                        { color: colors.text },
                                         isSelected && styles.formatTitleSelected,
                                         !isAvailable && { color: colors.textMuted },
                                       ]}
@@ -629,7 +635,7 @@ export default function NinValidationScreen() {
                                       {cat.label}
                                     </Text>
                                   </View>
-                                  <Text style={styles.formatDesc}>{cat.desc}</Text>
+                                  <Text style={[styles.formatDesc, { color: colors.textSecondary }]}>{cat.desc}</Text>
                                   {!isAvailable && (
                                     <Text style={styles.unavailableText}>
                                       {catPricing?.maintenanceMsg || "Temporarily Unavailable"}
@@ -651,6 +657,7 @@ export default function NinValidationScreen() {
                                     <Text
                                       style={[
                                         styles.formatPrice,
+                                        { color: colors.text },
                                         isSelected && styles.formatPriceSelected,
                                       ]}
                                     >
@@ -675,6 +682,7 @@ export default function NinValidationScreen() {
                     <TouchableOpacity
                       style={[
                         styles.attestationRow,
+                        { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
                         attestationsAccepted && styles.attestationRowAccepted,
                       ]}
                       onPress={() => setAttestationsAccepted(!attestationsAccepted)}
@@ -688,8 +696,8 @@ export default function NinValidationScreen() {
                       >
                         {attestationsAccepted && <CheckCircle2 size={15} color="#FFFFFF" />}
                       </View>
-                      <Text style={styles.attestationText}>
-                        I confirm that I am the applicant or hold lawful authorization from the data subject to process this validation in accordance with the <Text style={styles.fontBold}>Nigeria Data Protection Act (NDPA) 2023</Text> and LoraBiz Terms.
+                      <Text style={[styles.attestationText, { color: colors.textSecondary }]}>
+                        I confirm that I am the applicant or hold lawful authorization from the data subject to process this validation in accordance with the <Text style={[styles.fontBold, { color: colors.text }]}>Nigeria Data Protection Act (NDPA) 2023</Text> and LoraBiz Terms.
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -726,11 +734,11 @@ export default function NinValidationScreen() {
         onRequestClose={() => setIsPolicyModalOpen(false)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 20) + 12 }]}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.surfaceBorder, paddingBottom: Math.max(insets.bottom, 20) + 12 }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Clock size={20} color="#0284C7" style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Processing Time & Policy</Text>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Processing Time & Policy</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setIsPolicyModalOpen(false)}
@@ -742,23 +750,23 @@ export default function NinValidationScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
               {/* Timeline Section */}
-              <View style={styles.policySectionCard}>
+              <View style={[styles.policySectionCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
                   <Clock size={16} color="#0284C7" style={{ marginRight: 6 }} />
-                  <Text style={styles.policySectionTitle}>Estimated Processing Time</Text>
+                  <Text style={[styles.policySectionTitle, { color: colors.text }]}>Estimated Processing Time</Text>
                 </View>
-                <Text style={styles.policySectionBody}>
-                  Standard verification takes <Text style={styles.fontBold}>24 to 48 Business Hours (1 to 2 Working Days)</Text>. Depending on telecom networks and commercial bank systems, reflection across external portals may take up to 72 business hours.
+                <Text style={[styles.policySectionBody, { color: colors.textSecondary }]}>
+                  Standard verification takes <Text style={[styles.fontBold, { color: colors.text }]}>24 to 48 Working Hours</Text>. Depending on telecom networks and commercial bank systems, reflection across external portals may take up to 72 business hours.
                 </Text>
               </View>
 
               {/* Non-Refundable Policy Section (Without the word "strict") */}
-              <View style={[styles.policySectionCard, { borderColor: "#FECACA", backgroundColor: "#FEF2F2" }]}>
+              <View style={[styles.policySectionCard, { borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA", backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2" }]}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
                   <AlertCircle size={16} color="#DC2626" style={{ marginRight: 6 }} />
                   <Text style={[styles.policySectionTitle, { color: "#DC2626" }]}>Non-Refundable Policy</Text>
                 </View>
-                <Text style={[styles.policySectionBody, { color: "#991B1B" }]}>
+                <Text style={[styles.policySectionBody, { color: isDark ? "#F87171" : "#991B1B" }]}>
                   Please ensure that the NIN submitted genuinely requires synchronization. Once submitted and transmitted to the national identity gateway, validation services are <Text style={styles.fontBold}>non-refundable</Text>.
                 </Text>
               </View>
@@ -788,13 +796,13 @@ export default function NinValidationScreen() {
           <View
             style={[
               styles.modalCard,
-              { paddingBottom: Math.max(insets.bottom, 24) },
+              { backgroundColor: colors.surfaceElevated, borderTopColor: colors.surfaceBorder, paddingBottom: Math.max(insets.bottom, 24) },
             ]}
           >
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <ShieldCheck size={20} color={colors.primary} style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Confirm NIN Validation</Text>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Confirm NIN Validation</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setIsConfirmModalOpen(false)}
@@ -805,42 +813,42 @@ export default function NinValidationScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.modalBody}>
+            <View style={[styles.modalBody, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.modalRow}>
-                <Text style={styles.modalLabel}>Category:</Text>
-                <Text style={styles.modalValue}>{currentCategoryConfig?.label || selectedCategory}</Text>
+                <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Category:</Text>
+                <Text style={[styles.modalValue, { color: colors.text }]}>{currentCategoryConfig?.label || selectedCategory}</Text>
               </View>
-              <View style={styles.modalDivider} />
+              <View style={[styles.modalDivider, { backgroundColor: colors.surfaceBorder }]} />
               <View style={styles.modalRow}>
-                <Text style={styles.modalLabel}>NIN:</Text>
-                <Text style={[styles.modalValue, styles.fontMono]}>{sanitizedNin}</Text>
+                <Text style={[styles.modalLabel, { color: colors.textMuted }]}>NIN:</Text>
+                <Text style={[styles.modalValue, styles.fontMono, { color: colors.text }]}>{sanitizedNin}</Text>
               </View>
-              <View style={styles.modalDivider} />
+              <View style={[styles.modalDivider, { backgroundColor: colors.surfaceBorder }]} />
               <View style={styles.modalRow}>
-                <Text style={styles.modalLabel}>Processing Time:</Text>
-                <Text style={styles.modalValue}>24–48 Business Hours</Text>
+                <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Processing Time:</Text>
+                <Text style={[styles.modalValue, { color: colors.text }]}>24–48 Working Hours</Text>
               </View>
-              <View style={styles.modalDivider} />
+              <View style={[styles.modalDivider, { backgroundColor: colors.surfaceBorder }]} />
               <View style={styles.modalRow}>
-                <Text style={styles.modalLabel}>Total Cost:</Text>
+                <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Total Cost:</Text>
                 <Text style={[styles.modalValue, styles.modalPriceText]}>
                   {isPassApplied
                     ? "₦0.00 Free (Pass Applied)"
                     : `₦${(categoryPrice ?? 0).toLocaleString()}`}
                 </Text>
               </View>
-              <View style={styles.modalDivider} />
+              <View style={[styles.modalDivider, { backgroundColor: colors.surfaceBorder }]} />
               <View style={styles.modalRow}>
-                <Text style={styles.modalLabel}>Wallet Balance:</Text>
-                <Text style={styles.modalValue}>
+                <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Wallet Balance:</Text>
+                <Text style={[styles.modalValue, { color: colors.text }]}>
                   ₦{walletBalance.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
                 </Text>
               </View>
 
               {/* Non-Refundable Reminder (Without the word "strict") */}
-              <View style={styles.modalPolicyBox}>
+              <View style={[styles.modalPolicyBox, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2", borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FECACA" }]}>
                 <AlertCircle size={15} color="#B91C1C" style={{ marginRight: 7 }} />
-                <Text style={styles.modalPolicyText}>
+                <Text style={[styles.modalPolicyText, { color: isDark ? "#F87171" : "#B91C1C" }]}>
                   Non-refundable service: Please verify the NIN has genuine synchronization issues before confirming.
                 </Text>
               </View>
@@ -848,11 +856,11 @@ export default function NinValidationScreen() {
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={styles.modalCancelBtn}
+                style={[styles.modalCancelBtn, { backgroundColor: colors.surfaceBorder }]}
                 onPress={() => setIsConfirmModalOpen(false)}
                 disabled={isSubmitting}
               >
-                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+                <Text style={[styles.modalCancelBtnText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

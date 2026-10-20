@@ -12,6 +12,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Image,
+  StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -34,6 +35,7 @@ import {
   Info,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
@@ -88,6 +90,8 @@ const MODIFICATION_TYPES: {
 export default function NinModificationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { user, wallet, refreshWallet, refreshProfile } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const ninInputRef = useRef<TextInput>(null);
@@ -436,8 +440,12 @@ export default function NinModificationScreen() {
 
   return (
     <View style={styles.screen}>
-        {/* Top Header */}
-        <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
+      {/* Top Header */}
+      <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backBtn}
@@ -570,11 +578,13 @@ export default function NinModificationScreen() {
                 <>
                   {/* Agency Banner */}
                   <View style={styles.agencyBanner}>
-                    <Image
-                      source={require("../../assets/nimc.png")}
-                      style={styles.agencyLogo}
-                      resizeMode="contain"
-                    />
+                    <View style={styles.agencyLogoBox}>
+                      <Image
+                        source={require("../../assets/nimc.png")}
+                        style={styles.agencyLogo}
+                        resizeMode="contain"
+                      />
+                    </View>
                     <View style={{ flex: 1, marginLeft: 12 }}>
                       <Text style={styles.agencyBadge}>NIMC MODIFICATION SERVICE</Text>
                       <Text style={styles.agencyTitle}>NIN Modification</Text>
@@ -1309,840 +1319,831 @@ export default function NinModificationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  agencyBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 10,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  agencyLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-  },
-  agencyBadge: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: colors.primary,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  agencyTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginTop: 1,
-  },
-  agencyDesc: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  policyPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#ECFDF5",
-    borderWidth: 1,
-    borderColor: "#A7F3D0",
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    marginBottom: 14,
-  },
-  policyPillLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  policyPillText: {
-    fontSize: 12,
-    color: "#065F46",
-  },
-  policyPillRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  policyPillAction: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#059669",
-  },
-  fontBold: {
-    fontWeight: "700",
-  },
-  modalHeaderIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#EFF6FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalSub: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 1,
-  },
-  policyItem: {
-    backgroundColor: "#F8FAFC",
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  policyTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: 4,
-  },
-  policyDesc: {
-    fontSize: 11,
-    color: "#64748B",
-    lineHeight: 16,
-  },
-  primaryActionBtn: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  primaryActionText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
-    zIndex: 10,
-  },
-  backBtn: {
-    padding: 6,
-    borderRadius: 10,
-  },
-  headerTitle: {
-    fontSize: 16.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  historyNavPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
-  },
-  historyNavPillText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-  },
-
-  /* Error Banner */
-  errorBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.2)",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 12.5,
-    fontWeight: "600",
-    color: colors.error,
-    lineHeight: 18,
-  },
-
-  /* Section Styling */
-  sectionWrap: {
-    marginBottom: 20,
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 12,
-  },
-  walletBalanceChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(200, 45, 117, 0.07)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
-  },
-  walletBalanceChipText: {
-    fontSize: 11.5,
-    fontWeight: "800",
-    color: colors.primary,
-  },
-  collapsePill: {
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 6,
-  },
-  collapsePillText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-
-  /* Compact Collapsed Selected Category Box */
-  selectedCategoryBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 13,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  selectedCatIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  selectedCatTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  selectedCatDesc: {
-    fontSize: 11.5,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  selectedCatPrice: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: colors.primary,
-    marginBottom: 3,
-  },
-  selectedCatPill: {
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 2.5,
-    borderRadius: 6,
-  },
-  selectedCatPillText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  /* Input Card */
-  inputCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.06)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  inputLabelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  inputLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  inputCounter: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textMuted,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  inputWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  textInput: {
-    flex: 1,
-    height: "100%",
-    paddingVertical: 0,
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-
-  /* Formats List */
-  formatSection: {
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  formatHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  formatsList: {
-    gap: 10,
-  },
-  formatCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.06)",
-  },
-  formatCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: "rgba(200, 45, 117, 0.02)",
-  },
-  formatCardDisabled: {
-    opacity: 0.5,
-  },
-  formatCardLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#CBD5E1",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  radioCircleSelected: {
-    borderColor: colors.primary,
-  },
-  radioCircleDisabled: {
-    borderColor: "#E2E8F0",
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-  },
-  formatInfo: {
-    flex: 1,
-  },
-  formatTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  formatTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  formatTitleSelected: {
-    color: colors.primary,
-  },
-  formatDesc: {
-    fontSize: 11.5,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  unavailableText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.error,
-    marginTop: 3,
-  },
-  formatPrice: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  formatPriceSelected: {
-    color: colors.primary,
-  },
-  disabledBadge: {
-    backgroundColor: "#E2E8F0",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  disabledBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textMuted,
-  },
-
-  /* Field Form Styling */
-  fieldGroup: {
-    marginBottom: 14,
-  },
-  fieldLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  fieldLabel: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  fieldCounter: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  inputBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  inputField: {
-    flex: 1,
-    height: "100%",
-    fontSize: 13.5,
-    color: colors.text,
-    paddingVertical: 0,
-  },
-  helperText: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  pickerBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
-    paddingHorizontal: 14,
-    height: 48,
-  },
-  pickerValue: {
-    fontSize: 13.5,
-    fontWeight: "600",
-    color: colors.text,
-  },
-
-  /* Submit Button */
-  submitBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  submitBtnDisabled: {
-    opacity: 0.5,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  submitBtnText: {
-    fontSize: 14.5,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-
-  /* Centered States */
-  centerContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 28,
-  },
-  offlineIconBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  offlineTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#0F172A",
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  offlineSubtitle: {
-    fontSize: 13,
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 20,
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  retryBtnText: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-
-  /* Post-Submission Success State */
-  successCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 22,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.2)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  successIconWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  successTitle: {
-    fontSize: 17.5,
-    fontWeight: "800",
-    color: colors.text,
-    textAlign: "center",
-  },
-  successSubtitle: {
-    fontSize: 12.5,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  summaryBox: {
-    width: "100%",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 15,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-  },
-  summaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-  summaryDivider: {
-    height: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
-    marginVertical: 4,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  summaryValue: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  statusBadgePending: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  statusBadgeTextPending: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#D97706",
-  },
-  successActions: {
-    width: "100%",
-    marginTop: 18,
-    gap: 9,
-  },
-  primaryHistoryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-  },
-  primaryHistoryBtnText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  secondarySubmitBtn: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 14,
-    paddingVertical: 13,
-  },
-  secondarySubmitBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  /* Modals */
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: Platform.OS === "ios" ? 36 : 24,
-    maxHeight: Dimensions.get("window").height * 0.88,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  modalTitle: {
-    fontSize: 16.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  modalBody: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    marginBottom: 16,
-  },
-  modalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-  modalDivider: {
-    height: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
-    marginVertical: 4,
-  },
-  modalLabel: {
-    fontSize: 12.5,
-    color: colors.textMuted,
-  },
-  modalValue: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  modalPriceText: {
-    color: colors.primary,
-    fontWeight: "800",
-  },
-  reviewConsentRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.05)",
-  },
-  reviewConsentText: {
-    flex: 1,
-    fontSize: 11.5,
-    color: colors.textSecondary,
-    lineHeight: 16,
-    marginLeft: 8,
-  },
-  checkboxBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 1,
-  },
-  checkboxBoxChecked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  modalActions: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 14,
-    paddingVertical: 14,
-  },
-  modalCancelBtnText: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    color: colors.textSecondary,
-  },
-  modalConfirmBtn: {
-    flex: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-  },
-  modalConfirmBtnDisabled: {
-    opacity: 0.6,
-  },
-  modalConfirmBtnText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-
-  /* Terms Scroll */
-  termsScroll: {
-    maxHeight: 340,
-    marginBottom: 16,
-  },
-  termsParagraph: {
-    fontSize: 12.5,
-    color: colors.textSecondary,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  termsClauseBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    marginBottom: 14,
-  },
-  termsClauseTitle: {
-    fontSize: 12.5,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  termsClauseText: {
-    fontSize: 11.5,
-    color: colors.textSecondary,
-    lineHeight: 16,
-    marginBottom: 6,
-  },
-
-  fontMono: {
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-});
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    agencyBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.border,
+      marginBottom: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    agencyLogoBox: {
+      width: 50,
+      height: 50,
+      borderRadius: 16,
+      backgroundColor: "#FFFFFF",
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    agencyLogo: {
+      width: 38,
+      height: 38,
+      borderRadius: 8,
+    },
+    agencyBadge: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.primary,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    },
+    agencyTitle: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+      marginTop: 1,
+    },
+    agencyDesc: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 16,
+    },
+    policyPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: isDark ? "rgba(5, 150, 105, 0.12)" : "#ECFDF5",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(5, 150, 105, 0.3)" : "#A7F3D0",
+      paddingVertical: 9,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      marginBottom: 14,
+    },
+    policyPillLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    policyPillText: {
+      fontSize: 12,
+      color: isDark ? "#34D399" : "#065F46",
+    },
+    policyPillRight: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    policyPillAction: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: isDark ? "#34D399" : "#059669",
+    },
+    fontBold: {
+      fontWeight: "700",
+    },
+    modalHeaderIconWrap: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalSub: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    policyItem: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+    },
+    policyTitle: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    policyDesc: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      lineHeight: 16,
+    },
+    primaryActionBtn: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 14,
+    },
+    primaryActionText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+      zIndex: 10,
+    },
+    backBtn: {
+      padding: 6,
+      borderRadius: 10,
+    },
+    headerTitle: {
+      fontSize: 16.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    historyNavPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.18)" : "rgba(200, 45, 117, 0.08)",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 16,
+    },
+    historyNavPillText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    container: {
+      flex: 1,
+    },
+    contentContainer: {
+      padding: 16,
+    },
+    errorBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.08)",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "rgba(239, 68, 68, 0.2)",
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 16,
+    },
+    errorText: {
+      flex: 1,
+      fontSize: 12.5,
+      fontWeight: "600",
+      color: colors.error,
+      lineHeight: 18,
+    },
+    sectionWrap: {
+      marginBottom: 20,
+    },
+    sectionHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
+    sectionTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 12,
+    },
+    walletBalanceChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.16)" : "rgba(200, 45, 117, 0.07)",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 16,
+    },
+    walletBalanceChipText: {
+      fontSize: 11.5,
+      fontWeight: "800",
+      color: colors.primary,
+    },
+    collapsePill: {
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.18)" : "rgba(200, 45, 117, 0.08)",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginRight: 6,
+    },
+    collapsePillText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    selectedCategoryBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 13,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.08,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    selectedCatIconWrap: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.18)" : "rgba(200, 45, 117, 0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    selectedCatTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    selectedCatDesc: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    selectedCatPrice: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.primary,
+      marginBottom: 3,
+    },
+    selectedCatPill: {
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.18)" : "rgba(200, 45, 117, 0.08)",
+      paddingHorizontal: 8,
+      paddingVertical: 2.5,
+      borderRadius: 6,
+    },
+    selectedCatPillText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    inputCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.15 : 0.04,
+      shadowRadius: 3,
+      elevation: 1,
+    },
+    inputLabelRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    inputLabel: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: colors.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    inputCounter: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textMuted,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+    inputWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.09)" : "rgba(0, 0, 0, 0.08)",
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      height: 48,
+    },
+    textInput: {
+      flex: 1,
+      height: "100%",
+      paddingVertical: 0,
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.text,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+    formatSection: {
+      marginBottom: 16,
+    },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    formatHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    formatsList: {
+      gap: 10,
+    },
+    formatCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+    },
+    formatCardSelected: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.1)" : "rgba(200, 45, 117, 0.02)",
+    },
+    formatCardDisabled: {
+      opacity: 0.5,
+    },
+    formatCardLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+    },
+    radioCircle: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1",
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    radioCircleSelected: {
+      borderColor: colors.primary,
+    },
+    radioCircleDisabled: {
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+    },
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+    },
+    formatInfo: {
+      flex: 1,
+    },
+    formatTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 6,
+    },
+    formatTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    formatTitleSelected: {
+      color: colors.primary,
+    },
+    formatDesc: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 16,
+    },
+    unavailableText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.error,
+      marginTop: 3,
+    },
+    formatPrice: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    formatPriceSelected: {
+      color: colors.primary,
+    },
+    disabledBadge: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    disabledBadgeText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textMuted,
+    },
+    fieldGroup: {
+      marginBottom: 14,
+    },
+    fieldLabelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 6,
+    },
+    fieldLabel: {
+      fontSize: 12.5,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    fieldCounter: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textMuted,
+    },
+    inputBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)",
+      paddingHorizontal: 12,
+      height: 48,
+    },
+    inputField: {
+      flex: 1,
+      height: "100%",
+      fontSize: 13.5,
+      color: colors.text,
+      paddingVertical: 0,
+    },
+    helperText: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 4,
+    },
+    pickerBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)",
+      paddingHorizontal: 14,
+      height: 48,
+    },
+    pickerValue: {
+      fontSize: 13.5,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    submitBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 15,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 8,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    submitBtnDisabled: {
+      opacity: 0.5,
+      shadowOpacity: 0,
+      elevation: 0,
+    },
+    submitBtnText: {
+      fontSize: 14.5,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    centerContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 28,
+    },
+    offlineIconBox: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    offlineTitle: {
+      fontSize: 17,
+      fontWeight: "800",
+      color: colors.text,
+      textAlign: "center",
+      marginBottom: 6,
+    },
+    offlineSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 18,
+      marginBottom: 20,
+    },
+    retryBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 22,
+      paddingVertical: 12,
+      borderRadius: 12,
+    },
+    retryBtnText: {
+      fontSize: 13.5,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
+    successCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 22,
+      padding: 22,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "rgba(16, 185, 129, 0.2)",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.2 : 0.05,
+      shadowRadius: 10,
+      elevation: 2,
+      marginBottom: 20,
+    },
+    successIconWrap: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 12,
+    },
+    successTitle: {
+      fontSize: 17.5,
+      fontWeight: "800",
+      color: colors.text,
+      textAlign: "center",
+    },
+    successSubtitle: {
+      fontSize: 12.5,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: 4,
+      lineHeight: 18,
+    },
+    summaryBox: {
+      width: "100%",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 14,
+      padding: 15,
+      marginTop: 16,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+    },
+    summaryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 4,
+    },
+    summaryDivider: {
+      height: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+      marginVertical: 4,
+    },
+    summaryLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    summaryValue: {
+      fontSize: 12.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    statusBadgePending: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    statusBadgeTextPending: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: "#F59E0B",
+    },
+    successActions: {
+      width: "100%",
+      marginTop: 18,
+      gap: 9,
+    },
+    primaryHistoryBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+    },
+    primaryHistoryBtnText: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    secondarySubmitBtn: {
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      borderRadius: 14,
+      paddingVertical: 13,
+    },
+    secondarySubmitBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      justifyContent: "flex-end",
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: Platform.OS === "ios" ? 36 : 24,
+      maxHeight: Dimensions.get("window").height * 0.88,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 14,
+    },
+    modalTitle: {
+      fontSize: 16.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    modalBody: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+      marginBottom: 16,
+    },
+    modalRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 4,
+    },
+    modalDivider: {
+      height: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+      marginVertical: 4,
+    },
+    modalLabel: {
+      fontSize: 12.5,
+      color: colors.textMuted,
+    },
+    modalValue: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    modalPriceText: {
+      color: colors.primary,
+      fontWeight: "800",
+    },
+    reviewConsentRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginTop: 12,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+    },
+    reviewConsentText: {
+      flex: 1,
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      lineHeight: 16,
+      marginLeft: 8,
+    },
+    checkboxBox: {
+      width: 18,
+      height: 18,
+      borderRadius: 5,
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 1,
+    },
+    checkboxBoxChecked: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    modalCancelBtn: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      borderRadius: 14,
+      paddingVertical: 14,
+    },
+    modalCancelBtnText: {
+      fontSize: 13.5,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    modalConfirmBtn: {
+      flex: 2,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+    },
+    modalConfirmBtnDisabled: {
+      opacity: 0.6,
+    },
+    modalConfirmBtnText: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    termsScroll: {
+      maxHeight: 340,
+      marginBottom: 16,
+    },
+    termsParagraph: {
+      fontSize: 12.5,
+      color: colors.textSecondary,
+      lineHeight: 18,
+      marginBottom: 12,
+    },
+    termsClauseBox: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+      marginBottom: 14,
+    },
+    termsClauseTitle: {
+      fontSize: 12.5,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    termsClauseText: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      lineHeight: 16,
+      marginBottom: 6,
+    },
+    fontMono: {
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+  });

@@ -316,8 +316,17 @@ export default function ServicesScreen() {
                     <View
                       style={[
                         styles.gridIconBox,
-                        { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)" },
-                        svc.iconBg ? { backgroundColor: svc.iconBg } : null,
+                        svc.logo
+                          ? {
+                              backgroundColor: "#FFFFFF",
+                              borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.06)",
+                            }
+                          : {
+                              backgroundColor: svc.iconBg
+                                ? (isDark ? "rgba(255, 255, 255, 0.08)" : svc.iconBg)
+                                : (isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)"),
+                              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                            },
                       ]}
                     >
                       {svc.logo ? (
@@ -497,11 +506,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
-    elevation: 1,
+    overflow: "hidden",
   },
   gridAgencyLogo: {
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
+    borderRadius: 8,
   },
   gridLabel: {
     fontSize: 10.5,

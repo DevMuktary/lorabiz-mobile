@@ -34,9 +34,10 @@ import {
   WifiOff,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
@@ -110,6 +111,7 @@ export default function NinSlipScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, wallet, refreshWallet, refreshProfile } = useAuth();
+  const { colors, isDark } = useTheme();
 
   // Auto-refresh wallet when screen focuses
   useFocusEffect(
@@ -400,17 +402,17 @@ export default function NinSlipScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.screen}>
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
         {/* Top Header matching BVN Slip */}
-        <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
+        <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12, backgroundColor: colors.surface, borderBottomColor: colors.surfaceBorder }]}>
           <TouchableOpacity
             onPress={() => router.back()}
-            style={styles.backBtn}
+            style={[styles.backBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <ArrowLeft size={20} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>NIN Slip Printing</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>NIN Slip Printing</Text>
           <TouchableOpacity
             onPress={() => router.push({ pathname: "/services/slip-history", params: { type: "NIN" } } as any)}
             style={styles.historyNavPill}
@@ -434,8 +436,8 @@ export default function NinSlipScreen() {
             <View style={styles.offlineIconBox}>
               <WifiOff size={38} color="#94A3B8" />
             </View>
-            <Text style={styles.offlineTitle}>No Internet Connection</Text>
-            <Text style={styles.offlineSubtitle}>
+            <Text style={[styles.offlineTitle, { color: colors.text }]}>No Internet Connection</Text>
+            <Text style={[styles.offlineSubtitle, { color: colors.textSecondary }]}>
               Unable to connect to LoraBiz servers. Please check your mobile data or Wi-Fi connection and try again.
             </Text>
             <TouchableOpacity
@@ -453,7 +455,7 @@ export default function NinSlipScreen() {
             style={{ flex: 1 }}
           >
           <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
             contentContainerStyle={[
               styles.contentContainer,
               { paddingBottom: Math.max(insets.bottom, 16) + 32 },
@@ -463,11 +465,11 @@ export default function NinSlipScreen() {
             keyboardDismissMode="on-drag"
           >
             {/* Search Mode Segmented Control */}
-            <View style={styles.segmentContainer}>
+            <View style={[styles.segmentContainer, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0" }]}>
               <TouchableOpacity
                 style={[
                   styles.segmentBtn,
-                  searchMode === "NIN" && styles.segmentBtnActive,
+                  searchMode === "NIN" && [styles.segmentBtnActive, { backgroundColor: colors.surfaceElevated }],
                 ]}
                 onPress={() => {
                   setSearchMode("NIN");
@@ -483,7 +485,8 @@ export default function NinSlipScreen() {
                 <Text
                   style={[
                     styles.segmentBtnText,
-                    searchMode === "NIN" && styles.segmentBtnTextActive,
+                    { color: colors.textSecondary },
+                    searchMode === "NIN" && [styles.segmentBtnTextActive, { color: colors.text }],
                   ]}
                 >
                   Query by NIN
@@ -493,7 +496,7 @@ export default function NinSlipScreen() {
               <TouchableOpacity
                 style={[
                   styles.segmentBtn,
-                  searchMode === "PHONE" && styles.segmentBtnActive,
+                  searchMode === "PHONE" && [styles.segmentBtnActive, { backgroundColor: colors.surfaceElevated }],
                 ]}
                 onPress={() => {
                   setSearchMode("PHONE");
@@ -509,7 +512,8 @@ export default function NinSlipScreen() {
                 <Text
                   style={[
                     styles.segmentBtnText,
-                    searchMode === "PHONE" && styles.segmentBtnTextActive,
+                    { color: colors.textSecondary },
+                    searchMode === "PHONE" && [styles.segmentBtnTextActive, { color: colors.text }],
                   ]}
                 >
                   Query by Phone
@@ -526,19 +530,19 @@ export default function NinSlipScreen() {
             ) : null}
 
             {/* Input Card */}
-            <View style={styles.inputCard}>
+            <View style={[styles.inputCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.inputLabelRow}>
-                <Text style={styles.inputLabel}>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
                   {searchMode === "NIN"
                     ? "11-Digit National Identification Number"
                     : "11-Digit Registered Mobile Phone Number"}
                 </Text>
-                <Text style={styles.inputCounter}>{cleanInput.length}/11</Text>
+                <Text style={[styles.inputCounter, { color: colors.textMuted }]}>{cleanInput.length}/11</Text>
               </View>
 
-              <View style={styles.inputWrap}>
+              <View style={[styles.inputWrap, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, { color: colors.text }]}
                   keyboardType="number-pad"
                   maxLength={11}
                   value={identifierInput}
@@ -566,7 +570,7 @@ export default function NinSlipScreen() {
             {/* Slip Formats List */}
             <View style={styles.formatSection}>
               <View style={styles.formatHeaderRow}>
-                <Text style={styles.sectionLabel}>Select NIN Slip Format</Text>
+                <Text style={[styles.sectionLabel, { color: colors.text }]}>Select NIN Slip Format</Text>
                 <TouchableOpacity
                   style={styles.walletBalanceChip}
                   onPress={() => router.push("/wallet/fund" as any)}
@@ -592,6 +596,7 @@ export default function NinSlipScreen() {
                       key={opt.id}
                       style={[
                         styles.formatCard,
+                        { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
                         isSelected && styles.formatCardSelected,
                         !isAvailable && styles.formatCardDisabled,
                       ]}
@@ -616,6 +621,7 @@ export default function NinSlipScreen() {
                             <Text
                               style={[
                                 styles.formatTitle,
+                                { color: colors.text },
                                 !isAvailable && { color: colors.textMuted },
                               ]}
                             >
@@ -657,6 +663,7 @@ export default function NinSlipScreen() {
                         <Text
                           style={[
                             styles.formatPrice,
+                            { color: colors.text },
                             !isAvailable && styles.formatPriceDisabled,
                           ]}
                         >
@@ -671,7 +678,7 @@ export default function NinSlipScreen() {
 
             {/* Statutory NDPA Consent */}
             <TouchableOpacity
-              style={styles.consentRow}
+              style={[styles.consentRow, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}
               onPress={() => setNdpaConsent(!ndpaConsent)}
               activeOpacity={0.8}
             >
@@ -685,7 +692,7 @@ export default function NinSlipScreen() {
                   <Check size={14} color="#FFFFFF" strokeWidth={3} />
                 ) : null}
               </View>
-              <Text style={styles.consentText}>
+              <Text style={[styles.consentText, { color: colors.textSecondary }]}>
                 I confirm that I am the owner of this NIN or have lawful
                 authorization to retrieve this record in accordance with the{" "}
                 <Text style={{ fontWeight: "800", color: colors.text }}>
@@ -713,7 +720,7 @@ export default function NinSlipScreen() {
             {historyList.length > 0 ? (
               <View style={styles.historySection}>
                 <View style={styles.historyHeaderRow}>
-                  <Text style={styles.sectionLabel}>Recent Slips Generated</Text>
+                  <Text style={[styles.sectionLabel, { color: colors.text }]}>Recent Slips Generated</Text>
                   <TouchableOpacity
                     onPress={() => router.push({ pathname: "/services/slip-history", params: { type: "NIN" } } as any)}
                   >
@@ -721,12 +728,13 @@ export default function NinSlipScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.historyCard}>
+                <View style={[styles.historyCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
                   {historyList.slice(0, 5).map((item, idx) => (
                     <TouchableOpacity
                       key={item.id || idx}
                       style={[
                         styles.historyItem,
+                        { borderBottomColor: colors.surfaceBorder },
                         idx === Math.min(historyList.length, 5) - 1 && {
                           borderBottomWidth: 0,
                         },
@@ -746,10 +754,10 @@ export default function NinSlipScreen() {
                         <FileText size={16} color={colors.primary} />
                       </View>
                       <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={styles.historyTitle} numberOfLines={1}>
+                        <Text style={[styles.historyTitle, { color: colors.text }]} numberOfLines={1}>
                           {item.fullName || item.ninMasked || "NIN Slip"}
                         </Text>
-                        <Text style={styles.historySub}>
+                        <Text style={[styles.historySub, { color: colors.textSecondary }]}>
                           {item.slipType || "Standard"} • {formatRecentSlipDate(item)}
                         </Text>
                       </View>
@@ -782,11 +790,11 @@ export default function NinSlipScreen() {
           onRequestClose={() => setLightbox({ visible: false, imageSource: null, label: "" })}
         >
           <View style={styles.lightboxBackdrop}>
-            <View style={styles.lightboxCard}>
+            <View style={[styles.lightboxCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
               <View style={styles.lightboxHeader}>
-                <Text style={styles.lightboxTitle}>{lightbox.label} Specimen</Text>
+                <Text style={[styles.lightboxTitle, { color: colors.text }]}>{lightbox.label} Specimen</Text>
                 <TouchableOpacity
-                  style={styles.lightboxCloseBtn}
+                  style={[styles.lightboxCloseBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}
                   onPress={() =>
                     setLightbox({ visible: false, imageSource: null, label: "" })
                   }
@@ -818,11 +826,11 @@ export default function NinSlipScreen() {
           }
         >
           <View style={styles.resultBackdrop}>
-            <View style={[styles.resultCard, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 34 : 24) }]}>
+            <View style={[styles.resultCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder, paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 34 : 24) }]}>
               <View style={styles.resultHeader}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <CheckCircle2 size={20} color={colors.success} style={{ marginRight: 8 }} />
-                  <Text style={styles.resultTitle}>NIN Record Verified</Text>
+                  <Text style={[styles.resultTitle, { color: colors.text }]}>NIN Record Verified</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() =>
@@ -874,7 +882,7 @@ export default function NinSlipScreen() {
                   return (
                     <View style={{ marginBottom: 12 }}>
                       {/* Citizen Identity Profile Card */}
-                      <View style={styles.demoCard}>
+                      <View style={[styles.demoCard, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
                         {photoUri ? (
                           <Image
                             source={{ uri: photoUri }}
@@ -888,7 +896,7 @@ export default function NinSlipScreen() {
                         )}
                         <View style={{ flex: 1, marginLeft: 12 }}>
                           <Text style={styles.demoLabel}>VERIFIED CITIZEN RECORD</Text>
-                          <Text style={styles.demoName} numberOfLines={2}>
+                          <Text style={[styles.demoName, { color: colors.text }]} numberOfLines={2}>
                             {resultModal.fullName || demo.fullName || "Verified Citizen"}
                           </Text>
                           <View style={styles.demoBadgeRow}>
@@ -904,7 +912,7 @@ export default function NinSlipScreen() {
 
                       {/* Rich Demographics Grid (Only non-empty fields) */}
                       {detailFields.length > 0 && (
-                        <View style={styles.resultGrid}>
+                        <View style={[styles.resultGrid, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF", borderColor: colors.surfaceBorder }]}>
                           {detailFields.map((field, idx) => (
                             <View
                               key={idx}
@@ -913,10 +921,11 @@ export default function NinSlipScreen() {
                                 field.fullWidth && styles.resultGridItemFull,
                               ]}
                             >
-                              <Text style={styles.resultGridLabel}>{field.label}</Text>
+                              <Text style={[styles.resultGridLabel, { color: colors.textSecondary }]}>{field.label}</Text>
                               <Text
                                 style={[
                                   styles.resultGridValue,
+                                  { color: colors.text },
                                   field.isMono && styles.resultGridValueMono,
                                 ]}
                                 numberOfLines={field.fullWidth ? 3 : 1}
@@ -956,12 +965,12 @@ export default function NinSlipScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.closeResultBtn}
+                  style={[styles.closeResultBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
                   onPress={() =>
                     setResultModal({ visible: false, slipLabel: "", identifier: "" })
                   }
                 >
-                  <Text style={styles.closeResultBtnText}>Close</Text>
+                  <Text style={[styles.closeResultBtnText, { color: colors.textSecondary }]}>Close</Text>
                 </TouchableOpacity>
               </View>
             </View>

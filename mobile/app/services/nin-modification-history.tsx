@@ -11,6 +11,7 @@ import {
   ScrollView,
   Platform,
   Dimensions,
+  StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -33,6 +34,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
@@ -75,6 +77,8 @@ type FilterTab = "ALL" | "PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED";
 export default function NinModificationHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [records, setRecords] = useState<ModificationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -246,6 +250,10 @@ export default function NinModificationHistoryScreen() {
 
   return (
     <View style={styles.screen}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
       {/* Top Header */}
       <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
         <TouchableOpacity
@@ -653,457 +661,460 @@ export default function NinModificationHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
-    zIndex: 10,
-  },
-  backBtn: {
-    padding: 6,
-    borderRadius: 10,
-  },
-  headerTitle: {
-    fontSize: 16.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  refreshBtn: {
-    padding: 6,
-    borderRadius: 10,
-  },
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+      zIndex: 10,
+    },
+    backBtn: {
+      padding: 6,
+      borderRadius: 10,
+    },
+    headerTitle: {
+      fontSize: 16.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    refreshBtn: {
+      padding: 6,
+      borderRadius: 10,
+    },
 
-  /* Search */
-  searchBarWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 42,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    paddingVertical: 0,
-  },
+    /* Search */
+    searchBarWrap: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 8,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      height: 42,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.text,
+      paddingVertical: 0,
+    },
 
-  /* Filter Pills */
-  filterPillsRow: {
-    paddingBottom: 8,
-  },
-  filterPillsScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterPill: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-  },
-  filterPillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterPillText: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: colors.textSecondary,
-  },
-  filterPillTextActive: {
-    color: "#FFFFFF",
-  },
+    /* Filter Pills */
+    filterPillsRow: {
+      paddingBottom: 8,
+    },
+    filterPillsScroll: {
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    filterPill: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+    },
+    filterPillActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterPillText: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    filterPillTextActive: {
+      color: "#FFFFFF",
+    },
 
-  /* List Content */
-  listContent: {
-    padding: 16,
-    paddingTop: 8,
-    gap: 12,
-  },
-  orderCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.06)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.04)",
-  },
-  trackingPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  trackingText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.primary,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  statusBadgePending: {
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
-  },
-  statusBadgeProcessing: {
-    backgroundColor: "rgba(2, 132, 199, 0.12)",
-  },
-  statusBadgeCompleted: {
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
-  },
-  statusBadgeRejected: {
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
-  },
-  statusBadgeText: {
-    fontSize: 10.5,
-    fontWeight: "800",
-  },
-  statusTextPending: { color: "#D97706" },
-  statusTextProcessing: { color: "#0284C7" },
-  statusTextCompleted: { color: "#059669" },
-  statusTextRejected: { color: "#DC2626" },
+    /* List Content */
+    listContent: {
+      padding: 16,
+      paddingTop: 8,
+      gap: 12,
+    },
+    orderCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 15,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.03,
+      shadowRadius: 6,
+      elevation: 1,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 10,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+    },
+    trackingPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.16)" : "rgba(200, 45, 117, 0.08)",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+    },
+    trackingText: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.primary,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+    statusBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    statusBadgePending: {
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)",
+    },
+    statusBadgeProcessing: {
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.2)" : "rgba(2, 132, 199, 0.12)",
+    },
+    statusBadgeCompleted: {
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)",
+    },
+    statusBadgeRejected: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "rgba(239, 68, 68, 0.12)",
+    },
+    statusBadgeText: {
+      fontSize: 10.5,
+      fontWeight: "800",
+    },
+    statusTextPending: { color: "#F59E0B" },
+    statusTextProcessing: { color: "#0284C7" },
+    statusTextCompleted: { color: "#10B981" },
+    statusTextRejected: { color: "#EF4444" },
 
-  cardBody: {
-    gap: 5,
-  },
-  typeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  typeIconWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: "rgba(200, 45, 117, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-  },
-  typeTitle: {
-    fontSize: 13.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  detailValue: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  applicantNameText: {
-    fontWeight: "800",
-    color: colors.text,
-    fontSize: 13,
-    maxWidth: "65%",
-    textAlign: "right",
-  },
-  notesBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 8,
-    padding: 8,
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.04)",
-  },
-  notesLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  notesText: {
-    fontSize: 11.5,
-    color: colors.textSecondary,
-  },
-  rejectionBox: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 8,
-    padding: 8,
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  rejectionLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#B91C1C",
-    marginBottom: 2,
-  },
-  rejectionText: {
-    fontSize: 11.5,
-    color: "#991B1B",
-  },
-  downloadSlipBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 10,
-    marginTop: 10,
-  },
-  downloadSlipBtnText: {
-    fontSize: 12.5,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
+    cardBody: {
+      gap: 5,
+    },
+    typeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    typeIconWrap: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.16)" : "rgba(200, 45, 117, 0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 8,
+    },
+    typeTitle: {
+      fontSize: 13.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    detailRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    detailLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    detailValue: {
+      fontSize: 12.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    applicantNameText: {
+      fontWeight: "800",
+      color: colors.text,
+      fontSize: 13,
+      maxWidth: "65%",
+      textAlign: "right",
+    },
+    notesBox: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 8,
+      padding: 8,
+      marginTop: 6,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+    },
+    notesLabel: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    notesText: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+    },
+    rejectionBox: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2",
+      borderRadius: 8,
+      padding: 8,
+      marginTop: 6,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FECACA",
+    },
+    rejectionLabel: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: isDark ? "#F87171" : "#B91C1C",
+      marginBottom: 2,
+    },
+    rejectionText: {
+      fontSize: 11.5,
+      color: isDark ? "#FCA5A5" : "#991B1B",
+    },
+    downloadSlipBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingVertical: 10,
+      marginTop: 10,
+    },
+    downloadSlipBtnText: {
+      fontSize: 12.5,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
 
-  /* Empty State */
-  emptyWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 60,
-    paddingHorizontal: 28,
-  },
-  emptyIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 12.5,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 18,
-  },
-  newRequestBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 12,
-  },
-  newRequestBtnText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
+    /* Empty State */
+    emptyWrap: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingTop: 60,
+      paddingHorizontal: 28,
+    },
+    emptyIconBox: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 14,
+    },
+    emptyTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    emptySubtitle: {
+      fontSize: 12.5,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 18,
+      marginBottom: 18,
+    },
+    newRequestBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 11,
+      borderRadius: 12,
+    },
+    newRequestBtnText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
 
-  /* Centered States */
-  centerContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 28,
-  },
-  offlineIconBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  offlineTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#0F172A",
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  offlineSubtitle: {
-    fontSize: 13,
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 20,
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  retryBtnText: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
+    /* Centered States */
+    centerContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 28,
+    },
+    offlineIconBox: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    offlineTitle: {
+      fontSize: 17,
+      fontWeight: "800",
+      color: colors.text,
+      textAlign: "center",
+      marginBottom: 6,
+    },
+    offlineSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 18,
+      marginBottom: 20,
+    },
+    retryBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 22,
+      paddingVertical: 12,
+      borderRadius: 12,
+    },
+    retryBtnText: {
+      fontSize: 13.5,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
 
-  /* Details Modal */
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: Platform.OS === "ios" ? 36 : 24,
-    maxHeight: Dimensions.get("window").height * 0.88,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  modalTitle: {
-    fontSize: 16.5,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  modalScroll: {
-    marginBottom: 10,
-  },
-  modalStatusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  modalTrackingId: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: colors.primary,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  modalSummaryBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    marginBottom: 14,
-  },
-  summaryItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 5,
-  },
-  summaryItemDivider: {
-    height: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
-    marginVertical: 4,
-  },
-  summaryItemLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  summaryItemValue: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  modalNoteCard: {
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  modalNoteCardTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  modalNoteCardText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 16,
-  },
-  modalRejectionCard: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  modalRejectionCardTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#B91C1C",
-    marginBottom: 4,
-  },
-  modalRejectionCardText: {
-    fontSize: 12,
-    color: "#991B1B",
-    lineHeight: 16,
-  },
-  modalDownloadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    marginTop: 6,
-  },
-  modalDownloadBtnText: {
-    fontSize: 13.5,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
+    /* Details Modal */
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      justifyContent: "flex-end",
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: Platform.OS === "ios" ? 36 : 24,
+      maxHeight: Dimensions.get("window").height * 0.88,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 14,
+    },
+    modalTitle: {
+      fontSize: 16.5,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    modalScroll: {
+      marginBottom: 10,
+    },
+    modalStatusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
+    modalTrackingId: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.primary,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+    modalSummaryBox: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+      marginBottom: 14,
+    },
+    summaryItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 5,
+    },
+    summaryItemDivider: {
+      height: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+      marginVertical: 4,
+    },
+    summaryItemLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    summaryItemValue: {
+      fontSize: 12.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    modalNoteCard: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 12,
+    },
+    modalNoteCardTitle: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    modalNoteCardText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      lineHeight: 16,
+    },
+    modalRejectionCard: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2",
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FECACA",
+    },
+    modalRejectionCardTitle: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: isDark ? "#F87171" : "#B91C1C",
+      marginBottom: 4,
+    },
+    modalRejectionCardText: {
+      fontSize: 12,
+      color: isDark ? "#FCA5A5" : "#991B1B",
+      lineHeight: 16,
+    },
+    modalDownloadBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+      marginTop: 6,
+    },
+    modalDownloadBtnText: {
+      fontSize: 13.5,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
 
-  fontMono: {
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-});
+    fontMono: {
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+  });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
@@ -55,6 +56,8 @@ interface InitialRetrievalData {
 export default function BvnRetrievalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { user, wallet, refreshWallet } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const nameInputRef = useRef<TextInput>(null);
@@ -296,7 +299,7 @@ export default function BvnRetrievalScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
         <BrandLoader message="Loading BVN Retrieval pricing..." />
       </View>
     );
@@ -304,7 +307,7 @@ export default function BvnRetrievalScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
 
       {/* Top Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -451,11 +454,13 @@ export default function BvnRetrievalScreen() {
 
               {/* Agency Banner */}
               <View style={styles.agencyBanner}>
-                <Image
-                  source={require("../../assets/nibss.png")}
-                  style={styles.agencyLogo}
-                  resizeMode="contain"
-                />
+                <View style={styles.agencyLogoBox}>
+                  <Image
+                    source={require("../../assets/nibss.png")}
+                    style={styles.agencyLogo}
+                    resizeMode="contain"
+                  />
+                </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.agencyBadge}>NIBSS BVN SERVICE</Text>
                   <Text style={styles.agencyTitle}>BVN Retrieval</Text>
@@ -825,10 +830,10 @@ export default function BvnRetrievalScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -836,15 +841,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: colors.surfaceBorder,
   },
   backBtn: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -855,13 +860,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.2,
   },
   headerSubtitle: {
     fontSize: 11,
     fontWeight: "500",
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 1,
   },
   historyBtn: {
@@ -870,9 +875,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: isDark ? "rgba(200, 45, 117, 0.3)" : "#BFDBFE",
   },
   historyBtnText: {
     fontSize: 12,
@@ -897,9 +902,9 @@ const styles = StyleSheet.create({
   maintenanceCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
     padding: 14,
     borderRadius: 16,
     marginBottom: 16,
@@ -907,22 +912,22 @@ const styles = StyleSheet.create({
   maintenanceTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#DC2626",
+    color: isDark ? "#F87171" : "#DC2626",
   },
   maintenanceText: {
     fontSize: 12,
-    color: "#991B1B",
+    color: isDark ? "#FCA5A5" : "#991B1B",
     marginTop: 2,
     lineHeight: 18,
   },
   agencyBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 10,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
@@ -930,10 +935,21 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
+  agencyLogoBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   agencyLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 8,
   },
   agencyBadge: {
     fontSize: 10,
@@ -945,12 +961,12 @@ const styles = StyleSheet.create({
   agencyTitle: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
     marginTop: 1,
   },
   agencyDesc: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 2,
     lineHeight: 16,
   },
@@ -958,9 +974,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(5, 150, 105, 0.12)" : "#ECFDF5",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: isDark ? "rgba(5, 150, 105, 0.3)" : "#A7F3D0",
     paddingVertical: 9,
     paddingHorizontal: 14,
     borderRadius: 14,
@@ -973,7 +989,7 @@ const styles = StyleSheet.create({
   },
   policyPillText: {
     fontSize: 12,
-    color: "#065F46",
+    color: isDark ? "#34D399" : "#065F46",
   },
   policyPillRight: {
     flexDirection: "row",
@@ -982,17 +998,17 @@ const styles = StyleSheet.create({
   policyPillAction: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#059669",
+    color: isDark ? "#34D399" : "#059669",
   },
   pricingCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 14,
   },
   pricingLeft: {
@@ -1001,21 +1017,21 @@ const styles = StyleSheet.create({
   pricingLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#64748B",
+    color: colors.textMuted,
     letterSpacing: 0.5,
   },
   originalPriceText: {
     fontSize: 13,
-    color: "#94A3B8",
+    color: colors.textMuted,
     textDecorationLine: "line-through",
   },
   currentPriceText: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#059669",
+    color: colors.success,
   },
   discountBadgeWrap: {
-    backgroundColor: "#DCFCE7",
+    backgroundColor: isDark ? "rgba(22, 163, 74, 0.2)" : "#DCFCE7",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -1025,7 +1041,7 @@ const styles = StyleSheet.create({
   discountBadgeText: {
     fontSize: 9,
     fontWeight: "800",
-    color: "#15803D",
+    color: isDark ? "#4ADE80" : "#15803D",
   },
   balanceRight: {
     alignItems: "flex-end",
@@ -1033,13 +1049,13 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#64748B",
+    color: colors.textMuted,
     letterSpacing: 0.5,
   },
   balanceValue: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   fundWalletLink: {
     fontSize: 11,
@@ -1048,11 +1064,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   formCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -1067,11 +1083,11 @@ const styles = StyleSheet.create({
   formCardTitle: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   formCardSub: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 4,
     marginBottom: 14,
     lineHeight: 18,
@@ -1079,16 +1095,16 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 10.5,
     fontWeight: "800",
-    color: "#475569",
+    color: colors.textSecondary,
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: "#CBD5E1",
+    borderColor: colors.surfaceBorder,
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 50,
@@ -1097,7 +1113,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   inlineErrorBox: {
     flexDirection: "row",
@@ -1112,11 +1128,11 @@ const styles = StyleSheet.create({
   attestationRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginTop: 16,
   },
   checkboxBox: {
@@ -1124,8 +1140,8 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: "#94A3B8",
-    backgroundColor: "#FFFFFF",
+    borderColor: colors.surfaceBorder,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
@@ -1137,7 +1153,7 @@ const styles = StyleSheet.create({
   },
   attestationText: {
     fontSize: 11,
-    color: "#475569",
+    color: colors.textMuted,
     flex: 1,
     lineHeight: 16,
   },
@@ -1167,11 +1183,11 @@ const styles = StyleSheet.create({
   },
   // Success Screen Styles
   successBox: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     alignItems: "center",
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },
@@ -1183,9 +1199,9 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#ECFDF5",
+    backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
     borderWidth: 1.5,
-    borderColor: "#A7F3D0",
+    borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -1193,12 +1209,12 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
     textAlign: "center",
   },
   successSubtitle: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     textAlign: "center",
     marginTop: 6,
     lineHeight: 18,
@@ -1206,11 +1222,11 @@ const styles = StyleSheet.create({
   },
   successCard: {
     width: "100%",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginVertical: 18,
   },
   successCardRow: {
@@ -1221,28 +1237,28 @@ const styles = StyleSheet.create({
   },
   successCardLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   successCardRef: {
     fontSize: 12,
     fontWeight: "700",
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#0F172A",
+    color: colors.text,
   },
   successCardValBold: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   cardDivider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.surfaceBorder,
     marginVertical: 4,
   },
   statusPillProcessing: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF3C7",
+    backgroundColor: isDark ? "rgba(217, 119, 6, 0.2)" : "#FEF3C7",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -1273,12 +1289,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 12,
     borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
   },
   secondaryActionText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#334155",
+    color: colors.text,
   },
   // Review Modal Styles
   modalBackdrop: {
@@ -1287,7 +1303,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 20,
@@ -1302,26 +1318,26 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#EFF6FF",
     alignItems: "center",
     justifyContent: "center",
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   modalSub: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 1,
   },
   breakdownBox: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
     marginBottom: 18,
   },
   breakdownRow: {
@@ -1332,27 +1348,27 @@ const styles = StyleSheet.create({
   },
   breakdownDivider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.surfaceBorder,
     marginVertical: 4,
   },
   breakdownLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   breakdownValue: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
   breakdownPrice: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#059669",
+    color: colors.success,
   },
   breakdownBalanceAfter: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   modalBtnRow: {
     flexDirection: "row",
@@ -1362,14 +1378,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
   modalCancelBtnText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textMuted,
   },
   modalConfirmBtn: {
     flex: 2,
@@ -1386,21 +1402,21 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   policyItem: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.surfaceBorder,
   },
   policyTitle: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 4,
   },
   policyDesc: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     lineHeight: 16,
   },
 });

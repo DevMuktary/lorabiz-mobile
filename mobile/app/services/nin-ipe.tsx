@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -33,7 +33,7 @@ import {
   Check,
 } from "lucide-react-native";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
@@ -60,6 +60,8 @@ interface InitialIpeData {
 export default function NinIpeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const scrollViewRef = useRef<ScrollView>(null);
   const trackingInputRef = useRef<TextInput>(null);
 
@@ -267,7 +269,10 @@ export default function NinIpeScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={colors.surface}
+        />
         <BrandLoader message="Loading IPE Clearance pricing..." />
       </View>
     );
@@ -275,7 +280,10 @@ export default function NinIpeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
 
       {/* Top Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -413,11 +421,13 @@ export default function NinIpeScreen() {
 
               {/* Agency Banner Card: Matches Personalization/Validation Flow */}
               <View style={styles.agencyBanner}>
-                <Image
-                  source={require("../../assets/nimc.png")}
-                  style={styles.agencyLogo}
-                  resizeMode="contain"
-                />
+                <View style={styles.agencyLogoBox}>
+                  <Image
+                    source={require("../../assets/nimc.png")}
+                    style={styles.agencyLogo}
+                    resizeMode="contain"
+                  />
+                </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.agencyBadge}>NIMC CLEARANCE SERVICE</Text>
                   <Text style={styles.agencyTitle}>IPE Error Clearance</Text>
@@ -780,608 +790,620 @@ export default function NinIpeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitleWrap: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F172A",
-    letterSpacing: -0.2,
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    fontWeight: "500",
-    color: "#64748B",
-    marginTop: 1,
-  },
-  historyBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: "#EFF6FF",
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-  },
-  historyBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  historyBadge: {
-    marginLeft: 5,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 10,
-  },
-  historyBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  maintenanceCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 16,
-  },
-  maintenanceTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#DC2626",
-  },
-  maintenanceText: {
-    fontSize: 12,
-    color: "#991B1B",
-    marginTop: 2,
-    lineHeight: 18,
-  },
-  agencyBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 10,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  agencyLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-  },
-  agencyBadge: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: colors.primary,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  agencyTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginTop: 1,
-  },
-  agencyDesc: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  policyPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#ECFDF5",
-    borderWidth: 1,
-    borderColor: "#A7F3D0",
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    marginBottom: 14,
-  },
-  policyPillLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  policyPillText: {
-    fontSize: 12,
-    color: "#065F46",
-  },
-  policyPillRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  policyPillAction: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#059669",
-  },
-  pricingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 14,
-  },
-  pricingLeft: {
-    flex: 1,
-  },
-  pricingLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#64748B",
-    letterSpacing: 0.5,
-  },
-  originalPriceText: {
-    fontSize: 13,
-    color: "#94A3B8",
-    textDecorationLine: "line-through",
-  },
-  currentPriceText: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#059669",
-  },
-  discountBadgeWrap: {
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-    marginTop: 4,
-  },
-  discountBadgeText: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: "#15803D",
-  },
-  balanceRight: {
-    alignItems: "flex-end",
-  },
-  balanceLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#64748B",
-    letterSpacing: 0.5,
-  },
-  balanceValue: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  fundWalletLink: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primary,
-    marginTop: 2,
-  },
-  formCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 16,
-  },
-  formCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  formCardTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  formCardSub: {
-    fontSize: 12,
-    color: "#64748B",
-    marginTop: 4,
-    marginBottom: 14,
-    lineHeight: 18,
-  },
-  inputWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1.5,
-    borderColor: "#CBD5E1",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 52,
-  },
-  inputWrapError: {
-    borderColor: "#EF4444",
-    backgroundColor: "#FEF2F2",
-  },
-  inputWrapSuccess: {
-    borderColor: "#10B981",
-    backgroundColor: "#F0FDF4",
-  },
-  trackingInput: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "800",
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#0F172A",
-    letterSpacing: 1.5,
-  },
-  inputEndIcon: {
-    padding: 4,
-  },
-  inputMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 6,
-    paddingHorizontal: 2,
-  },
-  inputErrorText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#EF4444",
-    flex: 1,
-  },
-  inputHintText: {
-    fontSize: 11,
-    color: "#94A3B8",
-    flex: 1,
-  },
-  charCountText: {
-    fontSize: 11,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#64748B",
-    marginLeft: 8,
-  },
-  attestationRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#F8FAFC",
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginTop: 16,
-  },
-  checkboxBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: "#94A3B8",
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-    marginTop: 2,
-  },
-  checkboxBoxActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  attestationText: {
-    fontSize: 11,
-    color: "#475569",
-    flex: 1,
-    lineHeight: 16,
-  },
-  submitBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
-    marginTop: 18,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  submitBtnDisabled: {
-    opacity: 0.5,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  submitBtnText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  // Success Screen Styles
-  successBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    alignItems: "center",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  successIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#ECFDF5",
-    borderWidth: 1.5,
-    borderColor: "#A7F3D0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  successTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#0F172A",
-    textAlign: "center",
-  },
-  successSubtitle: {
-    fontSize: 12,
-    color: "#64748B",
-    textAlign: "center",
-    marginTop: 6,
-    lineHeight: 18,
-    paddingHorizontal: 8,
-  },
-  successCard: {
-    width: "100%",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginVertical: 18,
-  },
-  successCardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 6,
-  },
-  successCardLabel: {
-    fontSize: 12,
-    color: "#64748B",
-  },
-  successCardRef: {
-    fontSize: 12,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#0F172A",
-  },
-  successCardValBold: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#E2E8F0",
-    marginVertical: 4,
-  },
-  statusPillProcessing: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  statusPillTextProcessing: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#D97706",
-  },
-  primaryActionBtn: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
-    marginBottom: 10,
-  },
-  primaryActionText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  secondaryActionBtn: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: "#F1F5F9",
-  },
-  secondaryActionText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#334155",
-  },
-  // Review Modal Styles
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.65)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  modalHeaderIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#EFF6FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  modalSub: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 1,
-  },
-  breakdownBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 18,
-  },
-  breakdownRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 5,
-  },
-  breakdownDivider: {
-    height: 1,
-    backgroundColor: "#E2E8F0",
-    marginVertical: 4,
-  },
-  breakdownLabel: {
-    fontSize: 12,
-    color: "#64748B",
-  },
-  breakdownValue: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
-  breakdownMonoVal: {
-    fontSize: 12,
-    fontWeight: "800",
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#0F172A",
-  },
-  breakdownPrice: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#059669",
-  },
-  breakdownBalanceAfter: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  modalBtnRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalCancelBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#475569",
-  },
-  modalConfirmBtn: {
-    flex: 2,
-    flexDirection: "row",
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalConfirmBtnText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  policyItem: {
-    backgroundColor: "#F8FAFC",
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  policyTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: 4,
-  },
-  policyDesc: {
-    fontSize: 11,
-    color: "#64748B",
-    lineHeight: 16,
-  },
-});
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 14,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerTitleWrap: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    headerTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
+    headerSubtitle: {
+      fontSize: 11,
+      fontWeight: "500",
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    historyBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 20,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#EFF6FF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.25)" : "#BFDBFE",
+    },
+    historyBtnText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    historyBadge: {
+      marginLeft: 5,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      borderRadius: 10,
+    },
+    historyBadgeText: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    scrollContent: {
+      padding: 16,
+    },
+    maintenanceCard: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FECACA",
+      padding: 14,
+      borderRadius: 16,
+      marginBottom: 16,
+    },
+    maintenanceTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: "#DC2626",
+    },
+    maintenanceText: {
+      fontSize: 12,
+      color: isDark ? "#F87171" : "#991B1B",
+      marginTop: 2,
+      lineHeight: 18,
+    },
+    agencyBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 10,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    agencyLogoBox: {
+      width: 50,
+      height: 50,
+      borderRadius: 16,
+      backgroundColor: "#FFFFFF",
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    agencyLogo: {
+      width: 38,
+      height: 38,
+      borderRadius: 8,
+    },
+    agencyBadge: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.primary,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    },
+    agencyTitle: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+      marginTop: 1,
+    },
+    agencyDesc: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 2,
+      lineHeight: 16,
+    },
+    policyPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.25)" : "#A7F3D0",
+      paddingVertical: 9,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      marginBottom: 14,
+    },
+    policyPillLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    policyPillText: {
+      fontSize: 12,
+      color: isDark ? "#34D399" : "#065F46",
+    },
+    policyPillRight: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    policyPillAction: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: isDark ? "#34D399" : "#059669",
+    },
+    pricingCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    pricingLeft: {
+      flex: 1,
+    },
+    pricingLabel: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.textMuted,
+      letterSpacing: 0.5,
+    },
+    originalPriceText: {
+      fontSize: 13,
+      color: colors.textMuted,
+      textDecorationLine: "line-through",
+    },
+    currentPriceText: {
+      fontSize: 18,
+      fontWeight: "900",
+      color: isDark ? "#34D399" : "#059669",
+    },
+    discountBadgeWrap: {
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+      alignSelf: "flex-start",
+      marginTop: 4,
+    },
+    discountBadgeText: {
+      fontSize: 9,
+      fontWeight: "800",
+      color: isDark ? "#34D399" : "#15803D",
+    },
+    balanceRight: {
+      alignItems: "flex-end",
+    },
+    balanceLabel: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.textMuted,
+      letterSpacing: 0.5,
+    },
+    balanceValue: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    fundWalletLink: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primary,
+      marginTop: 2,
+    },
+    formCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+      marginBottom: 16,
+    },
+    formCardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    formCardTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    formCardSub: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 4,
+      marginBottom: 14,
+      lineHeight: 18,
+    },
+    inputWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      height: 52,
+    },
+    inputWrapError: {
+      borderColor: "#EF4444",
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
+    },
+    inputWrapSuccess: {
+      borderColor: "#10B981",
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.1)" : "#F0FDF4",
+    },
+    trackingInput: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "800",
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.text,
+      letterSpacing: 1.5,
+    },
+    inputEndIcon: {
+      padding: 4,
+    },
+    inputMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 6,
+      paddingHorizontal: 2,
+    },
+    inputErrorText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: "#EF4444",
+      flex: 1,
+    },
+    inputHintText: {
+      fontSize: 11,
+      color: colors.textMuted,
+      flex: 1,
+    },
+    charCountText: {
+      fontSize: 11,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.textMuted,
+      marginLeft: 8,
+    },
+    attestationRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginTop: 16,
+    },
+    checkboxBox: {
+      width: 18,
+      height: 18,
+      borderRadius: 5,
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.3)" : "#94A3B8",
+      backgroundColor: colors.surface,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 10,
+      marginTop: 2,
+    },
+    checkboxBoxActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    attestationText: {
+      fontSize: 11,
+      color: isDark ? colors.textSecondary : "#475569",
+      flex: 1,
+      lineHeight: 16,
+    },
+    submitBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 14,
+      marginTop: 18,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.2,
+      shadowRadius: 5,
+      elevation: 3,
+    },
+    submitBtnDisabled: {
+      opacity: 0.5,
+      shadowOpacity: 0,
+      elevation: 0,
+    },
+    submitBtnText: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    // Success Screen Styles
+    successBox: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      padding: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.25 : 0.05,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    successIconCircle: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    successTitle: {
+      fontSize: 18,
+      fontWeight: "900",
+      color: colors.text,
+      textAlign: "center",
+    },
+    successSubtitle: {
+      fontSize: 12,
+      color: colors.textMuted,
+      textAlign: "center",
+      marginTop: 6,
+      lineHeight: 18,
+      paddingHorizontal: 8,
+    },
+    successCard: {
+      width: "100%",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginVertical: 18,
+    },
+    successCardRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 6,
+    },
+    successCardLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    successCardRef: {
+      fontSize: 12,
+      fontWeight: "700",
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.text,
+    },
+    successCardValBold: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    cardDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 4,
+    },
+    statusPillProcessing: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+    },
+    statusPillTextProcessing: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: "#D97706",
+    },
+    primaryActionBtn: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 14,
+      marginBottom: 10,
+    },
+    primaryActionText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    secondaryActionBtn: {
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 12,
+      borderRadius: 14,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+    },
+    secondaryActionText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    // Review Modal Styles
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.65)",
+      justifyContent: "flex-end",
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      padding: 20,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    modalHeaderIconWrap: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#EFF6FF",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    modalSub: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    breakdownBox: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 18,
+    },
+    breakdownRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 5,
+    },
+    breakdownDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 4,
+    },
+    breakdownLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    breakdownValue: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    breakdownMonoVal: {
+      fontSize: 12,
+      fontWeight: "800",
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.text,
+    },
+    breakdownPrice: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: isDark ? "#34D399" : "#059669",
+    },
+    breakdownBalanceAfter: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    modalBtnRow: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    modalCancelBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 14,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalCancelBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    modalConfirmBtn: {
+      flex: 2,
+      flexDirection: "row",
+      paddingVertical: 14,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalConfirmBtnText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    policyItem: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    policyTitle: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    policyDesc: {
+      fontSize: 11,
+      color: colors.textMuted,
+      lineHeight: 16,
+    },
+  });

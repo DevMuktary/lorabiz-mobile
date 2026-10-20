@@ -36,6 +36,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
 import { parseDemographics } from "../../lib/demographics";
@@ -86,6 +87,8 @@ const ITEMS_PER_PAGE = 10;
 export default function SlipHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const params = useLocalSearchParams<{ type?: "NIN" | "BVN"; id?: string }>();
 
   // Determine active category strictly: NIN or BVN (never mixed on the same screen)
@@ -395,7 +398,10 @@ export default function SlipHistoryScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
 
       {/* Top Header */}
       <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -824,545 +830,548 @@ export default function SlipHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  searchSection: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 40,
-    marginBottom: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text,
-    paddingVertical: 0,
-  },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
-  },
-  filterPillActive: {
-    backgroundColor: colors.primary,
-  },
-  filterPillActiveBvn: {
-    backgroundColor: "#0284C7",
-  },
-  filterPillText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textSecondary,
-  },
-  filterPillTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-  },
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+    },
+    headerTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    searchSection: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9",
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      height: 40,
+      marginBottom: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.text,
+      paddingVertical: 0,
+    },
+    filterRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    filterPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+    },
+    filterPillActive: {
+      backgroundColor: colors.primary,
+    },
+    filterPillActiveBvn: {
+      backgroundColor: "#0284C7",
+    },
+    filterPillText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    filterPillTextActive: {
+      color: "#FFFFFF",
+      fontWeight: "800",
+    },
 
-  /* 72-Hour Banner */
-  retentionBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 6,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-  },
-  retentionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 2,
-  },
-  retentionTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  retentionChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  retentionChipText: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-  retentionSubtitle: {
-    fontSize: 11,
-    color: colors.textMuted,
-    lineHeight: 15,
-  },
+    /* 72-Hour Banner */
+    retentionBanner: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      backgroundColor: colors.surface,
+      marginHorizontal: 16,
+      marginTop: 10,
+      marginBottom: 6,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+    },
+    retentionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 2,
+    },
+    retentionTitle: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    retentionChip: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    retentionChipText: {
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+    },
+    retentionSubtitle: {
+      fontSize: 11,
+      color: colors.textMuted,
+      lineHeight: 15,
+    },
 
-  /* List & Table Row */
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 40,
-  },
-  tableRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.04)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  avatarWrap: {
-    marginRight: 10,
-  },
-  avatarImage: {
-    width: 42,
-    height: 46,
-    borderRadius: 10,
-    backgroundColor: "#F1F5F9",
-  },
-  avatarFallback: {
-    width: 42,
-    height: 46,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ninAvatarBg: {
-    backgroundColor: "rgba(255, 63, 122, 0.08)",
-  },
-  bvnAvatarBg: {
-    backgroundColor: "rgba(2, 132, 199, 0.08)",
-  },
-  rowMain: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 2,
-  },
-  rowFullName: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 2,
-  },
-  rowIdentifier: {
-    fontSize: 11,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: colors.textSecondary,
-  },
-  phoneTag: {
-    backgroundColor: "rgba(2, 132, 199, 0.1)",
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-    marginLeft: 4,
-  },
-  phoneTagText: {
-    fontSize: 8,
-    fontWeight: "800",
-    color: "#0284C7",
-  },
-  metaDot: {
-    fontSize: 10,
-    color: colors.textMuted,
-    marginHorizontal: 4,
-  },
-  rowSlipType: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textMuted,
-    flexShrink: 1,
-  },
-  bottomMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  rowDate: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  rowFee: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.textSecondary,
-  },
+    /* List & Table Row */
+    listContent: {
+      paddingHorizontal: 16,
+      paddingTop: 6,
+      paddingBottom: 40,
+    },
+    tableRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 12,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.02,
+      shadowRadius: 3,
+      elevation: 1,
+    },
+    avatarWrap: {
+      marginRight: 10,
+    },
+    avatarImage: {
+      width: 42,
+      height: 46,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+    },
+    avatarFallback: {
+      width: 42,
+      height: 46,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    ninAvatarBg: {
+      backgroundColor: "rgba(255, 63, 122, 0.08)",
+    },
+    bvnAvatarBg: {
+      backgroundColor: "rgba(2, 132, 199, 0.08)",
+    },
+    rowMain: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    nameRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 2,
+    },
+    rowFullName: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 2,
+    },
+    rowIdentifier: {
+      fontSize: 11,
+      fontWeight: "700",
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.textSecondary,
+    },
+    phoneTag: {
+      backgroundColor: "rgba(2, 132, 199, 0.1)",
+      paddingHorizontal: 4,
+      paddingVertical: 1,
+      borderRadius: 4,
+      marginLeft: 4,
+    },
+    phoneTagText: {
+      fontSize: 8,
+      fontWeight: "800",
+      color: "#0284C7",
+    },
+    metaDot: {
+      fontSize: 10,
+      color: colors.textMuted,
+      marginHorizontal: 4,
+    },
+    rowSlipType: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textMuted,
+      flexShrink: 1,
+    },
+    bottomMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    rowDate: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: colors.textMuted,
+    },
+    rowFee: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
 
-  /* Row Actions */
-  rowActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginLeft: 6,
-  },
-  detailsBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.04)",
-  },
-  detailsBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  downloadIconBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  expiredBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    backgroundColor: "#F1F5F9",
-  },
-  expiredText: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: colors.textMuted,
-  },
+    /* Row Actions */
+    rowActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginLeft: 6,
+    },
+    detailsBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+    },
+    detailsBtnText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    downloadIconBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    expiredBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+      borderRadius: 6,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+    },
+    expiredText: {
+      fontSize: 9,
+      fontWeight: "700",
+      color: colors.textMuted,
+    },
 
-  /* Pagination */
-  paginationSection: {
-    marginTop: 12,
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  paginationInfoRow: {
-    marginBottom: 8,
-  },
-  paginationInfoText: {
-    fontSize: 11,
-    color: colors.textMuted,
-  },
-  paginationControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  pageNavBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-  },
-  pageNavBtnDisabled: {
-    opacity: 0.4,
-  },
-  pageNavBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  pageNavBtnTextDisabled: {
-    color: colors.textMuted,
-  },
-  pagePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
-  },
-  pagePillText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.text,
-  },
+    /* Pagination */
+    paginationSection: {
+      marginTop: 12,
+      marginBottom: 20,
+      alignItems: "center",
+    },
+    paginationInfoRow: {
+      marginBottom: 8,
+    },
+    paginationInfoText: {
+      fontSize: 11,
+      color: colors.textMuted,
+    },
+    paginationControls: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    pageNavBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)",
+    },
+    pageNavBtnDisabled: {
+      opacity: 0.4,
+    },
+    pageNavBtnText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    pageNavBtnTextDisabled: {
+      color: colors.textMuted,
+    },
+    pagePill: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+    },
+    pagePillText: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: colors.text,
+    },
 
-  /* Empty State */
-  emptyWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 40,
-    paddingHorizontal: 24,
-  },
-  emptyIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 17,
-    marginBottom: 18,
-  },
-  quickGenBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  quickGenBtnText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
+    /* Empty State */
+    emptyWrap: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingTop: 40,
+      paddingHorizontal: 24,
+    },
+    emptyIconWrap: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 12,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    emptySubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 17,
+      marginBottom: 18,
+    },
+    quickGenBtn: {
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: 10,
+    },
+    quickGenBtnText: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
 
-  /* Applicant Details Modal */
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  modalCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    maxHeight: "94%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  modalBody: {
-    marginBottom: 6,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.06)",
-    marginBottom: 10,
-  },
-  modalTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  modalSubtitle: {
-    fontSize: 10.5,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  modalCloseBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalProfileCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    marginBottom: 10,
-  },
-  modalPhoto: {
-    width: 48,
-    height: 56,
-    borderRadius: 10,
-    backgroundColor: "#E2E8F0",
-  },
-  modalPhotoFallback: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalFieldLabel: {
-    fontSize: 8.5,
-    fontWeight: "800",
-    color: colors.textMuted,
-    letterSpacing: 0.5,
-  },
-  modalFullName: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-    marginVertical: 1,
-  },
-  modalIdBadge: {
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-    marginTop: 2,
-  },
-  modalIdBadgeText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: colors.textSecondary,
-  },
-  modalGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginBottom: 10,
-  },
-  gridItem: {
-    width: "48.8%",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.04)",
-  },
-  gridItemFull: {
-    width: "100%",
-  },
-  gridLabel: {
-    fontSize: 8.5,
-    fontWeight: "800",
-    color: colors.textMuted,
-    marginBottom: 2,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  gridValue: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  gridValueMono: {
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    letterSpacing: 0.3,
-  },
-  modalAuditCard: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.04)",
-  },
-  auditRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  auditDivider: {
-    height: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
-    marginVertical: 5,
-  },
-  auditLabel: {
-    fontSize: 9.5,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  auditValue: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    maxWidth: "60%",
-  },
-  modalActions: {
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.06)",
-    gap: 6,
-  },
-  modalDownloadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 11,
-    borderRadius: 12,
-  },
-  modalDownloadBtnText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  modalDismissBtn: {
-    paddingVertical: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalDismissBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textSecondary,
-  },
-});
+    /* Applicant Details Modal */
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.65)",
+      justifyContent: "center",
+      paddingHorizontal: 16,
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 16,
+      maxHeight: "94%",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.25,
+      shadowRadius: 20,
+      elevation: 8,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
+    },
+    modalBody: {
+      marginBottom: 6,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      paddingBottom: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+      marginBottom: 10,
+    },
+    modalTitle: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    modalSubtitle: {
+      fontSize: 10.5,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    modalCloseBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalProfileCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 12,
+      padding: 10,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)",
+      marginBottom: 10,
+    },
+    modalPhoto: {
+      width: 48,
+      height: 56,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+    },
+    modalPhotoFallback: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalFieldLabel: {
+      fontSize: 8.5,
+      fontWeight: "800",
+      color: colors.textMuted,
+      letterSpacing: 0.5,
+    },
+    modalFullName: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+      marginVertical: 1,
+    },
+    modalIdBadge: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 6,
+      alignSelf: "flex-start",
+      marginTop: 2,
+    },
+    modalIdBadgeText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.textSecondary,
+    },
+    modalGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 10,
+    },
+    gridItem: {
+      width: "48.8%",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 10,
+      padding: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+    },
+    gridItemFull: {
+      width: "100%",
+    },
+    gridLabel: {
+      fontSize: 8.5,
+      fontWeight: "800",
+      color: colors.textMuted,
+      marginBottom: 2,
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    gridValue: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    gridValueMono: {
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      letterSpacing: 0.3,
+    },
+    modalAuditCard: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 10,
+      padding: 8,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+    },
+    auditRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    auditDivider: {
+      height: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+      marginVertical: 5,
+    },
+    auditLabel: {
+      fontSize: 9.5,
+      fontWeight: "600",
+      color: colors.textMuted,
+    },
+    auditValue: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: colors.textSecondary,
+      maxWidth: "60%",
+    },
+    modalActions: {
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+      gap: 6,
+    },
+    modalDownloadBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 11,
+      borderRadius: 12,
+    },
+    modalDownloadBtnText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    modalDismissBtn: {
+      paddingVertical: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalDismissBtnText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+  });

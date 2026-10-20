@@ -15,8 +15,9 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Zap, Phone, Wifi, Tv, Lightbulb, CheckCircle2, Wallet, AlertCircle } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
 
 const NETWORKS = [
   { id: "MTN", name: "MTN", color: "#FBBF24", logo: require("../../assets/mtn.png") },
@@ -31,6 +32,7 @@ export default function BillsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, wallet, refreshWallet, refreshProfile } = useAuth();
+  const { colors, isDark } = useTheme();
 
   // Auto-refresh wallet when screen focuses
   useFocusEffect(
@@ -114,7 +116,7 @@ export default function BillsScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={[
           styles.contentContainer,
           {
@@ -128,18 +130,18 @@ export default function BillsScreen() {
       >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Bills & Utilities</Text>
-        <Text style={styles.headerSubtitle}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Bills & Utilities</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
           Instant airtime, data bundles, electricity tokens, and cable subscriptions
         </Text>
       </View>
 
       {/* Wallet Balance Bar */}
-      <View style={styles.walletBar}>
+      <View style={[styles.walletBar, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Wallet size={16} color={colors.primaryLight} style={{ marginRight: 8 }} />
-          <Text style={styles.walletBarLabel}>Available Balance: </Text>
-          <Text style={styles.walletBarAmount}>
+          <Text style={[styles.walletBarLabel, { color: colors.textSecondary }]}>Available Balance: </Text>
+          <Text style={[styles.walletBarAmount, { color: colors.text }]}>
             ₦{walletBalance.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
           </Text>
         </View>
@@ -155,62 +157,91 @@ export default function BillsScreen() {
       {/* Bill Categories */}
       <View style={styles.categoryRow}>
         <TouchableOpacity
-          style={[styles.categoryBtn, billType === "AIRTIME" && styles.categoryBtnActive]}
+          style={[
+            styles.categoryBtn,
+            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+            billType === "AIRTIME" && styles.categoryBtnActive,
+          ]}
           onPress={() => setBillType("AIRTIME")}
         >
           <Phone size={18} color={billType === "AIRTIME" ? "#FFFFFF" : colors.textSecondary} />
-          <Text style={[styles.categoryText, billType === "AIRTIME" && styles.categoryTextActive]}>
+          <Text style={[styles.categoryText, { color: colors.textSecondary }, billType === "AIRTIME" && styles.categoryTextActive]}>
             Airtime
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.categoryBtn, billType === "DATA" && styles.categoryBtnActive]}
+          style={[
+            styles.categoryBtn,
+            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+            billType === "DATA" && styles.categoryBtnActive,
+          ]}
           onPress={() => setBillType("DATA")}
         >
           <Wifi size={18} color={billType === "DATA" ? "#FFFFFF" : colors.textSecondary} />
-          <Text style={[styles.categoryText, billType === "DATA" && styles.categoryTextActive]}>
+          <Text style={[styles.categoryText, { color: colors.textSecondary }, billType === "DATA" && styles.categoryTextActive]}>
             Data
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.categoryBtn, billType === "POWER" && styles.categoryBtnActive]}
+          style={[
+            styles.categoryBtn,
+            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+            billType === "POWER" && styles.categoryBtnActive,
+          ]}
           onPress={() => setBillType("POWER")}
         >
           <Lightbulb size={18} color={billType === "POWER" ? "#FFFFFF" : colors.textSecondary} />
-          <Text style={[styles.categoryText, billType === "POWER" && styles.categoryTextActive]}>
+          <Text style={[styles.categoryText, { color: colors.textSecondary }, billType === "POWER" && styles.categoryTextActive]}>
             Power
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.categoryBtn, billType === "TV" && styles.categoryBtnActive]}
+          style={[
+            styles.categoryBtn,
+            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+            billType === "TV" && styles.categoryBtnActive,
+          ]}
           onPress={() => setBillType("TV")}
         >
           <Tv size={18} color={billType === "TV" ? "#FFFFFF" : colors.textSecondary} />
-          <Text style={[styles.categoryText, billType === "TV" && styles.categoryTextActive]}>
+          <Text style={[styles.categoryText, { color: colors.textSecondary }, billType === "TV" && styles.categoryTextActive]}>
             Cable
           </Text>
         </TouchableOpacity>
       </View>
 
       {billType === "AIRTIME" || billType === "DATA" ? (
-        <View style={styles.formCard}>
+        <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
           {/* Network Selector */}
-          <Text style={styles.fieldLabel}>Select Network</Text>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Select Network</Text>
           <View style={styles.networkGrid}>
             {NETWORKS.map((net) => {
               const isSelected = selectedNetwork === net.id;
               return (
                 <TouchableOpacity
                   key={net.id}
-                  style={[styles.networkBtn, isSelected && styles.networkBtnActive]}
+                  style={[
+                    styles.networkBtn,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+                      borderColor: colors.surfaceBorder,
+                    },
+                    isSelected && [
+                      styles.networkBtnActive,
+                      {
+                        borderColor: colors.primaryLight,
+                        backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : colors.surfaceElevated,
+                      },
+                    ],
+                  ]}
                   onPress={() => setSelectedNetwork(net.id)}
                   activeOpacity={0.8}
                 >
                   <Image source={net.logo} style={{ width: 26, height: 26, borderRadius: 13, marginRight: 8 }} resizeMode="contain" />
-                  <Text style={[styles.netName, isSelected && styles.netNameActive]}>
+                  <Text style={[styles.netName, { color: colors.textSecondary }, isSelected && [styles.netNameActive, { color: colors.text }]]}>
                     {net.name}
                   </Text>
                 </TouchableOpacity>
@@ -219,10 +250,10 @@ export default function BillsScreen() {
           </View>
 
           {/* Phone Input */}
-          <Text style={styles.fieldLabel}>Recipient Phone Number</Text>
-          <View style={styles.inputWrapper}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Recipient Phone Number</Text>
+          <View style={[styles.inputWrapper, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: colors.text }]}
               placeholder="08012345678"
               placeholderTextColor={colors.textMuted}
               value={phone}
@@ -233,10 +264,10 @@ export default function BillsScreen() {
           </View>
 
           {/* Amount Input */}
-          <Text style={styles.fieldLabel}>Recharge Amount (₦)</Text>
-          <View style={styles.inputWrapper}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Recharge Amount (₦)</Text>
+          <View style={[styles.inputWrapper, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: colors.text }]}
               placeholder="500"
               placeholderTextColor={colors.textMuted}
               value={amount}
@@ -252,10 +283,23 @@ export default function BillsScreen() {
               return (
                 <TouchableOpacity
                   key={val}
-                  style={[styles.presetItem, isSelected && styles.presetItemActive]}
+                  style={[
+                    styles.presetItem,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                      borderColor: colors.surfaceBorder,
+                    },
+                    isSelected && [
+                      styles.presetItemActive,
+                      {
+                        borderColor: colors.primary,
+                        backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.08)",
+                      },
+                    ],
+                  ]}
                   onPress={() => setAmount(String(val))}
                 >
-                  <Text style={[styles.presetText, isSelected && styles.presetTextActive]}>
+                  <Text style={[styles.presetText, { color: colors.textSecondary }, isSelected && [styles.presetTextActive, { color: colors.primary }]]}>
                     ₦{val}
                   </Text>
                 </TouchableOpacity>
@@ -264,9 +308,9 @@ export default function BillsScreen() {
           </View>
 
           {/* Wallet Balance Info */}
-          <View style={styles.walletBox}>
+          <View style={[styles.walletBox, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9", borderColor: colors.surfaceBorder }]}>
             <Wallet size={16} color={colors.primaryLight} />
-            <Text style={styles.walletText}>
+            <Text style={[styles.walletText, { color: colors.textSecondary }]}>
               Wallet:{" "}
               <Text style={{ fontWeight: "700", color: colors.text }}>
                 ₦{walletBalance.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
@@ -306,12 +350,12 @@ export default function BillsScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.comingSoonCard}>
+        <View style={[styles.comingSoonCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
           <Lightbulb size={32} color={colors.gold} />
-          <Text style={styles.comingSoonTitle}>
+          <Text style={[styles.comingSoonTitle, { color: colors.text }]}>
             {billType === "POWER" ? "Electricity Token Purchase" : "Cable TV Subscription"}
           </Text>
-          <Text style={styles.comingSoonText}>
+          <Text style={[styles.comingSoonText, { color: colors.textSecondary }]}>
             Disco meter verification and decoder renewals are available. Select your provider to proceed.
           </Text>
         </View>

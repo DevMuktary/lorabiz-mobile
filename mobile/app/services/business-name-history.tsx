@@ -38,7 +38,7 @@ import {
   ShieldAlert,
 } from "lucide-react-native";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
@@ -97,6 +97,8 @@ type FilterStatus = "ALL" | "DRAFTS" | "PENDING" | "APPROVED" | "QUERIED";
 export default function BusinessNameHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [history, setHistory] = useState<BusinessNameRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -453,7 +455,10 @@ export default function BusinessNameHistoryScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.surface}
+      />
 
       {/* Fixed Top Bar */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
@@ -679,415 +684,416 @@ export default function BusinessNameHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  topBar: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F3F4F6",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  newRegBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  newRegBtnText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  searchBarContainer: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 42,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-  },
-  tabScrollContainer: {
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  tabScrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  filterPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-  },
-  filterPillActive: {
-    backgroundColor: colors.primary,
-  },
-  filterPillText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textMuted,
-  },
-  filterPillTextActive: {
-    color: "#FFFFFF",
-  },
-  loadingBox: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  listContent: {
-    padding: 16,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 16,
-    marginBottom: 14,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  cardHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    flex: 1,
-    marginRight: 8,
-  },
-  iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconBadgeDraft: {
-    backgroundColor: "#F3F4F6",
-  },
-  iconBadgePending: {
-    backgroundColor: "#EFF6FF",
-  },
-  iconBadgeApproved: {
-    backgroundColor: "#ECFDF5",
-  },
-  iconBadgeQueried: {
-    backgroundColor: "#FEF2F2",
-  },
-  companyName: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  trackingText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  statusBadgeDraft: {
-    backgroundColor: "#F3F4F6",
-  },
-  statusBadgePending: {
-    backgroundColor: "#DBEAFE",
-  },
-  statusBadgeApproved: {
-    backgroundColor: "#D1FAE5",
-  },
-  statusBadgeQueried: {
-    backgroundColor: "#FEE2E2",
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  statusBadgeTextDraft: {
-    color: colors.textMuted,
-  },
-  statusBadgeTextPending: {
-    color: "#1E40AF",
-  },
-  statusBadgeTextApproved: {
-    color: "#065F46",
-  },
-  statusBadgeTextQueried: {
-    color: "#991B1B",
-  },
-  cardBody: {
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    paddingTop: 10,
-    marginBottom: 12,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 4,
-  },
-  metaLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-    fontWeight: "600",
-  },
-  metaValue: {
-    fontSize: 12,
-    color: colors.text,
-    fontWeight: "700",
-    flex: 1,
-    textAlign: "right",
-    marginLeft: 8,
-  },
-  turnaroundBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 6,
-    marginTop: 6,
-  },
-  turnaroundText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  queryReasonBox: {
-    flexDirection: "row",
-    backgroundColor: "#FEF2F2",
-    padding: 10,
-    borderRadius: 8,
-    gap: 8,
-    marginTop: 8,
-  },
-  queryReasonTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#991B1B",
-  },
-  queryReasonText: {
-    fontSize: 11,
-    color: "#B91C1C",
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    paddingTop: 10,
-  },
-  cardDate: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  actionButtonsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  deleteDraftBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "#FEF2F2",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  continueDraftBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  continueDraftBtnText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  downloadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  downloadBtnText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  detailsBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#F3F4F6",
-  },
-  detailsBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  emptyStateContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 24,
-  },
-  emptyStateTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  emptyStateDesc: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  emptyActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  emptyActionBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContainer: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-    paddingBottom: 12,
-  },
-  modalHeaderTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  modalHeaderSub: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  modalScroll: {
-    maxHeight: 400,
-  },
-  modalSection: {
-    marginBottom: 16,
-  },
-  modalSectionTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.textMuted,
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  modalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  modalLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-    fontWeight: "600",
-  },
-  modalValue: {
-    fontSize: 12,
-    color: colors.text,
-    fontWeight: "700",
-    flex: 1,
-    textAlign: "right",
-    marginLeft: 8,
-  },
-  propDetailCard: {
-    backgroundColor: "#F9FAFB",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  propDetailName: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  propDetailSub: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-});
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topBar: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.surfaceVariant,
+    },
+    headerTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    newRegBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+    },
+    newRegBtnText: {
+      color: "#FFFFFF",
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    searchBarContainer: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      height: 42,
+      gap: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.text,
+    },
+    tabScrollContainer: {
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tabScrollContent: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      gap: 8,
+    },
+    filterPill: {
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 20,
+      backgroundColor: colors.surfaceVariant,
+    },
+    filterPillActive: {
+      backgroundColor: colors.primary,
+    },
+    filterPillText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    filterPillTextActive: {
+      color: "#FFFFFF",
+    },
+    loadingBox: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    listContent: {
+      padding: 16,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 14,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    cardHeaderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      flex: 1,
+      marginRight: 8,
+    },
+    iconBadge: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    iconBadgeDraft: {
+      backgroundColor: colors.surfaceVariant,
+    },
+    iconBadgePending: {
+      backgroundColor: isDark ? "rgba(2, 132, 199, 0.2)" : "#EFF6FF",
+    },
+    iconBadgeApproved: {
+      backgroundColor: isDark ? "rgba(5, 150, 105, 0.2)" : "#ECFDF5",
+    },
+    iconBadgeQueried: {
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.2)" : "#FEF2F2",
+    },
+    companyName: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    trackingText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    statusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    statusBadgeDraft: {
+      backgroundColor: colors.surfaceVariant,
+    },
+    statusBadgePending: {
+      backgroundColor: isDark ? "rgba(30, 64, 175, 0.25)" : "#DBEAFE",
+    },
+    statusBadgeApproved: {
+      backgroundColor: isDark ? "rgba(5, 150, 105, 0.25)" : "#D1FAE5",
+    },
+    statusBadgeQueried: {
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.25)" : "#FEE2E2",
+    },
+    statusBadgeText: {
+      fontSize: 10,
+      fontWeight: "800",
+    },
+    statusBadgeTextDraft: {
+      color: colors.textSecondary,
+    },
+    statusBadgeTextPending: {
+      color: isDark ? "#93C5FD" : "#1E40AF",
+    },
+    statusBadgeTextApproved: {
+      color: isDark ? "#34D399" : "#065F46",
+    },
+    statusBadgeTextQueried: {
+      color: isDark ? "#F87171" : "#991B1B",
+    },
+    cardBody: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 10,
+      marginBottom: 12,
+    },
+    metaRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 4,
+    },
+    metaLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "600",
+    },
+    metaValue: {
+      fontSize: 12,
+      color: colors.text,
+      fontWeight: "700",
+      flex: 1,
+      textAlign: "right",
+      marginLeft: 8,
+    },
+    turnaroundBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      gap: 6,
+      marginTop: 6,
+    },
+    turnaroundText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: isDark ? "#60A5FA" : colors.primary,
+    },
+    queryReasonBox: {
+      flexDirection: "row",
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEF2F2",
+      padding: 10,
+      borderRadius: 8,
+      gap: 8,
+      marginTop: 8,
+    },
+    queryReasonTitle: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: isDark ? "#F87171" : "#991B1B",
+    },
+    queryReasonText: {
+      fontSize: 11,
+      color: isDark ? "#FCA5A5" : "#B91C1C",
+      marginTop: 2,
+      lineHeight: 16,
+    },
+    cardFooter: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 10,
+    },
+    cardDate: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textTertiary,
+    },
+    actionButtonsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    deleteDraftBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEF2F2",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    continueDraftBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    continueDraftBtnText: {
+      color: "#FFFFFF",
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    downloadBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    downloadBtnText: {
+      color: isDark ? "#60A5FA" : colors.primary,
+      fontSize: 11,
+      fontWeight: "700",
+    },
+    detailsBtn: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceVariant,
+    },
+    detailsBtnText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    emptyStateContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 60,
+      paddingHorizontal: 24,
+    },
+    emptyStateTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    emptyStateDesc: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 20,
+      marginBottom: 20,
+    },
+    emptyActionBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+      borderRadius: 12,
+    },
+    emptyActionBtnText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContainer: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 20,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: 12,
+    },
+    modalHeaderTitle: {
+      fontSize: 17,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    modalHeaderSub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    modalScroll: {
+      maxHeight: 400,
+    },
+    modalSection: {
+      marginBottom: 16,
+    },
+    modalSectionTitle: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+      marginBottom: 8,
+    },
+    modalRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 6,
+    },
+    modalLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "600",
+    },
+    modalValue: {
+      fontSize: 12,
+      color: colors.text,
+      fontWeight: "700",
+      flex: 1,
+      textAlign: "right",
+      marginLeft: 8,
+    },
+    propDetailCard: {
+      backgroundColor: colors.surfaceVariant,
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 6,
+    },
+    propDetailName: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    propDetailSub: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+  });

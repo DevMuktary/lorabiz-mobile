@@ -31,9 +31,10 @@ import {
   WifiOff,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-import { colors } from "../../constants/theme";
+import { colors as defaultColors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
@@ -71,6 +72,7 @@ export default function BvnSlipScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, wallet, refreshWallet, refreshProfile } = useAuth();
+  const { colors, isDark } = useTheme();
 
   // Auto-refresh wallet when screen focuses
   useFocusEffect(
@@ -300,16 +302,16 @@ export default function BvnSlipScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.screen}>
-        <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12 }]}>
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <View style={[styles.topHeader, { paddingTop: Math.max(insets.top, 20) + 12, backgroundColor: colors.surface, borderBottomColor: colors.surfaceBorder }]}>
           <TouchableOpacity
             onPress={() => router.back()}
-            style={styles.backBtn}
+            style={[styles.backBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.surfaceBorder }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <ArrowLeft size={20} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>BVN Verification Slips</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>BVN Verification Slips</Text>
           <TouchableOpacity
             onPress={() => router.push({ pathname: "/services/slip-history", params: { type: "BVN" } } as any)}
             style={styles.historyNavPill}
@@ -330,11 +332,11 @@ export default function BvnSlipScreen() {
           </View>
         ) : isStatusError || !statusData ? (
           <View style={styles.centerContainer}>
-            <View style={styles.offlineIconBox}>
+            <View style={[styles.offlineIconBox, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" }]}>
               <WifiOff size={38} color="#94A3B8" />
             </View>
-            <Text style={styles.offlineTitle}>No Internet Connection</Text>
-            <Text style={styles.offlineSubtitle}>
+            <Text style={[styles.offlineTitle, { color: colors.text }]}>No Internet Connection</Text>
+            <Text style={[styles.offlineSubtitle, { color: colors.textSecondary }]}>
               Unable to connect to LoraBiz servers. Please check your mobile data or Wi-Fi connection and try again.
             </Text>
             <TouchableOpacity
@@ -348,7 +350,7 @@ export default function BvnSlipScreen() {
           </View>
         ) : (
           <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
             contentContainerStyle={[
               styles.contentContainer,
               { paddingBottom: Math.max(insets.bottom, 16) + 32 },
@@ -364,15 +366,15 @@ export default function BvnSlipScreen() {
           </View>
         ) : null}
         {/* Input Card */}
-        <View style={styles.inputCard}>
+        <View style={[styles.inputCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
           <View style={styles.inputLabelRow}>
-            <Text style={styles.inputLabel}>11-Digit Bank Verification Number (BVN)</Text>
-            <Text style={styles.inputCounter}>{bvnInput.length}/11</Text>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>11-Digit Bank Verification Number (BVN)</Text>
+            <Text style={[styles.inputCounter, { color: colors.textMuted }]}>{bvnInput.length}/11</Text>
           </View>
 
-          <View style={styles.inputWrap}>
+          <View style={[styles.inputWrap, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC", borderColor: colors.surfaceBorder }]}>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: colors.text }]}
               keyboardType="number-pad"
               maxLength={11}
               value={bvnInput}
@@ -392,7 +394,7 @@ export default function BvnSlipScreen() {
         {/* Formats */}
         <View style={styles.formatSection}>
           <View style={styles.formatHeaderRow}>
-            <Text style={styles.sectionLabel}>Select Slip Format</Text>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>Select Slip Format</Text>
             <TouchableOpacity
               style={styles.walletBalanceChip}
               onPress={() => router.push("/wallet/fund" as any)}
@@ -419,6 +421,7 @@ export default function BvnSlipScreen() {
                   key={opt.id}
                   style={[
                     styles.formatCard,
+                    { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
                     isSelected && styles.formatCardSelected,
                     !formatAvailable && styles.formatCardDisabled,
                   ]}
@@ -443,6 +446,7 @@ export default function BvnSlipScreen() {
                         <Text
                           style={[
                             styles.formatTitle,
+                            { color: colors.text },
                             !formatAvailable && { color: colors.textMuted },
                           ]}
                         >
@@ -477,6 +481,7 @@ export default function BvnSlipScreen() {
                     <Text
                       style={[
                         styles.formatPrice,
+                        { color: colors.text },
                         !formatAvailable && styles.formatPriceDisabled,
                       ]}
                     >
@@ -491,7 +496,7 @@ export default function BvnSlipScreen() {
 
         {/* Single Statutory NDPA Consent */}
         <TouchableOpacity
-          style={styles.consentRow}
+          style={[styles.consentRow, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}
           onPress={() => setNdpaConsent(!ndpaConsent)}
           activeOpacity={0.8}
         >
@@ -503,7 +508,7 @@ export default function BvnSlipScreen() {
           >
             {ndpaConsent ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
           </View>
-          <Text style={styles.consentText}>
+          <Text style={[styles.consentText, { color: colors.textSecondary }]}>
             I confirm that I am the owner of this BVN or have lawful authorization to retrieve this financial record in accordance with the{" "}
             <Text style={{ fontWeight: "800", color: colors.text }}>
               Nigeria Data Protection Act (NDPA) 2023
@@ -529,13 +534,14 @@ export default function BvnSlipScreen() {
         {/* History */}
         {historyList.length > 0 ? (
           <View style={styles.historySection}>
-            <Text style={styles.sectionLabel}>Recent BVN Slips</Text>
-            <View style={styles.historyCard}>
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Recent BVN Slips</Text>
+            <View style={[styles.historyCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               {historyList.slice(0, 5).map((item, idx) => (
                 <TouchableOpacity
                   key={item.id || idx}
                   style={[
                     styles.historyItem,
+                    { borderBottomColor: colors.surfaceBorder },
                     idx === Math.min(historyList.length, 5) - 1 && { borderBottomWidth: 0 },
                   ]}
                   onPress={() =>
@@ -549,14 +555,14 @@ export default function BvnSlipScreen() {
                   }
                   activeOpacity={0.7}
                 >
-                  <View style={styles.historyIconWrap}>
+                  <View style={[styles.historyIconWrap, { backgroundColor: colors.surfaceElevated }]}>
                     <FileText size={16} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.historyTitle} numberOfLines={1}>
+                    <Text style={[styles.historyTitle, { color: colors.text }]} numberOfLines={1}>
                       {item.fullName || item.bvn || "BVN Slip"}
                     </Text>
-                    <Text style={styles.historySub}>
+                    <Text style={[styles.historySub, { color: colors.textTertiary }]}>
                       {item.slipType || "Standard"} • {formatRecentSlipDate(item)}
                     </Text>
                   </View>
@@ -590,17 +596,17 @@ export default function BvnSlipScreen() {
         onRequestClose={() => setLightbox({ visible: false, imageSource: null, label: "" })}
       >
         <View style={styles.lightboxBackdrop}>
-          <View style={styles.lightboxCard}>
-            <View style={styles.lightboxHeader}>
-              <Text style={styles.lightboxTitle}>{lightbox.label} Specimen</Text>
+          <View style={[styles.lightboxCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
+            <View style={[styles.lightboxHeader, { borderBottomColor: colors.surfaceBorder }]}>
+              <Text style={[styles.lightboxTitle, { color: colors.text }]}>{lightbox.label} Specimen</Text>
               <TouchableOpacity
                 onPress={() => setLightbox({ visible: false, imageSource: null, label: "" })}
-                style={styles.lightboxCloseBtn}
+                style={[styles.lightboxCloseBtn, { backgroundColor: colors.surfaceBorder }]}
               >
                 <X size={18} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <View style={styles.lightboxImageWrap}>
+            <View style={[styles.lightboxImageWrap, { backgroundColor: colors.surface }]}>
               {lightbox.imageSource ? (
                 <Image
                   source={lightbox.imageSource}
@@ -621,15 +627,15 @@ export default function BvnSlipScreen() {
         onRequestClose={() => setResultModal({ visible: false })}
       >
         <View style={styles.resultBackdrop}>
-          <View style={[styles.resultCard, { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 34 : 24) }]}>
-            <View style={styles.resultHeader}>
+          <View style={[styles.resultCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder, paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 34 : 24) }]}>
+            <View style={[styles.resultHeader, { borderBottomColor: colors.surfaceBorder }]}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <CheckCircle2 size={20} color={colors.success} style={{ marginRight: 8 }} />
-                <Text style={styles.resultTitle}>BVN Record Verified</Text>
+                <Text style={[styles.resultTitle, { color: colors.text }]}>BVN Record Verified</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setResultModal({ visible: false })}
-                style={styles.lightboxCloseBtn}
+                style={[styles.lightboxCloseBtn, { backgroundColor: colors.surfaceBorder }]}
               >
                 <X size={18} color={colors.text} />
               </TouchableOpacity>
@@ -675,7 +681,7 @@ export default function BvnSlipScreen() {
                 return (
                   <View style={{ marginBottom: 12 }}>
                     {/* Identity Profile Header */}
-                    <View style={styles.demoCard}>
+                    <View style={[styles.demoCard, { backgroundColor: isDark ? "rgba(2, 132, 199, 0.12)" : "#F0F9FF", borderColor: isDark ? "rgba(2, 132, 199, 0.3)" : "rgba(2, 132, 199, 0.15)" }]}>
                       {photoUri ? (
                         <Image
                           source={{ uri: photoUri }}
@@ -683,21 +689,21 @@ export default function BvnSlipScreen() {
                           resizeMode="cover"
                         />
                       ) : (
-                        <View style={[styles.demoPhoto, styles.demoPhotoFallback]}>
+                        <View style={[styles.demoPhoto, styles.demoPhotoFallback, { backgroundColor: isDark ? "rgba(2, 132, 199, 0.2)" : "rgba(2, 132, 199, 0.1)" }]}>
                           <User size={28} color="#0284C7" />
                         </View>
                       )}
                       <View style={{ flex: 1, marginLeft: 12 }}>
                         <Text style={styles.demoLabel}>VERIFIED ACCOUNT HOLDER</Text>
-                        <Text style={styles.demoName} numberOfLines={2}>
+                        <Text style={[styles.demoName, { color: colors.text }]} numberOfLines={2}>
                           {demo.fullName || "Verified Bank Customer"}
                         </Text>
                         <View style={styles.demoBadgeRow}>
                           <View style={styles.bvnPill}>
                             <Text style={styles.bvnPillText}>BVN: {maskedBvn}</Text>
                           </View>
-                          <View style={styles.formatPill}>
-                            <Text style={styles.formatPillText}>{resultModal.slipLabel || "BVN Slip"}</Text>
+                          <View style={[styles.formatPill, { backgroundColor: colors.surfaceBorder }]}>
+                            <Text style={[styles.formatPillText, { color: colors.textSecondary }]}>{resultModal.slipLabel || "BVN Slip"}</Text>
                           </View>
                         </View>
                       </View>
@@ -711,13 +717,15 @@ export default function BvnSlipScreen() {
                             key={idx}
                             style={[
                               styles.resultGridItem,
+                              { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
                               field.fullWidth && styles.resultGridItemFull,
                             ]}
                           >
-                            <Text style={styles.resultGridLabel}>{field.label}</Text>
+                            <Text style={[styles.resultGridLabel, { color: colors.textMuted }]}>{field.label}</Text>
                             <Text
                               style={[
                                 styles.resultGridValue,
+                                { color: colors.text },
                                 field.isMono && styles.resultGridValueMono,
                               ]}
                               numberOfLines={field.fullWidth ? 3 : 1}
@@ -732,7 +740,7 @@ export default function BvnSlipScreen() {
                 );
               })()}
 
-              <View style={styles.successBanner}>
+              <View style={[styles.successBanner, { backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.08)", borderColor: isDark ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.2)" }]}>
                 <Text style={styles.successBannerText}>
                   Your {resultModal.slipLabel || "BVN Slip"} PDF has been generated and is ready to download.
                 </Text>
@@ -750,16 +758,16 @@ export default function BvnSlipScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.closeResultBtn}
+                style={[styles.closeResultBtn, { backgroundColor: colors.surfaceBorder }]}
                 onPress={() => setResultModal({ visible: false })}
                 activeOpacity={0.8}
               >
-                <Text style={styles.closeResultBtnText}>Done</Text>
+                <Text style={[styles.closeResultBtnText, { color: colors.textSecondary }]}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-        </Modal>
+      </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
