@@ -498,8 +498,8 @@ export default function TransactionDetailsScreen() {
                 }
                 activeOpacity={0.85}
               >
-                <ShieldAlert size={16} color="#334155" style={{ marginRight: 8 }} />
-                <Text style={[styles.openDisputePageText, { color: "#1E293B" }]}>
+                <ShieldAlert size={16} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={[styles.openDisputePageText, { color: isDark ? "#FFFFFF" : colors.primary }]}>
                   View Dispute Case & Updates
                 </Text>
               </TouchableOpacity>
@@ -520,6 +520,16 @@ export default function TransactionDetailsScreen() {
                 </Text>
               </TouchableOpacity>
             )}
+
+            <TouchableOpacity
+              style={{ alignSelf: "center", marginTop: 14, paddingVertical: 6 }}
+              onPress={() => router.push("/wallet/disputes")}
+              activeOpacity={0.7}
+            >
+              <Text style={{ fontSize: 12.5, fontWeight: "600", color: colors.textSecondary }}>
+                Looking for other cases? <Text style={{ color: colors.primary, fontWeight: "700" }}>View All Disputes</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Legal Note */}
@@ -948,8 +958,8 @@ const getStyles = (colors: any, isDark: boolean) =>
       color: "#DC2626",
     },
     openDisputeActiveBtn: {
-      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
-      borderColor: colors.surfaceBorder,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.16)" : "#FDF2F8",
+      borderColor: isDark ? "rgba(200, 45, 117, 0.40)" : "rgba(200, 45, 117, 0.25)",
     },
     disputePendingBanner: {
       flexDirection: "row",

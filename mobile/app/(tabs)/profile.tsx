@@ -41,6 +41,7 @@ import {
   Smartphone,
   CheckCircle2,
   AlertTriangle,
+  AlertCircle,
   X,
   KeyRound,
   ShieldCheck,
@@ -373,11 +374,19 @@ export default function ProfileScreen() {
       });
       return;
     }
+    setIsEditingPhone(true);
     setPhoneStep("ENTER_PHONE");
     setNewPhone("");
     setPhoneOtp("");
     setPhoneError(null);
-    setActiveModal("PHONE_CHANGE");
+  }
+
+  function handleCancelPhoneEdit() {
+    setIsEditingPhone(false);
+    setPhoneStep("ENTER_PHONE");
+    setNewPhone("");
+    setPhoneOtp("");
+    setPhoneError(null);
   }
 
   async function handleSendPhoneOtp() {
@@ -424,7 +433,10 @@ export default function ProfileScreen() {
 
       if (res?.success) {
         await refreshProfile();
-        setActiveModal(null);
+        setIsEditingPhone(false);
+        setPhoneStep("ENTER_PHONE");
+        setNewPhone("");
+        setPhoneOtp("");
         setAlertConfig({
           visible: true,
           type: "success",
@@ -1068,10 +1080,14 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* APP AUTO-LOCK INLINE SELECTOR */}
+            {/* APP AUTO-LOCK MENU ROW */}
             <Text style={[styles.subSectionTitle, { color: colors.textSecondary, marginTop: 22 }]}>Session Security</Text>
             <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
-              <View style={[styles.menuItem, { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder }]}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => setActiveModal("AUTO_LOCK")}
+                activeOpacity={0.7}
+              >
                 <View style={[styles.menuIconBox, { backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.10)" }]}>
                   <Clock size={19} color={colors.purple} />
                 </View>
@@ -1079,49 +1095,32 @@ export default function ProfileScreen() {
                   <Text style={[styles.menuTitle, { color: colors.text }]}>App Auto-Lock</Text>
                   <Text style={[styles.menuSub, { color: colors.textSecondary }]}>Lock session when inactive or minimized</Text>
                 </View>
-              </View>
-
-              {/* In-Place Selectable Timeout Options (No modal redirect) */}
-              <View style={{ padding: 10, gap: 6 }}>
-                {[
-                  { id: "immediately", label: "Immediately upon leaving" },
-                  { id: "1m", label: "1 Minute of inactivity" },
-                  { id: "5m", label: "5 Minutes of inactivity" },
-                  { id: "15m", label: "15 Minutes of inactivity" },
-                  { id: "1h", label: "1 Hour of inactivity" },
-                  { id: "2h", label: "2 Hours of inactivity" },
-                  { id: "never", label: "Never (Disabled)" },
-                ].map((item) => {
-                  const isSelected = autoLockTimeout === item.id;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.inlineTimeoutRow,
-                        {
-                          backgroundColor: isSelected
-                            ? (isDark ? "rgba(200, 45, 117, 0.18)" : "rgba(200, 45, 117, 0.08)")
-                            : (isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)"),
-                          borderColor: isSelected ? colors.primary : (isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder),
-                        },
-                      ]}
-                      onPress={() => setAutoLockSetting(item.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.inlineTimeoutText,
-                          { color: isSelected ? colors.primary : colors.text },
-                          isSelected && { fontWeight: "700" },
-                        ]}
-                      >
-                        {item.label}
-                      </Text>
-                      {isSelected ? <Check size={16} color={colors.primary} /> : null}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <View style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 8,
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+                  }}>
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>
+                      {autoLockTimeout === "immediately"
+                        ? "Immediate"
+                        : autoLockTimeout === "1m"
+                        ? "1 Min"
+                        : autoLockTimeout === "5m"
+                        ? "5 Mins"
+                        : autoLockTimeout === "15m"
+                        ? "15 Mins"
+                        : autoLockTimeout === "1h"
+                        ? "1 Hour"
+                        : autoLockTimeout === "2h"
+                        ? "2 Hours"
+                        : "Disabled"}
+                    </Text>
+                  </View>
+                  <ChevronRight size={18} color={colors.textSecondary} />
+                </View>
+              </TouchableOpacity>
             </View>
 
             {/* DISPLAY & PRIVACY */}
@@ -1679,133 +1678,80 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* ==================================================== */}
-      {/* MODAL 2: Change Phone Number (With Keyboard Avoidance) */}
+      {/* MODAL: App Auto-Lock Timeout Picker                  */}
       {/* ==================================================== */}
       <Modal
-        visible={activeModal === "PHONE_CHANGE"}
+        visible={activeModal === "AUTO_LOCK"}
         transparent
         animationType="slide"
-        onRequestClose={() => setActiveModal("IDENTITY")}
+        onRequestClose={() => setActiveModal(null)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardAvoidingModal}
-        >
-          <View style={styles.modalBackdropCenter}>
-            <View style={[styles.formDialogCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
-              <View style={styles.dialogHeader}>
-                <Text style={[styles.dialogTitle, { color: colors.text }]}>Change Phone Number</Text>
-                <TouchableOpacity onPress={() => setActiveModal("IDENTITY")} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
+        <View style={styles.modalBackdropCenter}>
+          <View style={[styles.formDialogCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.surfaceBorder }]}>
+            <View style={styles.dialogHeader}>
+              <View>
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>App Auto-Lock</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                  Lock session when inactive or minimized
+                </Text>
               </View>
+              <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <X size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-              {phoneError ? (
-                <View style={styles.errorBanner}>
-                  <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
-                  <Text style={styles.errorBannerText}>{phoneError}</Text>
-                </View>
-              ) : null}
-
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ paddingBottom: 16 }}
-              >
-                {phoneStep === "ENTER_PHONE" ? (
-                  <View>
-                    <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
-                      Enter your new Nigerian mobile phone number. We will send a 6-digit confirmation code to your registered email ({user?.email}) to verify ownership.
-                    </Text>
-
-                    <Text style={[styles.inputLabel, { color: colors.text }]}>New Phone Number</Text>
-                    <TextInput
-                      style={[
-                        styles.highContrastInput,
-                        {
-                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                          borderColor: colors.surfaceBorder,
-                          color: colors.text,
-                        },
-                      ]}
-                      value={newPhone}
-                      onChangeText={setNewPhone}
-                      placeholder="e.g. 08012345678"
-                      keyboardType="phone-pad"
-                      placeholderTextColor={colors.textMuted}
-                      selectionColor={colors.primary}
-                      autoFocus
-                    />
-
-                    <Text style={[styles.helperNote, { color: colors.textMuted }]}>
-                      Note: You can only update your phone number once every 30 days for account security.
-                    </Text>
-
-                    <TouchableOpacity
-                      style={[styles.dialogSaveBtn, (!newPhone || isPhoneLoading) && styles.btnDisabled]}
-                      onPress={handleSendPhoneOtp}
-                      disabled={!newPhone || isPhoneLoading}
-                      activeOpacity={0.88}
+            <View style={{ marginTop: 8, gap: 6 }}>
+              {[
+                { id: "immediately", label: "Immediately upon leaving" },
+                { id: "1m", label: "1 Minute of inactivity" },
+                { id: "5m", label: "5 Minutes of inactivity" },
+                { id: "15m", label: "15 Minutes of inactivity" },
+                { id: "1h", label: "1 Hour of inactivity" },
+                { id: "2h", label: "2 Hours of inactivity" },
+                { id: "never", label: "Never (Disabled)" },
+              ].map((item) => {
+                const isSelected = autoLockTimeout === item.id;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.inlineTimeoutRow,
+                      {
+                        backgroundColor: isSelected
+                          ? (isDark ? "rgba(200, 45, 117, 0.18)" : "rgba(200, 45, 117, 0.08)")
+                          : (isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)"),
+                        borderColor: isSelected ? colors.primary : (isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder),
+                        paddingVertical: 13,
+                        paddingHorizontal: 14,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      },
+                    ]}
+                    onPress={async () => {
+                      await setAutoLockSetting(item.id);
+                      setActiveModal(null);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: isSelected ? colors.primary : colors.text,
+                        fontWeight: isSelected ? "700" : "500",
+                      }}
                     >
-                      {isPhoneLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <Text style={styles.dialogSaveText}>Send Verification Code</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View>
-                    <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
-                      Enter the 6-digit verification code sent to your registered email ({user?.email}) to confirm your new phone number ({newPhone}).
+                      {item.label}
                     </Text>
-
-                    <Text style={[styles.inputLabel, { color: colors.text }]}>6-Digit Verification Code</Text>
-                    <TextInput
-                      style={[
-                        styles.highContrastInput,
-                        styles.otpInput,
-                        {
-                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                          borderColor: colors.surfaceBorder,
-                          color: colors.text,
-                        },
-                      ]}
-                      value={phoneOtp}
-                      onChangeText={setPhoneOtp}
-                      placeholder="123456"
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      placeholderTextColor={colors.textMuted}
-                      selectionColor={colors.primary}
-                      autoFocus
-                    />
-
-                    <TouchableOpacity
-                      style={[styles.dialogSaveBtn, (!phoneOtp || isPhoneLoading) && styles.btnDisabled]}
-                      onPress={handleVerifyPhoneOtp}
-                      disabled={!phoneOtp || isPhoneLoading}
-                      activeOpacity={0.88}
-                    >
-                      {isPhoneLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <Text style={styles.dialogSaveText}>Verify & Save Number</Text>
-                      )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.backStepBtn}
-                      onPress={() => setPhoneStep("ENTER_PHONE")}
-                    >
-                      <Text style={styles.backStepText}>Change Phone Number</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </ScrollView>
+                    {isSelected ? <Check size={18} color={colors.primary} /> : null}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* ==================================================== */}
@@ -1967,8 +1913,7 @@ export default function ProfileScreen() {
         transparent
         animationType="slide"
         onRequestClose={() => {
-          setActiveModal(null);
-          setActiveSubScreen("SECURITY");
+          setActiveModal("SECURITY");
         }}
       >
         <KeyboardAvoidingView
@@ -1981,8 +1926,7 @@ export default function ProfileScreen() {
                 <Text style={[styles.dialogTitle, { color: colors.text }]}>Two-Factor Authentication</Text>
                 <TouchableOpacity
                   onPress={() => {
-                    setActiveModal(null);
-                    setActiveSubScreen("SECURITY");
+                    setActiveModal("SECURITY");
                   }}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
@@ -2196,8 +2140,7 @@ export default function ProfileScreen() {
         transparent={false}
         animationType="slide"
         onRequestClose={() => {
-          setActiveModal(null);
-          setActiveSubScreen("LEGAL");
+          setActiveModal("LEGAL");
         }}
       >
         <View style={[styles.docViewerContainer, { paddingTop: Math.max(insets.top, 20), backgroundColor: colors.background }]}>
@@ -2211,8 +2154,7 @@ export default function ProfileScreen() {
             </View>
             <TouchableOpacity
               onPress={() => {
-                setActiveModal(null);
-                setActiveSubScreen("LEGAL");
+                setActiveModal("LEGAL");
               }}
               style={[styles.docViewerCloseBtn, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -2341,8 +2283,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.docViewerDoneBtn}
               onPress={() => {
-                setActiveModal(null);
-                setActiveSubScreen("LEGAL");
+                setActiveModal("LEGAL");
               }}
               activeOpacity={0.88}
             >

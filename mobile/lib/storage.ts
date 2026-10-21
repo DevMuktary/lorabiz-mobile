@@ -302,9 +302,9 @@ export async function getThemeModePref(): Promise<ThemeMode> {
   try {
     const val = await getItem(THEME_MODE_KEY);
     if (val === "dark" || val === "system" || val === "light") return val;
-    return "light"; // Default white per user specification
+    return "system"; // Default to system theme so OS dark/light mode is respected
   } catch {
-    return "light";
+    return "system";
   }
 }
 

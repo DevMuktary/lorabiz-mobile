@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { getSavedProfile } from "../lib/storage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -21,6 +22,7 @@ const LOGO_HEIGHT = 100;
 
 export default function IndexScreen() {
   const { token, user, isLoading } = useAuth();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
 
   // Animation values (GPU native driver for 60/120fps)
@@ -132,6 +134,7 @@ export default function IndexScreen() {
         style={[
           styles.whiteCircle,
           {
+            backgroundColor: colors.background,
             opacity: circleOpacity,
             transform: [{ scale: circleScale }],
           },

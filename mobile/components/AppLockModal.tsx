@@ -100,7 +100,7 @@ export default function AppLockModal() {
     <Modal
       visible={isAppLocked}
       transparent={true}
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent
     >
       <StatusBar style={isDark ? "light" : "dark"} />

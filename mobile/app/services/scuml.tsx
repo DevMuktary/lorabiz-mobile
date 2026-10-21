@@ -402,7 +402,7 @@ export default function ScumlScreen() {
           <Text style={styles.topBarTitle}>SCUML Registration</Text>
           <View style={{ width: 36 }} />
         </View>
-        <BrandLoader message="Loading SCUML service..." />
+        <BrandLoader inline message="Loading SCUML service..." />
       </View>
     );
   }
@@ -903,7 +903,7 @@ export default function ScumlScreen() {
 
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Turnaround Time:</Text>
-                <Text style={[styles.summaryValue, { color: "#334155", fontWeight: "700" }]}>
+                <Text style={[styles.summaryValue, { color: isDark ? colors.text : "#334155", fontWeight: "700" }]}>
                   24 – 72 Working Hours
                 </Text>
               </View>
@@ -1056,7 +1056,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#FFFFFF",
     overflow: "hidden",
     borderWidth: 1,
     borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
@@ -1468,7 +1468,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#FFFFFF",
     overflow: "hidden",
     borderWidth: 1,
     borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",

@@ -756,7 +756,7 @@ export default function BvnModificationScreen() {
             <Text style={styles.headerSubtitle}>Loading service...</Text>
           </View>
         </View>
-        <BrandLoader message="Loading BVN Modification service..." />
+        <BrandLoader inline message="Loading BVN Modification service..." />
       </View>
     );
   }
@@ -1689,7 +1689,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#FFFFFF",
     overflow: "hidden",
     borderWidth: 1,
     borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",

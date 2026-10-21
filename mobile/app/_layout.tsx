@@ -55,6 +55,13 @@ function RootLayoutContent() {
           }}
         />
         <Stack.Screen
+          name="wallet/disputes"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
+        <Stack.Screen
           name="wallet/transaction/dispute/[id]"
           options={{
             headerShown: false,

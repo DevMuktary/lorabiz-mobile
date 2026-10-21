@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
   RotateCw,
   Search,
   CheckCircle2,
+  ShieldAlert,
   AlertCircle,
   Clock3,
   X,
@@ -34,7 +35,6 @@ import {
   Check,
 } from "lucide-react-native";
 import { colors as defaultColors } from "../../constants/theme";
-const colors = defaultColors;
 import { useTheme } from "../../context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -113,6 +113,7 @@ export default function ActivityScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   // Filter states
   const [selectedService, setSelectedService] = useState<SpecificServiceKey>("ALL");
@@ -379,6 +380,33 @@ export default function ActivityScreen() {
           <RotateCw size={18} color={colors.text} />
         </TouchableOpacity>
       </View>
+
+      {/* Dispute Cases Access Banner */}
+      <TouchableOpacity
+        style={styles.disputesShortcutBanner}
+        onPress={() => router.push("/wallet/disputes")}
+        activeOpacity={0.8}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+          <View style={styles.disputesShortcutIconWrap}>
+            <ShieldAlert size={15} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.disputesShortcutTitle, { color: colors.text }]}>
+              Have an issue with a transaction?
+            </Text>
+            <Text style={[styles.disputesShortcutSub, { color: colors.textSecondary }]}>
+              View all dispute cases & inquiry status
+            </Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+          <Text style={[styles.disputesShortcutLink, { color: colors.primary }]}>
+            All Cases
+          </Text>
+          <ChevronRight size={14} color={colors.primary} />
+        </View>
+      </TouchableOpacity>
 
       {/* 2. Filters Section: Search & Service Dropdown */}
       <View style={styles.filterSection}>
@@ -766,10 +794,10 @@ export default function ActivityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
 
   /* Calm, Centered Standard Top Bar */
@@ -779,9 +807,40 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
+    borderBottomColor: colors.surfaceBorder,
+  },
+  disputesShortcutBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.06)",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: isDark ? "rgba(200, 45, 117, 0.22)" : "rgba(200, 45, 117, 0.12)",
+  },
+  disputesShortcutIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.25)" : "rgba(200, 45, 117, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  disputesShortcutTitle: {
+    fontSize: 12.5,
+    fontWeight: "700",
+  },
+  disputesShortcutSub: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  disputesShortcutLink: {
+    fontSize: 11.5,
+    fontWeight: "700",
   },
   backBtn: {
     width: 36,
@@ -816,17 +875,17 @@ const styles = StyleSheet.create({
 
   /* Filter Section */
   filterSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
+    borderBottomColor: colors.surfaceBorder,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -850,7 +909,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     borderRadius: 10,
@@ -868,7 +927,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     borderRadius: 10,
@@ -899,7 +958,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
   },
@@ -939,11 +998,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.04)",
+    borderColor: colors.surfaceBorder,
   },
   txCardLeft: {
     flexDirection: "row",
@@ -1035,7 +1094,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     gap: 4,
@@ -1068,7 +1127,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#FDF2F8",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
@@ -1101,7 +1160,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   dropdownModalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 18,
     shadowColor: "#000",
@@ -1148,7 +1207,7 @@ const styles = StyleSheet.create({
 
   /* Date Modal */
   dateModalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 18,
     shadowColor: "#000",
@@ -1172,7 +1231,7 @@ const styles = StyleSheet.create({
   },
   modalPresetBtn: {
     flexBasis: "48%",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 8,
@@ -1204,7 +1263,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   dateInput: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     borderRadius: 8,

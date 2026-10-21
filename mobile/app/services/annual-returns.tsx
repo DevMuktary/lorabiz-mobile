@@ -355,7 +355,7 @@ export default function AnnualReturnsScreen() {
           <Text style={styles.topBarTitle}>CAC Annual Returns</Text>
           <View style={{ width: 36 }} />
         </View>
-        <BrandLoader message="Loading Annual Returns service..." />
+        <BrandLoader inline message="Loading Annual Returns service..." />
       </View>
     );
   }
@@ -1108,7 +1108,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#FFFFFF",
     overflow: "hidden",
     borderWidth: 1,
     borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",

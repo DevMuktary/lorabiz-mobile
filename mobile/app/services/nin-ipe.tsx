@@ -268,12 +268,12 @@ export default function NinIpeScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: "center", alignItems: "center" }]}>
         <StatusBar
           barStyle={isDark ? "light-content" : "dark-content"}
           backgroundColor={colors.surface}
         />
-        <BrandLoader message="Loading IPE Clearance pricing..." />
+        <BrandLoader inline message="Loading IPE Clearance pricing..." />
       </View>
     );
   }
@@ -900,7 +900,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       width: 50,
       height: 50,
       borderRadius: 16,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#FFFFFF",
       overflow: "hidden",
       borderWidth: 1,
       borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",

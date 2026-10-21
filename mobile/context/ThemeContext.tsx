@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import { useColorScheme } from "react-native";
+import { useColorScheme, Appearance } from "react-native";
 import { lightColors, darkColors } from "../constants/theme";
 import { getThemeModePref, setThemeModePref, ThemeMode } from "../lib/storage";
 
@@ -13,8 +13,11 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme();
-  const [themeMode, setThemeModeState] = useState<ThemeMode>("light"); // Default light per specification
+  const hookScheme = useColorScheme();
+  const [currentSystemScheme, setCurrentSystemScheme] = useState<"light" | "dark">(
+    Appearance.getColorScheme() || (hookScheme === "dark" ? "dark" : "light")
+  );
+  const [themeMode, setThemeModeState] = useState<ThemeMode>("system"); // Default to device system theme
 
   useEffect(() => {
     let isMounted = true;
@@ -23,8 +26,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setThemeModeState(stored);
       }
     });
+
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      if (isMounted && colorScheme) {
+        setCurrentSystemScheme(colorScheme === "dark" ? "dark" : "light");
+      }
+    });
+
     return () => {
       isMounted = false;
+      subscription.remove();
     };
   }, []);
 
@@ -37,8 +48,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (themeMode === "dark") return true;
     if (themeMode === "light") return false;
     // "system"
-    return systemScheme === "dark";
-  }, [themeMode, systemScheme]);
+    const activeScheme = currentSystemScheme || hookScheme || "light";
+    return activeScheme === "dark";
+  }, [themeMode, currentSystemScheme, hookScheme]);
 
   const activeColors = useMemo(() => {
     return isDark ? darkColors : lightColors;
@@ -59,7 +71,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 }
 
 const defaultThemeValue: ThemeContextType = {
-  themeMode: "light",
+  themeMode: "system",
   isDark: false,
   colors: lightColors,
   setThemeMode: async () => {},

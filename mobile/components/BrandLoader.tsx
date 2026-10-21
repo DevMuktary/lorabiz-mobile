@@ -8,7 +8,8 @@ import {
   Image,
   Easing,
 } from "react-native";
-import { colors } from "../constants/theme";
+import { colors as defaultColors } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
 
 interface BrandLoaderProps {
   visible?: boolean;
@@ -17,6 +18,7 @@ interface BrandLoaderProps {
 }
 
 export default function BrandLoader({ visible = true, message, inline = false }: BrandLoaderProps) {
+  const { colors, isDark } = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
@@ -68,18 +70,32 @@ export default function BrandLoader({ visible = true, message, inline = false }:
   });
 
   const content = (
-    <View style={inline ? styles.inlineContainer : styles.overlay}>
+    <View
+      style={
+        inline
+          ? styles.inlineContainer
+          : [
+              styles.overlay,
+              {
+                backgroundColor: isDark
+                  ? "rgba(11, 17, 32, 0.92)"
+                  : "rgba(255, 255, 255, 0.92)",
+              },
+            ]
+      }
+    >
       <View style={styles.transparentBox}>
         <View style={styles.logoWrapper}>
           {/* Orbiting Spinner Ring */}
           <Animated.View
             style={[
               styles.spinnerRing,
+              { borderColor: colors.primary, borderTopColor: "transparent", borderRightColor: "transparent" },
               { transform: [{ rotate: spin }] },
             ]}
           />
 
-          {/* Brand Logo with Gentle Pulse (Zero Background Square / Box) */}
+          {/* Brand Logo with Gentle Pulse */}
           <Animated.View
             style={[
               styles.logoBox,
@@ -95,7 +111,9 @@ export default function BrandLoader({ visible = true, message, inline = false }:
         </View>
 
         {message ? (
-          <Text style={styles.messageText}>{message}</Text>
+          <Text style={[styles.messageText, { color: isDark ? "#94A3B8" : "#64748B" }]}>
+            {message}
+          </Text>
         ) : null}
       </View>
     </View>
