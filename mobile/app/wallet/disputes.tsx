@@ -65,7 +65,7 @@ export default function DisputesOverviewScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Fetch all disputes
+  // Fetch all disputes with fallback to transactions ledger
   const {
     data,
     isLoading,
@@ -74,21 +74,93 @@ export default function DisputesOverviewScreen() {
   } = useQuery({
     queryKey: ["allUserDisputes", statusFilter, searchQuery],
     queryFn: async () => {
+      let rawDisputes: DisputeItem[] = [];
+
+      // 1. Try dedicated dispute endpoint first
       try {
         const queryParams = new URLSearchParams();
         if (statusFilter !== "ALL") queryParams.append("status", statusFilter);
         if (searchQuery.trim()) queryParams.append("search", searchQuery.trim());
         const res = await api.get(`/api/user/transactions/dispute?${queryParams.toString()}`);
-        return {
-          disputes: (res?.disputes || []) as DisputeItem[],
-          counts: res?.counts || { all: 0, pending: 0, resolved: 0, rejected: 0 },
-        };
-      } catch {
-        return {
-          disputes: [] as DisputeItem[],
-          counts: { all: 0, pending: 0, resolved: 0, rejected: 0 },
-        };
+        if (res?.success && Array.isArray(res?.disputes) && res.disputes.length > 0) {
+          rawDisputes = res.disputes;
+        }
+      } catch {}
+
+      // 2. If no disputes found from dedicated endpoint, fetch from transactions endpoint (active in production)
+      if (rawDisputes.length === 0) {
+        try {
+          const txRes = await api.get("/api/user/transactions?limit=100");
+          const txList = txRes?.transactions || [];
+          const disputedTx = txList.filter((t: any) => !!t.dispute);
+
+          rawDisputes = disputedTx.map((t: any) => {
+            const d = t.dispute;
+            return {
+              id: d.id || `disp_${t.id}`,
+              reference: t.reference,
+              transactionId: t.id,
+              amount: Number(t.amount || 0),
+              type: t.type || "DEBIT",
+              serviceCategory: t.serviceCategory || "SERVICE",
+              description: t.description || "Transaction Dispute",
+              status: (d.status || "PENDING") as "PENDING" | "RESOLVED" | "REJECTED",
+              issueType: d.issueType || "Transaction Issue",
+              notes: d.notes || "",
+              adminResponse: d.adminResponse || null,
+              messageCount: d.messages ? d.messages.length : (d.adminResponse ? 2 : 1),
+              latestMessage: d.adminResponse
+                ? {
+                    sender: "SUPPORT" as const,
+                    text: d.adminResponse,
+                    createdAt: d.createdAt || t.createdAt,
+                  }
+                : d.notes
+                ? {
+                    sender: "USER" as const,
+                    text: d.notes,
+                    createdAt: d.createdAt || t.createdAt,
+                  }
+                : null,
+              createdAt: d.createdAt || t.createdAt,
+              updatedAt: d.createdAt || t.createdAt,
+            };
+          });
+        } catch (err) {
+          console.error("Failed to fallback fetch transactions for disputes:", err);
+        }
       }
+
+      // Compute status counts across all discovered disputes
+      const counts = {
+        all: rawDisputes.length,
+        pending: rawDisputes.filter((d) => d.status === "PENDING").length,
+        resolved: rawDisputes.filter((d) => d.status === "RESOLVED").length,
+        rejected: rawDisputes.filter((d) => d.status === "REJECTED").length,
+      };
+
+      // Filter locally by status
+      let filtered = rawDisputes;
+      if (statusFilter !== "ALL") {
+        filtered = filtered.filter((d) => d.status === statusFilter);
+      }
+
+      // Filter locally by search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        filtered = filtered.filter(
+          (d) =>
+            d.reference.toLowerCase().includes(q) ||
+            d.issueType.toLowerCase().includes(q) ||
+            d.description.toLowerCase().includes(q) ||
+            d.notes.toLowerCase().includes(q)
+        );
+      }
+
+      return {
+        disputes: filtered,
+        counts,
+      };
     },
   });
 

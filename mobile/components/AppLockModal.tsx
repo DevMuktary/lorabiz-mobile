@@ -97,11 +97,15 @@ export default function AppLockModal() {
   const displayName = user?.name || user?.firstName || "Account Owner";
 
   return (
-    <Modal
-      visible={isAppLocked}
-      transparent={true}
-      animationType="none"
-      statusBarTranslucent
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          zIndex: 99999,
+          elevation: 99999,
+          backgroundColor: colors.background,
+        },
+      ]}
     >
       <StatusBar style={isDark ? "light" : "dark"} />
       <KeyboardAvoidingView
@@ -256,7 +260,7 @@ export default function AppLockModal() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </View>
   );
 }
 

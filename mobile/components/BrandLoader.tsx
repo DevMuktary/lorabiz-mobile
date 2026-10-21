@@ -8,7 +8,7 @@ import {
   Image,
   Easing,
 } from "react-native";
-import { colors as defaultColors } from "../constants/theme";
+import { colors } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
 
 interface BrandLoaderProps {
