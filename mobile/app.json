@@ -12,11 +12,6 @@
       "android",
       "web"
     ],
-    "splash": {
-      "image": "./assets/logo-white.png",
-      "backgroundColor": "#C82D75",
-      "resizeMode": "contain"
-    },
     "ios": {
       "userInterfaceStyle": "automatic",
       "supportsTablet": true,
@@ -58,6 +53,14 @@
         "expo-image-picker",
         {
           "photosPermission": "LoraBiz needs access to your gallery to upload document slips and certificates."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo-white.png",
+          "backgroundColor": "#C82D75",
+          "resizeMode": "contain"
         }
       ]
     ],

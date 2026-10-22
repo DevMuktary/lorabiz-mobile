@@ -411,7 +411,7 @@ export default function PersonalDetailsScreen() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalBackdrop}
         >
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={handleClosePhoneChange} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleClosePhoneChange} />
           <View
             style={[
               styles.bottomSheetCard,

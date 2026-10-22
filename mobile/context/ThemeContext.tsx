@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const hookScheme = useColorScheme();
   const [currentSystemScheme, setCurrentSystemScheme] = useState<"light" | "dark">(
-    Appearance.getColorScheme() || (hookScheme === "dark" ? "dark" : "light")
+    Appearance.getColorScheme() === "dark" || hookScheme === "dark" ? "dark" : "light"
   );
   const [themeMode, setThemeModeState] = useState<ThemeMode>("system"); // Default to device system theme
 
@@ -37,7 +37,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (nextState === "active" && isMounted) {
         const osScheme = Appearance.getColorScheme();
         if (osScheme) {
-          setCurrentSystemScheme(osScheme);
+          setCurrentSystemScheme(osScheme === "dark" ? "dark" : "light");
         }
       }
     });

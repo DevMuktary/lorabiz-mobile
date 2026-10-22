@@ -549,7 +549,7 @@ export default function SecurityScreen() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalBackdrop}
         >
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setActiveDialog(null)} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveDialog(null)} />
           <View
             style={[
               styles.bottomSheetCard,
@@ -769,7 +769,7 @@ export default function SecurityScreen() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalBackdrop}
         >
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setActiveDialog(null)} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveDialog(null)} />
           <View
             style={[
               styles.bottomSheetCard,
@@ -1074,7 +1074,7 @@ export default function SecurityScreen() {
         onRequestClose={() => setActiveDialog(null)}
       >
         <View style={styles.modalBackdrop}>
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setActiveDialog(null)} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveDialog(null)} />
           <View
             style={[
               styles.bottomSheetCard,

@@ -1,4 +1,4 @@
-name: Build Mobile Apps (iOS IPA)
+name: Build Mobile Apps (iOS IPA & Android APK)
 
 on:
   push:
@@ -197,9 +197,74 @@ jobs:
             done
           fi
 
-# Android build disabled per user request to save time and focus 100% on iOS IPA build.
-# - build-android-apk
+  build-android-apk:
+    name: Build Android APK (Release)
+    runs-on: ubuntu-latest
+    env:
+      CI: 1
+      EXPO_NON_INTERACTIVE: 1
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3072m -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://lora.quadrox.dev' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
 
+      - name: Install dependencies
+        working-directory: ./mobile
+        run: npm ci --legacy-peer-deps
 
+      - name: Expo Prebuild (Generate Native Android Project)
+        working-directory: ./mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Make Gradle Wrapper Executable
+        working-directory: ./mobile/android
+        run: chmod +x gradlew
+
+      - name: Build Android Release APK
+        working-directory: ./mobile/android
+        run: |
+          ./gradlew assembleRelease --no-daemon -x lint -x test --stacktrace
+
+      - name: Locate and Package Release APK
+        working-directory: ./mobile/android
+        run: |
+          set -e
+          APK_PATH=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+            echo "Error: Could not locate compiled .apk in app/build/outputs/apk/"
+            find app/build/outputs/ -type f || true
+            exit 1
+          fi
+
+          echo "Found APK at: $APK_PATH"
+          cp "$APK_PATH" Lorabiz.apk
+          ls -lh Lorabiz.apk
+
+          FILESIZE=$(wc -c < "Lorabiz.apk")
+          echo "Generated APK size: $FILESIZE bytes"
+          if [ "$FILESIZE" -lt 5000000 ]; then
+            echo "Error: Lorabiz.apk is too small ($FILESIZE bytes). APK does not contain complete bundle."
+            exit 1
+          fi
+          echo "SUCCESS: Lorabiz.apk created and verified."
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorabiz-Android-APK
+          path: mobile/android/Lorabiz.apk
+          retention-days: 14

@@ -563,7 +563,7 @@ export default function BvnSlipScreen() {
                     <Text style={[styles.historyTitle, { color: colors.text }]} numberOfLines={1}>
                       {item.fullName || item.bvn || "BVN Slip"}
                     </Text>
-                    <Text style={[styles.historySub, { color: colors.textTertiary }]}>
+                    <Text style={[styles.historySub, { color: colors.textSecondary }]}>
                       {item.slipType || "Standard"} • {formatRecentSlipDate(item)}
                     </Text>
                   </View>

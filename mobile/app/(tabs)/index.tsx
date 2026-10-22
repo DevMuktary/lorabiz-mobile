@@ -710,45 +710,48 @@ export default function HomeScreen() {
         </View>
 
         <View style={[styles.quickServicesGrid, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
-          {QUICK_SERVICES.map((svc) => (
-            <TouchableOpacity
-              key={svc.id}
-              style={styles.gridItem}
-              onPress={() => router.push(svc.route as any)}
-              activeOpacity={0.75}
-            >
-              <View
-                style={[
-                  styles.gridIconBox,
-                  svc.logo
-                    ? {
-                        backgroundColor: "#FFFFFF",
-                        borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.06)",
-                      }
-                    : svc.isMore
-                    ? styles.moreIconBox
-                    : {
-                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
-                        borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
-                      },
-                ]}
+          {QUICK_SERVICES.map((svc) => {
+            const IconComp = (svc as any).icon;
+            return (
+              <TouchableOpacity
+                key={svc.id}
+                style={styles.gridItem}
+                onPress={() => router.push(svc.route as any)}
+                activeOpacity={0.75}
               >
-                {svc.isMore ? (
-                  <LayoutGrid size={22} color={colors.primary} />
-                ) : (svc as any).icon ? (
-                  <svc.icon size={22} color={(svc as any).iconColor || colors.primary} />
-                ) : (
-                  <Image source={svc.logo} style={styles.gridAgencyLogo} resizeMode="contain" />
-                )}
-              </View>
-              <Text
-                style={[styles.gridLabel, { color: colors.text }, svc.isMore && styles.moreGridLabel]}
-                numberOfLines={1}
-              >
-                {svc.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <View
+                  style={[
+                    styles.gridIconBox,
+                    svc.logo
+                      ? {
+                          backgroundColor: "#FFFFFF",
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.06)",
+                        }
+                      : svc.isMore
+                      ? styles.moreIconBox
+                      : {
+                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                        },
+                  ]}
+                >
+                  {svc.isMore ? (
+                    <LayoutGrid size={22} color={colors.primary} />
+                  ) : IconComp ? (
+                    <IconComp size={22} color={(svc as any).iconColor || colors.primary} />
+                  ) : (
+                    <Image source={svc.logo} style={styles.gridAgencyLogo} resizeMode="contain" />
+                  )}
+                </View>
+                <Text
+                  style={[styles.gridLabel, { color: colors.text }, svc.isMore && styles.moreGridLabel]}
+                  numberOfLines={1}
+                >
+                  {svc.title}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* =================================================================== */}

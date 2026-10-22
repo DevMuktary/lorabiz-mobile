@@ -109,6 +109,13 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     }),
 
+  patch: <T = any>(url: string, body?: any, options?: FetchOptions) =>
+    apiClient<T>(url, {
+      ...options,
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
   delete: <T = any>(url: string, options?: FetchOptions) =>
     apiClient<T>(url, { ...options, method: "DELETE" }),
 };

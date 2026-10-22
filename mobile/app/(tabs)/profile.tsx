@@ -644,7 +644,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalBackdrop}>
           <Pressable
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             onPress={() => setShowPhotoOptions(false)}
           />
           <View
@@ -815,7 +815,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       color: "#FFFFFF",
     },
     avatarLoadingOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderRadius: 34,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
       alignItems: "center",
@@ -938,7 +938,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       fontWeight: "500",
     },
     modalDismissOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "rgba(0, 0, 0, 0.6)",
     },
     modalBackdrop: {

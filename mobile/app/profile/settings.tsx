@@ -381,7 +381,7 @@ export default function SettingsScreen() {
       >
         <View style={styles.modalBackdrop}>
           <Pressable
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             onPress={() => setIsAutoLockModalVisible(false)}
           />
           <View
