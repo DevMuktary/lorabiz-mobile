@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -398,176 +399,179 @@ export default function PersonalDetailsScreen() {
         </View>
       </ScrollView>
 
-      {/* Change Phone Number Bottom Sheet / Modal Dialog */}
-      {isPhoneModalVisible && (
-        <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.keyboardAvoidingModal}
+      {/* Change Phone Number Native Modal (Bottom Sheet Presentation) */}
+      <Modal
+        visible={isPhoneModalVisible}
+        transparent={true}
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={handleClosePhoneChange}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.modalBackdrop}
+        >
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={handleClosePhoneChange} />
+          <View
+            style={[
+              styles.bottomSheetCard,
+              {
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.surfaceBorder,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
           >
-            <Pressable style={styles.modalDismissOverlay} onPress={handleClosePhoneChange} />
-            <View style={styles.modalBackdropCenter}>
-              <View
-                style={[
-                  styles.formDialogCard,
-                  {
-                    backgroundColor: colors.surfaceElevated,
-                    borderColor: colors.surfaceBorder,
-                  },
-                ]}
+            <View style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" }]} />
+            <View style={styles.dialogHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>
+                  Change Phone Number
+                </Text>
+                <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }}>
+                  Update your registered mobile phone
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleClosePhoneChange}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={[styles.closeIconCircle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
               >
-                <View style={styles.dialogHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.dialogTitle, { color: colors.text }]}>
-                      Change Phone Number
-                    </Text>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                      Update your registered mobile phone
-                    </Text>
-                  </View>
+                <X size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {phoneError ? (
+              <View style={styles.errorBanner}>
+                <AlertCircle size={15} color={colors.error} style={{ marginRight: 6 }} />
+                <Text style={styles.errorBannerText}>{phoneError}</Text>
+              </View>
+            ) : null}
+
+            {phoneStep === "ENTER_PHONE" ? (
+              <View style={{ marginTop: 14 }}>
+                <Text style={[styles.dialogExplainer, { color: colors.textSecondary }]}>
+                  Enter your new mobile phone number. We will send a 6-digit confirmation code to your registered email ({user?.email}) to verify ownership.
+                </Text>
+
+                <Text style={[styles.inputLabel, { color: colors.text }]}>New Phone Number</Text>
+                <TextInput
+                  style={[
+                    styles.highContrastInput,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+                      borderColor: colors.surfaceBorder,
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="e.g. 08012345678"
+                  placeholderTextColor={colors.textMuted}
+                  value={newPhone}
+                  onChangeText={setNewPhone}
+                  keyboardType="phone-pad"
+                  selectionColor={colors.primary}
+                />
+
+                <Text style={[styles.helperNote, { color: colors.textMuted }]}>
+                  Note: For account security, you can only update your phone number once every 30 days.
+                </Text>
+
+                <View style={styles.dialogActionRow}>
                   <TouchableOpacity
+                    style={[
+                      styles.dialogCancelBtn,
+                      {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+                      },
+                    ]}
                     onPress={handleClosePhoneChange}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    activeOpacity={0.7}
                   >
-                    <X size={20} color={colors.textSecondary} />
+                    <Text style={[styles.dialogCancelText, { color: colors.text }]}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.dialogSaveBtn,
+                      { backgroundColor: colors.primary },
+                      (!newPhone || isPhoneLoading) && styles.btnDisabled,
+                    ]}
+                    onPress={handleSendPhoneOtp}
+                    disabled={!newPhone || isPhoneLoading}
+                    activeOpacity={0.88}
+                  >
+                    {isPhoneLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.dialogSaveText}>Send Code</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
-
-                {phoneError ? (
-                  <View style={styles.errorBanner}>
-                    <AlertCircle size={15} color={colors.error} style={{ marginRight: 6 }} />
-                    <Text style={styles.errorBannerText}>{phoneError}</Text>
-                  </View>
-                ) : null}
-
-                {phoneStep === "ENTER_PHONE" ? (
-                  <View style={{ marginTop: 14 }}>
-                    <Text style={[styles.dialogExplainer, { color: colors.textSecondary }]}>
-                      Enter your new mobile phone number. We will send a 6-digit confirmation code to your registered email ({user?.email}) to verify ownership.
-                    </Text>
-
-                    <Text style={[styles.inputLabel, { color: colors.text }]}>New Phone Number</Text>
-                    <TextInput
-                      style={[
-                        styles.highContrastInput,
-                        {
-                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                          borderColor: colors.surfaceBorder,
-                          color: colors.text,
-                        },
-                      ]}
-                      placeholder="e.g. 08012345678"
-                      placeholderTextColor={colors.textMuted}
-                      value={newPhone}
-                      onChangeText={setNewPhone}
-                      keyboardType="phone-pad"
-                      selectionColor={colors.primary}
-                      autoFocus
-                    />
-
-                    <Text style={[styles.helperNote, { color: colors.textMuted }]}>
-                      Note: For account security, you can only update your phone number once every 30 days.
-                    </Text>
-
-                    <View style={styles.dialogActionRow}>
-                      <TouchableOpacity
-                        style={[
-                          styles.dialogCancelBtn,
-                          {
-                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
-                          },
-                        ]}
-                        onPress={handleClosePhoneChange}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.dialogCancelText, { color: colors.text }]}>Cancel</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.dialogSaveBtn,
-                          { backgroundColor: colors.primary },
-                          (!newPhone || isPhoneLoading) && styles.btnDisabled,
-                        ]}
-                        onPress={handleSendPhoneOtp}
-                        disabled={!newPhone || isPhoneLoading}
-                        activeOpacity={0.88}
-                      >
-                        {isPhoneLoading ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <Text style={styles.dialogSaveText}>Send Code</Text>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={{ marginTop: 14 }}>
-                    <Text style={[styles.dialogExplainer, { color: colors.textSecondary }]}>
-                      Enter the 6-digit verification code dispatched to your registered email ({user?.email}).
-                    </Text>
-
-                    <Text style={[styles.inputLabel, { color: colors.text }]}>
-                      6-Digit Verification Code
-                    </Text>
-                    <TextInput
-                      style={[
-                        styles.highContrastInput,
-                        styles.otpInput,
-                        {
-                          backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                          borderColor: colors.surfaceBorder,
-                          color: colors.text,
-                        },
-                      ]}
-                      placeholder="123456"
-                      placeholderTextColor={colors.textMuted}
-                      value={phoneOtp}
-                      onChangeText={setPhoneOtp}
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      selectionColor={colors.primary}
-                      autoFocus
-                    />
-
-                    <View style={styles.dialogActionRow}>
-                      <TouchableOpacity
-                        style={[
-                          styles.dialogCancelBtn,
-                          {
-                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
-                          },
-                        ]}
-                        onPress={() => setPhoneStep("ENTER_PHONE")}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.dialogCancelText, { color: colors.text }]}>Back</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.dialogSaveBtn,
-                          { backgroundColor: colors.primary },
-                          (!phoneOtp || isPhoneLoading) && styles.btnDisabled,
-                        ]}
-                        onPress={handleVerifyPhoneOtp}
-                        disabled={!phoneOtp || isPhoneLoading}
-                        activeOpacity={0.88}
-                      >
-                        {isPhoneLoading ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <Text style={styles.dialogSaveText}>Verify & Save</Text>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
               </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      )}
+            ) : (
+              <View style={{ marginTop: 14 }}>
+                <Text style={[styles.dialogExplainer, { color: colors.textSecondary }]}>
+                  Enter the 6-digit verification code dispatched to your registered email ({user?.email}).
+                </Text>
+
+                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                  6-Digit Verification Code
+                </Text>
+                <TextInput
+                  style={[
+                    styles.highContrastInput,
+                    styles.otpInput,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+                      borderColor: colors.surfaceBorder,
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="123456"
+                  placeholderTextColor={colors.textMuted}
+                  value={phoneOtp}
+                  onChangeText={setPhoneOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  selectionColor={colors.primary}
+                />
+
+                <View style={styles.dialogActionRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.dialogCancelBtn,
+                      {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+                      },
+                    ]}
+                    onPress={() => setPhoneStep("ENTER_PHONE")}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.dialogCancelText, { color: colors.text }]}>Back</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.dialogSaveBtn,
+                      { backgroundColor: colors.primary },
+                      (!phoneOtp || isPhoneLoading) && styles.btnDisabled,
+                    ]}
+                    onPress={handleVerifyPhoneOtp}
+                    disabled={!phoneOtp || isPhoneLoading}
+                    activeOpacity={0.88}
+                  >
+                    {isPhoneLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.dialogSaveText}>Verify & Save</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* In-Page Custom Alert Modal */}
       <CustomAlertModal
@@ -770,42 +774,49 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-  keyboardAvoidingModal: {
+  modalBackdrop: {
     flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    justifyContent: "flex-end",
   },
-  modalDismissOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  modalBackdropCenter: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  formDialogCard: {
-    width: "100%",
-    maxWidth: 380,
-    borderRadius: 20,
+  bottomSheetCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
-    padding: 20,
+    borderBottomWidth: 0,
+    paddingHorizontal: 20,
+    paddingTop: 14,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 10,
+  },
+  sheetHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: "center",
+    marginBottom: 16,
   },
   dialogHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
   },
+  closeIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   dialogTitle: {
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "800",
   },
   dialogExplainer: {
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 18,
     marginBottom: 14,
   },
@@ -815,50 +826,50 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   highContrastInput: {
-    height: 48,
-    borderRadius: 12,
+    height: 50,
+    borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 14,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
   },
   otpInput: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
     letterSpacing: 8,
     textAlign: "center",
   },
   helperNote: {
-    fontSize: 11,
+    fontSize: 11.5,
     marginTop: 6,
     marginBottom: 16,
-    lineHeight: 15,
+    lineHeight: 16,
   },
   dialogActionRow: {
     flexDirection: "row",
     gap: 10,
-    marginTop: 4,
+    marginTop: 6,
   },
   dialogCancelBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   dialogCancelText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
   },
   dialogSaveBtn: {
     flex: 1.5,
-    height: 44,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   dialogSaveText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
   },

@@ -97,17 +97,22 @@ export default function AppLockModal() {
   const displayName = user?.name || user?.firstName || "Account Owner";
 
   return (
-    <View
-      style={[
-        StyleSheet.absoluteFill,
-        {
-          zIndex: 99999,
-          elevation: 99999,
-          backgroundColor: colors.background,
-        },
-      ]}
+    <Modal
+      visible={isAppLocked}
+      transparent={false}
+      animationType="fade"
+      statusBarTranslucent={true}
+      onRequestClose={() => {}}
     >
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <View
+        style={[
+          styles.fillContainer,
+          {
+            backgroundColor: colors.background,
+          },
+        ]}
+      >
+        <StatusBar style={isDark ? "light" : "dark"} />
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: colors.background }]}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -260,11 +265,15 @@ export default function AppLockModal() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  fillContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: "center",

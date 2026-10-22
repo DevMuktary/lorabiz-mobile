@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Pressable,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,7 +26,6 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
-import CustomAlertModal from "../../components/CustomAlertModal";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -156,7 +156,9 @@ export default function SettingsScreen() {
               <View
                 style={[
                   styles.themeIconCircle,
-                  themeMode === "system" && { backgroundColor: "rgba(200, 45, 117, 0.15)" },
+                  themeMode === "system"
+                    ? { backgroundColor: "rgba(200, 45, 117, 0.15)" }
+                    : { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" },
                 ]}
               >
                 <Smartphone
@@ -191,7 +193,9 @@ export default function SettingsScreen() {
               <View
                 style={[
                   styles.themeIconCircle,
-                  themeMode === "light" && { backgroundColor: "rgba(200, 45, 117, 0.15)" },
+                  themeMode === "light"
+                    ? { backgroundColor: "rgba(200, 45, 117, 0.15)" }
+                    : { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" },
                 ]}
               >
                 <Sun size={22} color={themeMode === "light" ? colors.primary : colors.textMuted} />
@@ -223,7 +227,9 @@ export default function SettingsScreen() {
               <View
                 style={[
                   styles.themeIconCircle,
-                  themeMode === "dark" && { backgroundColor: "rgba(200, 45, 117, 0.15)" },
+                  themeMode === "dark"
+                    ? { backgroundColor: "rgba(200, 45, 117, 0.15)" }
+                    : { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" },
                 ]}
               >
                 <Moon size={22} color={themeMode === "dark" ? colors.primary : colors.textMuted} />
@@ -365,92 +371,108 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      {/* Auto-Lock Picker Dialog */}
-      {isAutoLockModalVisible && (
-        <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]}>
+      {/* Auto-Lock Native Modal Picker (Bottom Sheet Presentation) */}
+      <Modal
+        visible={isAutoLockModalVisible}
+        transparent={true}
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={() => setIsAutoLockModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
           <Pressable
-            style={styles.modalDismissOverlay}
+            style={StyleSheet.absoluteFillObject}
             onPress={() => setIsAutoLockModalVisible(false)}
           />
-          <View style={styles.modalBackdropCenter}>
-            <View
-              style={[
-                styles.dialogCard,
-                {
-                  backgroundColor: colors.surfaceElevated,
-                  borderColor: colors.surfaceBorder,
-                },
-              ]}
-            >
-              <View style={styles.dialogHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.dialogTitle, { color: colors.text }]}>
-                    App Auto-Lock Timeout
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                    Select inactivity duration before locking
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setIsAutoLockModalVisible(false)}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
+          <View
+            style={[
+              styles.bottomSheetCard,
+              {
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.surfaceBorder,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
+            <View style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" }]} />
+            <View style={styles.dialogHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>
+                  App Auto-Lock Timeout
+                </Text>
+                <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }}>
+                  Select inactivity duration before requiring unlock
+                </Text>
               </View>
+              <TouchableOpacity
+                onPress={() => setIsAutoLockModalVisible(false)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={[styles.closeIconCircle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-              <View style={{ marginTop: 12, gap: 8 }}>
-                {[
-                  { id: "immediately", label: "Immediately upon leaving" },
-                  { id: "1m", label: "1 Minute of inactivity" },
-                  { id: "5m", label: "5 Minutes of inactivity" },
-                  { id: "15m", label: "15 Minutes of inactivity" },
-                  { id: "30m", label: "30 Minutes of inactivity" },
-                  { id: "never", label: "Never (Require manual sign out)" },
-                ].map((option) => (
-                  <TouchableOpacity
-                    key={option.id}
+            <View style={{ marginTop: 14, gap: 8 }}>
+              {[
+                { id: "immediately", label: "Immediately upon leaving" },
+                { id: "1m", label: "1 Minute of inactivity" },
+                { id: "5m", label: "5 Minutes of inactivity" },
+                { id: "15m", label: "15 Minutes of inactivity" },
+                { id: "30m", label: "30 Minutes of inactivity" },
+                { id: "never", label: "Never (Require manual sign out)" },
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={[
+                    styles.autoLockOptionRow,
+                    {
+                      backgroundColor:
+                        autoLockTimeout === option.id
+                          ? (isDark ? "rgba(200, 45, 117, 0.15)" : "#FDF2F8")
+                          : (isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC"),
+                      borderColor:
+                        autoLockTimeout === option.id ? colors.primary : colors.surfaceBorder,
+                    },
+                  ]}
+                  onPress={() => {
+                    setAutoLockSetting(option.id as any);
+                    setIsAutoLockModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
                     style={[
-                      styles.autoLockOptionRow,
-                      {
-                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
-                        borderColor:
-                          autoLockTimeout === option.id ? colors.primary : colors.surfaceBorder,
+                      styles.autoLockOptionLabel,
+                      { color: colors.text },
+                      autoLockTimeout === option.id && {
+                        color: colors.primary,
+                        fontWeight: "700",
                       },
-                      autoLockTimeout === option.id && styles.autoLockOptionRowActive,
                     ]}
-                    onPress={() => {
-                      setAutoLockSetting(option.id as any);
-                      setIsAutoLockModalVisible(false);
-                    }}
-                    activeOpacity={0.7}
                   >
-                    <Text
-                      style={[
-                        styles.autoLockOptionLabel,
-                        { color: colors.text },
-                        autoLockTimeout === option.id && {
-                          color: colors.primary,
-                          fontWeight: "700",
-                        },
-                      ]}
+                    {option.label}
+                  </Text>
+                  {autoLockTimeout === option.id ? (
+                    <View
+                      style={[styles.optionRadioActive, { backgroundColor: colors.primary }]}
                     >
-                      {option.label}
-                    </Text>
-                    {autoLockTimeout === option.id && (
-                      <View
-                        style={[styles.optionRadioActive, { backgroundColor: colors.primary }]}
-                      >
-                        <Check size={13} color="#FFFFFF" />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+                      <Check size={12} color="#FFFFFF" />
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.optionRadioInactive,
+                        { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" },
+                      ]}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 }
@@ -595,51 +617,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  modalDismissOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  modalBackdropCenter: {
+  modalBackdrop: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    justifyContent: "flex-end",
   },
-  dialogCard: {
-    width: "100%",
-    maxWidth: 380,
-    borderRadius: 20,
+  bottomSheetCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
-    padding: 20,
+    borderBottomWidth: 0,
+    paddingHorizontal: 20,
+    paddingTop: 14,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 10,
+  },
+  sheetHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: "center",
+    marginBottom: 16,
   },
   dialogHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
   },
+  closeIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   dialogTitle: {
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "800",
   },
   autoLockOptionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  autoLockOptionRowActive: {
-    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   autoLockOptionLabel: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "500",
   },
   optionRadioActive: {
@@ -648,5 +677,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  optionRadioInactive: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
   },
 });

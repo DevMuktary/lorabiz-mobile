@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import { useColorScheme, Appearance } from "react-native";
+import { useColorScheme, Appearance, AppState } from "react-native";
 import { lightColors, darkColors } from "../constants/theme";
 import { getThemeModePref, setThemeModePref, ThemeMode } from "../lib/storage";
 
@@ -33,9 +33,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    const appStateSub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && isMounted) {
+        const osScheme = Appearance.getColorScheme();
+        if (osScheme) {
+          setCurrentSystemScheme(osScheme);
+        }
+      }
+    });
+
     return () => {
       isMounted = false;
       subscription.remove();
+      appStateSub.remove();
     };
   }, []);
 
@@ -47,8 +57,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const isDark = useMemo(() => {
     if (themeMode === "dark") return true;
     if (themeMode === "light") return false;
-    // "system"
-    const activeScheme = currentSystemScheme || hookScheme || "light";
+    // "system": follows device OS setting in real-time
+    const activeScheme = hookScheme || currentSystemScheme || Appearance.getColorScheme() || "light";
     return activeScheme === "dark";
   }, [themeMode, currentSystemScheme, hookScheme]);
 

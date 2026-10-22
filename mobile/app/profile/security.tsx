@@ -13,6 +13,7 @@ import {
   Pressable,
   Image,
   Clipboard,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -536,599 +537,633 @@ export default function SecurityScreen() {
         </View>
       </ScrollView>
 
-      {/* Change Password Dialog */}
-      {activeDialog === "CHANGE_PASSWORD" && (
-        <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.keyboardAvoidingModal}
+      {/* Change Password Native Modal */}
+      <Modal
+        visible={activeDialog === "CHANGE_PASSWORD"}
+        transparent={true}
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={() => setActiveDialog(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.modalBackdrop}
+        >
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setActiveDialog(null)} />
+          <View
+            style={[
+              styles.bottomSheetCard,
+              {
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.surfaceBorder,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
           >
-            <Pressable style={styles.modalDismissOverlay} onPress={() => setActiveDialog(null)} />
-            <View style={styles.modalBackdropCenter}>
-              <View
-                style={[
-                  styles.formDialogCard,
-                  {
-                    backgroundColor: colors.surfaceElevated,
-                    borderColor: colors.surfaceBorder,
-                  },
-                ]}
+            <View style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" }]} />
+            <View style={styles.dialogHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>Change Password</Text>
+                <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }}>
+                  Update your account security password
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setActiveDialog(null)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={[styles.closeIconCircle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
               >
-                <View style={styles.dialogHeader}>
-                  <Text style={[styles.dialogTitle, { color: colors.text }]}>Change Password</Text>
-                  <TouchableOpacity
-                    onPress={() => setActiveDialog(null)}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                <X size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {passwordError ? (
+              <View style={styles.errorBanner}>
+                <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
+                <Text style={styles.errorBannerText}>{passwordError}</Text>
+              </View>
+            ) : null}
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 16 }}
+            >
+              {passwordStep === "CURRENT" ? (
+                <View style={{ marginTop: 14 }}>
+                  <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
+                    For your security, enter your current password. We will send a 6-digit confirmation code to your email.
+                  </Text>
+
+                  <Text style={[styles.inputLabel, { color: colors.text }]}>Current Password</Text>
+                  <View
+                    style={[
+                      styles.passwordInputWrapper,
+                      {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+                        borderColor: colors.surfaceBorder,
+                      },
+                    ]}
                   >
-                    <X size={20} color={colors.textSecondary} />
+                    <TextInput
+                      style={[styles.passwordInput, { color: colors.text }]}
+                      value={currentPassword}
+                      onChangeText={setCurrentPassword}
+                      placeholder="Enter current password"
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry={!showCurrentPass}
+                      selectionColor={colors.primary}
+                    />
+                    <TouchableOpacity onPress={() => setShowCurrentPass(!showCurrentPass)}>
+                      {showCurrentPass ? (
+                        <EyeOff size={19} color={colors.textMuted} />
+                      ) : (
+                        <Eye size={19} color={colors.textMuted} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.dialogSaveBtn,
+                      { backgroundColor: colors.primary, marginTop: 18 },
+                      (!currentPassword || isPasswordLoading) && styles.btnDisabled,
+                    ]}
+                    onPress={handleSendPasswordOtp}
+                    disabled={!currentPassword || isPasswordLoading}
+                    activeOpacity={0.88}
+                  >
+                    {isPasswordLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.dialogSaveText}>Send Verification Code</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
+              ) : (
+                <View style={{ marginTop: 14 }}>
+                  <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
+                    Enter the 6-digit code sent to your registered email and your new password.
+                  </Text>
 
-                {passwordError ? (
-                  <View style={styles.errorBanner}>
-                    <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
-                    <Text style={styles.errorBannerText}>{passwordError}</Text>
+                  <Text style={[styles.inputLabel, { color: colors.text }]}>
+                    6-Digit Verification Code
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.highContrastInput,
+                      styles.otpInput,
+                      {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+                        borderColor: colors.surfaceBorder,
+                        color: colors.text,
+                      },
+                    ]}
+                    value={passwordOtp}
+                    onChangeText={setPasswordOtp}
+                    placeholder="123456"
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    placeholderTextColor={colors.textMuted}
+                    selectionColor={colors.primary}
+                  />
+
+                  <Text style={[styles.inputLabel, { color: colors.text, marginTop: 14 }]}>
+                    New Password
+                  </Text>
+                  <View
+                    style={[
+                      styles.passwordInputWrapper,
+                      {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+                        borderColor: colors.surfaceBorder,
+                      },
+                    ]}
+                  >
+                    <TextInput
+                      style={[styles.passwordInput, { color: colors.text }]}
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      placeholder="At least 8 characters"
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry={!showNewPass}
+                      selectionColor={colors.primary}
+                    />
+                    <TouchableOpacity onPress={() => setShowNewPass(!showNewPass)}>
+                      {showNewPass ? (
+                        <EyeOff size={19} color={colors.textMuted} />
+                      ) : (
+                        <Eye size={19} color={colors.textMuted} />
+                      )}
+                    </TouchableOpacity>
                   </View>
-                ) : null}
 
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={{ paddingBottom: 16 }}
-                >
-                  {passwordStep === "CURRENT" ? (
-                    <View style={{ marginTop: 14 }}>
-                      <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
-                        For your security, enter your current password. We will send a 6-digit confirmation code to your email.
-                      </Text>
+                  <Text style={[styles.inputLabel, { color: colors.text, marginTop: 14 }]}>
+                    Confirm New Password
+                  </Text>
+                  <View
+                    style={[
+                      styles.passwordInputWrapper,
+                      {
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+                        borderColor: colors.surfaceBorder,
+                      },
+                    ]}
+                  >
+                    <TextInput
+                      style={[styles.passwordInput, { color: colors.text }]}
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      placeholder="Confirm new password"
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry={!showConfirmPass}
+                      selectionColor={colors.primary}
+                    />
+                    <TouchableOpacity onPress={() => setShowConfirmPass(!showConfirmPass)}>
+                      {showConfirmPass ? (
+                        <EyeOff size={19} color={colors.textMuted} />
+                      ) : (
+                        <Eye size={19} color={colors.textMuted} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
 
-                      <Text style={[styles.inputLabel, { color: colors.text }]}>Current Password</Text>
-                      <View
+                  {newPassword && confirmPassword && newPassword !== confirmPassword ? (
+                    <Text style={{ fontSize: 12, color: colors.error, marginTop: 6, fontWeight: "500" }}>
+                      Passwords do not match.
+                    </Text>
+                  ) : null}
+
+                  <TouchableOpacity
+                    style={[
+                      styles.dialogSaveBtn,
+                      { backgroundColor: colors.primary, marginTop: 18 },
+                      (!passwordOtp || !newPassword || isPasswordLoading) && styles.btnDisabled,
+                    ]}
+                    onPress={handleVerifyNewPassword}
+                    disabled={!passwordOtp || !newPassword || isPasswordLoading}
+                    activeOpacity={0.88}
+                  >
+                    {isPasswordLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.dialogSaveText}>Update Password</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Two-Factor Authentication Native Modal */}
+      <Modal
+        visible={activeDialog === "TWO_FACTOR"}
+        transparent={true}
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={() => setActiveDialog(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.modalBackdrop}
+        >
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setActiveDialog(null)} />
+          <View
+            style={[
+              styles.bottomSheetCard,
+              {
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.surfaceBorder,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
+            <View style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" }]} />
+            <View style={styles.dialogHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>
+                  Two-Factor Authentication
+                </Text>
+                <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }}>
+                  Manage second-factor login verification
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setActiveDialog(null)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={[styles.closeIconCircle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {twoFactorError ? (
+              <View style={styles.errorBanner}>
+                <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
+                <Text style={styles.errorBannerText}>{twoFactorError}</Text>
+              </View>
+            ) : null}
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 16 }}
+            >
+              {user?.twoFactorEnabled ? (
+                <View style={{ alignItems: "center", paddingVertical: 12 }}>
+                  <View
+                    style={[
+                      styles.shieldActiveOrb,
+                      { backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5" },
+                    ]}
+                  >
+                    <Shield size={36} color={colors.success} />
+                  </View>
+                  <Text style={[styles.dialogTitle, { color: colors.text, marginTop: 12 }]}>
+                    2FA is Currently Active
+                  </Text>
+                  <Text
+                    style={[
+                      styles.modalExplainer,
+                      { textAlign: "center", color: colors.textSecondary, marginTop: 4 },
+                    ]}
+                  >
+                    Your account requires a two-factor security code during sign-ins. To disable, enter your account password below.
+                  </Text>
+
+                  <TextInput
+                    style={[
+                      styles.highContrastInput,
+                      {
+                        width: "100%",
+                        marginTop: 16,
+                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+                        borderColor: colors.surfaceBorder,
+                        color: colors.text,
+                      },
+                    ]}
+                    value={disablePassword}
+                    onChangeText={setDisablePassword}
+                    placeholder="Enter account password"
+                    secureTextEntry
+                    placeholderTextColor={colors.textMuted}
+                    selectionColor={colors.primary}
+                  />
+
+                  <TouchableOpacity
+                    style={[
+                      styles.destructiveBtn,
+                      { backgroundColor: colors.error, width: "100%", marginTop: 16 },
+                      (!disablePassword || is2FALoading) && styles.btnDisabled,
+                    ]}
+                    onPress={handleDisable2FA}
+                    disabled={!disablePassword || is2FALoading}
+                    activeOpacity={0.88}
+                  >
+                    {is2FALoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.destructiveBtnText}>Disable Two-Factor Auth</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={{ marginTop: 10 }}>
+                  <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
+                    Add an extra layer of security. Choose an authenticator app (Google Authenticator, Microsoft Authenticator) or Email verification.
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.methodTabRow,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.06)"
+                          : "#F1F5F9",
+                      },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.methodTab,
+                        twoFactorMethod === "AUTHENTICATOR" && [
+                          styles.methodTabActive,
+                          { backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF" },
+                        ],
+                      ]}
+                      onPress={() => handleInit2FASetup("AUTHENTICATOR")}
+                    >
+                      <Text
                         style={[
-                          styles.passwordInputWrapper,
-                          {
-                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                            borderColor: colors.surfaceBorder,
-                          },
+                          styles.methodTabText,
+                          { color: colors.textSecondary },
+                          twoFactorMethod === "AUTHENTICATOR" && styles.methodTabTextActive,
                         ]}
                       >
-                        <TextInput
-                          style={[styles.passwordInput, { color: colors.text }]}
-                          value={currentPassword}
-                          onChangeText={setCurrentPassword}
-                          placeholder="Enter current password"
-                          placeholderTextColor={colors.textMuted}
-                          secureTextEntry={!showCurrentPass}
-                          selectionColor={colors.primary}
-                          autoFocus
-                        />
-                        <TouchableOpacity onPress={() => setShowCurrentPass(!showCurrentPass)}>
-                          {showCurrentPass ? (
-                            <EyeOff size={19} color={colors.textMuted} />
+                        Authenticator App
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.methodTab,
+                        twoFactorMethod === "EMAIL" && [
+                          styles.methodTabActive,
+                          { backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF" },
+                        ],
+                      ]}
+                      onPress={() => handleInit2FASetup("EMAIL")}
+                    >
+                      <Text
+                        style={[
+                          styles.methodTabText,
+                          { color: colors.textSecondary },
+                          twoFactorMethod === "EMAIL" && styles.methodTabTextActive,
+                        ]}
+                      >
+                        Email Passkey
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {twoFactorMethod === "AUTHENTICATOR" ? (
+                    <View style={{ alignItems: "center", marginTop: 12 }}>
+                      {twoFactorQrCode ? (
+                        <View
+                          style={[
+                            styles.qrCodeBox,
+                            {
+                              borderColor: colors.surfaceBorder,
+                              backgroundColor: "#FFFFFF",
+                            },
+                          ]}
+                        >
+                          <Image
+                            source={{ uri: twoFactorQrCode }}
+                            style={{ width: 140, height: 140 }}
+                          />
+                        </View>
+                      ) : (
+                        <View
+                          style={[
+                            styles.qrCodeBox,
+                            {
+                              height: 140,
+                              width: 140,
+                              justifyContent: "center",
+                              borderColor: colors.surfaceBorder,
+                              backgroundColor: "#FFFFFF",
+                            },
+                          ]}
+                        >
+                          <ActivityIndicator color={colors.primary} size="small" />
+                        </View>
+                      )}
+
+                      {twoFactorSecret ? (
+                        <TouchableOpacity
+                          style={[
+                            styles.secretPill,
+                            {
+                              backgroundColor: isDark
+                                ? "rgba(200, 45, 117, 0.15)"
+                                : "#FDF2F8",
+                            },
+                          ]}
+                          onPress={handleCopySecret}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.secretText, { color: colors.primary }]}>
+                            Key: {twoFactorSecret}
+                          </Text>
+                          {copiedSecret ? (
+                            <Check size={13} color={colors.primary} style={{ marginLeft: 6 }} />
                           ) : (
-                            <Eye size={19} color={colors.textMuted} />
+                            <Copy size={13} color={colors.primary} style={{ marginLeft: 6 }} />
                           )}
                         </TouchableOpacity>
-                      </View>
+                      ) : null}
 
-                      <TouchableOpacity
+                      <Text
                         style={[
-                          styles.dialogSaveBtn,
-                          { backgroundColor: colors.primary, marginTop: 18 },
-                          (!currentPassword || isPasswordLoading) && styles.btnDisabled,
+                          styles.inputLabel,
+                          { color: colors.text, alignSelf: "flex-start", marginTop: 12 },
                         ]}
-                        onPress={handleSendPasswordOtp}
-                        disabled={!currentPassword || isPasswordLoading}
-                        activeOpacity={0.88}
                       >
-                        {isPasswordLoading ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <Text style={styles.dialogSaveText}>Send Verification Code</Text>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <View style={{ marginTop: 14 }}>
-                      <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
-                        Enter the 6-digit code sent to your registered email and your new password.
-                      </Text>
-
-                      <Text style={[styles.inputLabel, { color: colors.text }]}>
-                        6-Digit Verification Code
+                        Enter 6-Digit Authenticator Code
                       </Text>
                       <TextInput
                         style={[
                           styles.highContrastInput,
                           styles.otpInput,
                           {
-                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                            width: "100%",
+                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
                             borderColor: colors.surfaceBorder,
                             color: colors.text,
                           },
                         ]}
-                        value={passwordOtp}
-                        onChangeText={setPasswordOtp}
+                        value={twoFactorOtp}
+                        onChangeText={setTwoFactorOtp}
                         placeholder="123456"
                         keyboardType="number-pad"
                         maxLength={6}
                         placeholderTextColor={colors.textMuted}
                         selectionColor={colors.primary}
-                        autoFocus
                       />
-
-                      <Text style={[styles.inputLabel, { color: colors.text, marginTop: 14 }]}>
-                        New Password
-                      </Text>
-                      <View
-                        style={[
-                          styles.passwordInputWrapper,
-                          {
-                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                            borderColor: colors.surfaceBorder,
-                          },
-                        ]}
-                      >
-                        <TextInput
-                          style={[styles.passwordInput, { color: colors.text }]}
-                          value={newPassword}
-                          onChangeText={setNewPassword}
-                          placeholder="At least 8 characters"
-                          placeholderTextColor={colors.textMuted}
-                          secureTextEntry={!showNewPass}
-                          selectionColor={colors.primary}
-                        />
-                        <TouchableOpacity onPress={() => setShowNewPass(!showNewPass)}>
-                          {showNewPass ? (
-                            <EyeOff size={19} color={colors.textMuted} />
-                          ) : (
-                            <Eye size={19} color={colors.textMuted} />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-
-                      <Text style={[styles.inputLabel, { color: colors.text, marginTop: 14 }]}>
-                        Confirm New Password
-                      </Text>
-                      <View
-                        style={[
-                          styles.passwordInputWrapper,
-                          {
-                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                            borderColor: colors.surfaceBorder,
-                          },
-                        ]}
-                      >
-                        <TextInput
-                          style={[styles.passwordInput, { color: colors.text }]}
-                          value={confirmPassword}
-                          onChangeText={setConfirmPassword}
-                          placeholder="Confirm new password"
-                          placeholderTextColor={colors.textMuted}
-                          secureTextEntry={!showConfirmPass}
-                          selectionColor={colors.primary}
-                        />
-                        <TouchableOpacity onPress={() => setShowConfirmPass(!showConfirmPass)}>
-                          {showConfirmPass ? (
-                            <EyeOff size={19} color={colors.textMuted} />
-                          ) : (
-                            <Eye size={19} color={colors.textMuted} />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-
-                      {newPassword && confirmPassword && newPassword !== confirmPassword ? (
-                        <Text style={{ fontSize: 11.5, color: colors.error, marginTop: 6 }}>
-                          Passwords do not match.
-                        </Text>
-                      ) : null}
-
-                      <TouchableOpacity
-                        style={[
-                          styles.dialogSaveBtn,
-                          { backgroundColor: colors.primary, marginTop: 18 },
-                          (!passwordOtp || !newPassword || isPasswordLoading) && styles.btnDisabled,
-                        ]}
-                        onPress={handleVerifyNewPassword}
-                        disabled={!passwordOtp || !newPassword || isPasswordLoading}
-                        activeOpacity={0.88}
-                      >
-                        {isPasswordLoading ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <Text style={styles.dialogSaveText}>Update Password</Text>
-                        )}
-                      </TouchableOpacity>
                     </View>
-                  )}
-                </ScrollView>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      )}
-
-      {/* Two-Factor Authentication Dialog */}
-      {activeDialog === "TWO_FACTOR" && (
-        <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.keyboardAvoidingModal}
-          >
-            <Pressable style={styles.modalDismissOverlay} onPress={() => setActiveDialog(null)} />
-            <View style={styles.modalBackdropCenter}>
-              <View
-                style={[
-                  styles.formDialogCard,
-                  {
-                    backgroundColor: colors.surfaceElevated,
-                    borderColor: colors.surfaceBorder,
-                  },
-                ]}
-              >
-                <View style={styles.dialogHeader}>
-                  <Text style={[styles.dialogTitle, { color: colors.text }]}>
-                    Two-Factor Authentication
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setActiveDialog(null)}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  >
-                    <X size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-
-                {twoFactorError ? (
-                  <View style={styles.errorBanner}>
-                    <AlertTriangle size={15} color={colors.error} style={{ marginRight: 6 }} />
-                    <Text style={styles.errorBannerText}>{twoFactorError}</Text>
-                  </View>
-                ) : null}
-
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={{ paddingBottom: 16 }}
-                >
-                  {user?.twoFactorEnabled ? (
-                    <View style={{ alignItems: "center", paddingVertical: 12 }}>
-                      <View
-                        style={[
-                          styles.shieldActiveOrb,
-                          { backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5" },
-                        ]}
-                      >
-                        <Shield size={36} color={colors.success} />
-                      </View>
-                      <Text style={[styles.dialogTitle, { color: colors.text, marginTop: 12 }]}>
-                        2FA is Currently Active
+                  ) : (
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
+                        A 6-digit verification code has been dispatched to {user?.email}.
                       </Text>
-                      <Text
-                        style={[
-                          styles.modalExplainer,
-                          { textAlign: "center", color: colors.textSecondary, marginTop: 4 },
-                        ]}
-                      >
-                        Your account requires a two-factor security code during sign-ins. To disable, enter your account password below.
+                      <Text style={[styles.inputLabel, { color: colors.text, marginTop: 12 }]}>
+                        Enter 6-Digit Email Code
                       </Text>
-
                       <TextInput
                         style={[
                           styles.highContrastInput,
+                          styles.otpInput,
                           {
-                            width: "100%",
-                            marginTop: 16,
-                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+                            backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
                             borderColor: colors.surfaceBorder,
                             color: colors.text,
                           },
                         ]}
-                        value={disablePassword}
-                        onChangeText={setDisablePassword}
-                        placeholder="Enter account password"
-                        secureTextEntry
+                        value={twoFactorOtp}
+                        onChangeText={setTwoFactorOtp}
+                        placeholder="123456"
+                        keyboardType="number-pad"
+                        maxLength={6}
                         placeholderTextColor={colors.textMuted}
                         selectionColor={colors.primary}
                       />
-
-                      <TouchableOpacity
-                        style={[
-                          styles.destructiveBtn,
-                          { backgroundColor: colors.error, width: "100%", marginTop: 16 },
-                          (!disablePassword || is2FALoading) && styles.btnDisabled,
-                        ]}
-                        onPress={handleDisable2FA}
-                        disabled={!disablePassword || is2FALoading}
-                        activeOpacity={0.88}
-                      >
-                        {is2FALoading ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <Text style={styles.destructiveBtnText}>Disable Two-Factor Auth</Text>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
-                        Add an extra layer of security. Choose an authenticator app (Google Authenticator, Microsoft Authenticator) or Email verification.
-                      </Text>
-
-                      <View
-                        style={[
-                          styles.methodTabRow,
-                          {
-                            backgroundColor: isDark
-                              ? "rgba(255, 255, 255, 0.06)"
-                              : "#F1F5F9",
-                          },
-                        ]}
-                      >
-                        <TouchableOpacity
-                          style={[
-                            styles.methodTab,
-                            twoFactorMethod === "AUTHENTICATOR" && [
-                              styles.methodTabActive,
-                              { backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF" },
-                            ],
-                          ]}
-                          onPress={() => handleInit2FASetup("AUTHENTICATOR")}
-                        >
-                          <Text
-                            style={[
-                              styles.methodTabText,
-                              { color: colors.textSecondary },
-                              twoFactorMethod === "AUTHENTICATOR" && styles.methodTabTextActive,
-                            ]}
-                          >
-                            Authenticator App
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.methodTab,
-                            twoFactorMethod === "EMAIL" && [
-                              styles.methodTabActive,
-                              { backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF" },
-                            ],
-                          ]}
-                          onPress={() => handleInit2FASetup("EMAIL")}
-                        >
-                          <Text
-                            style={[
-                              styles.methodTabText,
-                              { color: colors.textSecondary },
-                              twoFactorMethod === "EMAIL" && styles.methodTabTextActive,
-                            ]}
-                          >
-                            Email Passkey
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      {twoFactorMethod === "AUTHENTICATOR" ? (
-                        <View style={{ alignItems: "center", marginTop: 12 }}>
-                          {twoFactorQrCode ? (
-                            <View
-                              style={[
-                                styles.qrCodeBox,
-                                {
-                                  borderColor: colors.surfaceBorder,
-                                  backgroundColor: "#FFFFFF",
-                                },
-                              ]}
-                            >
-                              <Image
-                                source={{ uri: twoFactorQrCode }}
-                                style={{ width: 140, height: 140 }}
-                              />
-                            </View>
-                          ) : (
-                            <View
-                              style={[
-                                styles.qrCodeBox,
-                                {
-                                  height: 140,
-                                  width: 140,
-                                  justifyContent: "center",
-                                  borderColor: colors.surfaceBorder,
-                                  backgroundColor: "#FFFFFF",
-                                },
-                              ]}
-                            >
-                              <ActivityIndicator color={colors.primary} size="small" />
-                            </View>
-                          )}
-
-                          {twoFactorSecret ? (
-                            <TouchableOpacity
-                              style={[
-                                styles.secretPill,
-                                {
-                                  backgroundColor: isDark
-                                    ? "rgba(200, 45, 117, 0.15)"
-                                    : "#FDF2F8",
-                                },
-                              ]}
-                              onPress={handleCopySecret}
-                              activeOpacity={0.7}
-                            >
-                              <Text style={[styles.secretText, { color: colors.primary }]}>
-                                Key: {twoFactorSecret}
-                              </Text>
-                              {copiedSecret ? (
-                                <Check size={13} color={colors.primary} style={{ marginLeft: 6 }} />
-                              ) : (
-                                <Copy size={13} color={colors.primary} style={{ marginLeft: 6 }} />
-                              )}
-                            </TouchableOpacity>
-                          ) : null}
-
-                          <Text
-                            style={[
-                              styles.inputLabel,
-                              { color: colors.text, alignSelf: "flex-start", marginTop: 12 },
-                            ]}
-                          >
-                            Enter 6-Digit Authenticator Code
-                          </Text>
-                          <TextInput
-                            style={[
-                              styles.highContrastInput,
-                              styles.otpInput,
-                              {
-                                width: "100%",
-                                backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                                borderColor: colors.surfaceBorder,
-                                color: colors.text,
-                              },
-                            ]}
-                            value={twoFactorOtp}
-                            onChangeText={setTwoFactorOtp}
-                            placeholder="123456"
-                            keyboardType="number-pad"
-                            maxLength={6}
-                            placeholderTextColor={colors.textMuted}
-                            selectionColor={colors.primary}
-                          />
-                        </View>
-                      ) : (
-                        <View style={{ marginTop: 12 }}>
-                          <Text style={[styles.modalExplainer, { color: colors.textSecondary }]}>
-                            A 6-digit verification code has been dispatched to {user?.email}.
-                          </Text>
-                          <Text style={[styles.inputLabel, { color: colors.text, marginTop: 12 }]}>
-                            Enter 6-Digit Email Code
-                          </Text>
-                          <TextInput
-                            style={[
-                              styles.highContrastInput,
-                              styles.otpInput,
-                              {
-                                backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-                                borderColor: colors.surfaceBorder,
-                                color: colors.text,
-                              },
-                            ]}
-                            value={twoFactorOtp}
-                            onChangeText={setTwoFactorOtp}
-                            placeholder="123456"
-                            keyboardType="number-pad"
-                            maxLength={6}
-                            placeholderTextColor={colors.textMuted}
-                            selectionColor={colors.primary}
-                          />
-                        </View>
-                      )}
-
-                      <TouchableOpacity
-                        style={[
-                          styles.dialogSaveBtn,
-                          { backgroundColor: colors.primary, marginTop: 18 },
-                          (!twoFactorOtp || is2FALoading) && styles.btnDisabled,
-                        ]}
-                        onPress={handleConfirm2FASetup}
-                        disabled={!twoFactorOtp || is2FALoading}
-                        activeOpacity={0.88}
-                      >
-                        {is2FALoading ? (
-                          <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                          <Text style={styles.dialogSaveText}>Verify & Enable 2FA</Text>
-                        )}
-                      </TouchableOpacity>
                     </View>
                   )}
-                </ScrollView>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      )}
 
-      {/* Auto-Lock Picker Dialog */}
-      {activeDialog === "AUTO_LOCK" && (
-        <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]}>
-          <Pressable style={styles.modalDismissOverlay} onPress={() => setActiveDialog(null)} />
-          <View style={styles.modalBackdropCenter}>
-            <View
-              style={[
-                styles.dialogCard,
-                {
-                  backgroundColor: colors.surfaceElevated,
-                  borderColor: colors.surfaceBorder,
-                },
-              ]}
-            >
-              <View style={styles.dialogHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.dialogTitle, { color: colors.text }]}>
-                    App Auto-Lock Timeout
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                    Select inactivity duration before locking
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setActiveDialog(null)}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={{ marginTop: 12, gap: 8 }}>
-                {[
-                  { id: "immediately", label: "Immediately upon leaving" },
-                  { id: "1m", label: "1 Minute of inactivity" },
-                  { id: "5m", label: "5 Minutes of inactivity" },
-                  { id: "15m", label: "15 Minutes of inactivity" },
-                  { id: "30m", label: "30 Minutes of inactivity" },
-                  { id: "never", label: "Never (Require manual sign out)" },
-                ].map((option) => (
                   <TouchableOpacity
-                    key={option.id}
                     style={[
-                      styles.autoLockOptionRow,
-                      {
-                        backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
-                        borderColor:
-                          autoLockTimeout === option.id ? colors.primary : colors.surfaceBorder,
-                      },
-                      autoLockTimeout === option.id && styles.autoLockOptionRowActive,
+                      styles.dialogSaveBtn,
+                      { backgroundColor: colors.primary, marginTop: 18 },
+                      (!twoFactorOtp || is2FALoading) && styles.btnDisabled,
                     ]}
-                    onPress={() => {
-                      setAutoLockSetting(option.id as any);
-                      setActiveDialog(null);
-                    }}
-                    activeOpacity={0.7}
+                    onPress={handleConfirm2FASetup}
+                    disabled={!twoFactorOtp || is2FALoading}
+                    activeOpacity={0.88}
                   >
-                    <Text
-                      style={[
-                        styles.autoLockOptionLabel,
-                        { color: colors.text },
-                        autoLockTimeout === option.id && {
-                          color: colors.primary,
-                          fontWeight: "700",
-                        },
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                    {autoLockTimeout === option.id && (
-                      <View
-                        style={[styles.optionRadioActive, { backgroundColor: colors.primary }]}
-                      >
-                        <Check size={13} color="#FFFFFF" />
-                      </View>
+                    {is2FALoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.dialogSaveText}>Verify & Enable 2FA</Text>
                     )}
                   </TouchableOpacity>
-                ))}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Auto-Lock Native Modal */}
+      <Modal
+        visible={activeDialog === "AUTO_LOCK"}
+        transparent={true}
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={() => setActiveDialog(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setActiveDialog(null)} />
+          <View
+            style={[
+              styles.bottomSheetCard,
+              {
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.surfaceBorder,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
+            <View style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" }]} />
+            <View style={styles.dialogHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>
+                  App Auto-Lock Timeout
+                </Text>
+                <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }}>
+                  Select inactivity duration before locking
+                </Text>
               </View>
+              <TouchableOpacity
+                onPress={() => setActiveDialog(null)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={[styles.closeIconCircle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ marginTop: 14, gap: 8 }}>
+              {[
+                { id: "immediately", label: "Immediately upon leaving" },
+                { id: "1m", label: "1 Minute of inactivity" },
+                { id: "5m", label: "5 Minutes of inactivity" },
+                { id: "15m", label: "15 Minutes of inactivity" },
+                { id: "30m", label: "30 Minutes of inactivity" },
+                { id: "never", label: "Never (Require manual sign out)" },
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={[
+                    styles.autoLockOptionRow,
+                    {
+                      backgroundColor:
+                        autoLockTimeout === option.id
+                          ? (isDark ? "rgba(200, 45, 117, 0.15)" : "#FDF2F8")
+                          : (isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC"),
+                      borderColor:
+                        autoLockTimeout === option.id ? colors.primary : colors.surfaceBorder,
+                    },
+                  ]}
+                  onPress={() => {
+                    setAutoLockSetting(option.id as any);
+                    setActiveDialog(null);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.autoLockOptionLabel,
+                      { color: colors.text },
+                      autoLockTimeout === option.id && {
+                        color: colors.primary,
+                        fontWeight: "700",
+                      },
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {autoLockTimeout === option.id ? (
+                    <View
+                      style={[styles.optionRadioActive, { backgroundColor: colors.primary }]}
+                    >
+                      <Check size={12} color="#FFFFFF" />
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.optionRadioInactive,
+                        { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" },
+                      ]}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </View>
-      )}
+      </Modal>
 
       {/* In-Page Custom Alert Modal */}
       <CustomAlertModal
@@ -1233,51 +1268,50 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.5,
   },
-  modalDismissOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  modalBackdropCenter: {
+  modalBackdrop: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    justifyContent: "flex-end",
+  },
+  bottomSheetCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderBottomWidth: 0,
     paddingHorizontal: 20,
-  },
-  formDialogCard: {
-    width: "100%",
-    maxWidth: 380,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
+    paddingTop: 14,
+    maxHeight: "88%",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 10,
   },
-  dialogCard: {
-    width: "100%",
-    maxWidth: 380,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+  sheetHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: "center",
+    marginBottom: 16,
   },
   dialogHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
   },
+  closeIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   dialogTitle: {
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "800",
   },
   modalExplainer: {
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 18,
     marginBottom: 10,
   },
@@ -1287,15 +1321,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   highContrastInput: {
-    height: 48,
-    borderRadius: 12,
+    height: 50,
+    borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 14,
     fontSize: 15,
     fontWeight: "600",
   },
   otpInput: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
     letterSpacing: 8,
     textAlign: "center",
@@ -1304,23 +1338,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: 12,
-    height: 48,
+    borderRadius: 14,
+    height: 50,
     paddingHorizontal: 14,
   },
   passwordInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
   },
   dialogSaveBtn: {
-    height: 44,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   dialogSaveText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
   },
@@ -1350,13 +1384,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   destructiveBtn: {
-    height: 44,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   destructiveBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
   },
@@ -1368,8 +1402,8 @@ const styles = StyleSheet.create({
   },
   methodTab: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: "center",
   },
   methodTabActive: {
@@ -1380,7 +1414,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   methodTabText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: "600",
   },
   methodTabTextActive: {
@@ -1409,15 +1443,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  autoLockOptionRowActive: {
-    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   autoLockOptionLabel: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "500",
   },
   optionRadioActive: {
@@ -1426,5 +1457,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  optionRadioInactive: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
   },
 });

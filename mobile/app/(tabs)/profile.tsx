@@ -10,6 +10,7 @@ import {
   Clipboard,
   Pressable,
   Linking,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -634,95 +635,100 @@ export default function ProfileScreen() {
       </View>
 
       {/* Profile Photo Options Dialog */}
-      {showPhotoOptions && (
-        <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]}>
+      <Modal
+        visible={showPhotoOptions}
+        transparent={true}
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={() => setShowPhotoOptions(false)}
+      >
+        <View style={styles.modalBackdrop}>
           <Pressable
-            style={styles.modalDismissOverlay}
+            style={StyleSheet.absoluteFillObject}
             onPress={() => setShowPhotoOptions(false)}
           />
-          <View style={styles.modalBackdrop}>
+          <View
+            style={[
+              styles.bottomSheetCard,
+              {
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.surfaceBorder,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View
               style={[
-                styles.bottomSheetCard,
+                styles.sheetHandle,
                 {
-                  backgroundColor: colors.surfaceElevated,
-                  borderColor: colors.surfaceBorder,
+                  backgroundColor: isDark
+                    ? "rgba(255, 255, 255, 0.2)"
+                    : "#CBD5E1",
                 },
               ]}
+            />
+            <Text style={[styles.sheetModalTitle, { color: colors.text }]}>Profile Photo</Text>
+            <Text style={[styles.sheetModalSub, { color: colors.textSecondary }]}>
+              Choose how you want to update your profile photo
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.sheetActionBtn,
+                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+              ]}
+              onPress={() => handlePickImage("camera")}
+              activeOpacity={0.7}
             >
-              <View
+              <Camera size={20} color={colors.primary} />
+              <Text style={[styles.sheetActionText, { color: colors.text }]}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.sheetActionBtn,
+                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
+              ]}
+              onPress={() => handlePickImage("library")}
+              activeOpacity={0.7}
+            >
+              <Smartphone size={20} color={colors.primary} />
+              <Text style={[styles.sheetActionText, { color: colors.text }]}>
+                Choose from Library
+              </Text>
+            </TouchableOpacity>
+
+            {user?.image ? (
+              <TouchableOpacity
                 style={[
-                  styles.sheetHandle,
+                  styles.sheetActionBtn,
                   {
-                    backgroundColor: isDark
-                      ? "rgba(255, 255, 255, 0.15)"
-                      : "#E2E8F0",
+                    backgroundColor: isDark ? "rgba(239, 68, 68, 0.10)" : "#FEF2F2",
+                    borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FEE2E2",
                   },
                 ]}
-              />
-              <Text style={[styles.sheetModalTitle, { color: colors.text }]}>Profile Photo</Text>
-              <Text style={[styles.sheetModalSub, { color: colors.textSecondary }]}>
-                Choose how you want to update your profile photo
+                onPress={handleRemovePhoto}
+                activeOpacity={0.7}
+              >
+                <Trash2 size={20} color={colors.error} />
+                <Text style={[styles.sheetActionText, { color: colors.error }]}>
+                  Remove Photo
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            <TouchableOpacity
+              style={styles.sheetCancelBtn}
+              onPress={() => setShowPhotoOptions(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>
+                Cancel
               </Text>
-
-              <TouchableOpacity
-                style={[
-                  styles.sheetActionBtn,
-                  { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
-                ]}
-                onPress={() => handlePickImage("camera")}
-                activeOpacity={0.7}
-              >
-                <Camera size={20} color={colors.primary} />
-                <Text style={[styles.sheetActionText, { color: colors.text }]}>Take Photo</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.sheetActionBtn,
-                  { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
-                ]}
-                onPress={() => handlePickImage("library")}
-                activeOpacity={0.7}
-              >
-                <Smartphone size={20} color={colors.primary} />
-                <Text style={[styles.sheetActionText, { color: colors.text }]}>
-                  Choose from Library
-                </Text>
-              </TouchableOpacity>
-
-              {user?.image ? (
-                <TouchableOpacity
-                  style={[
-                    styles.sheetActionBtn,
-                    {
-                      backgroundColor: isDark ? "rgba(239, 68, 68, 0.10)" : "#FEF2F2",
-                      borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FEE2E2",
-                    },
-                  ]}
-                  onPress={handleRemovePhoto}
-                  activeOpacity={0.7}
-                >
-                  <Trash2 size={20} color={colors.error} />
-                  <Text style={[styles.sheetActionText, { color: colors.error }]}>
-                    Remove Photo
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-
-              <TouchableOpacity
-                style={styles.sheetCancelBtn}
-                onPress={() => setShowPhotoOptions(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
-      )}
+      </Modal>
 
       {/* Branded Alert Modal */}
       <CustomAlertModal
