@@ -72,6 +72,34 @@ function RootLayoutContent() {
         <Stack.Screen name="services/nin-validation-history" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="services/nin-modification" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="services/nin-modification-history" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen
+          name="profile/personal-details"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
+        <Stack.Screen
+          name="profile/settings"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
+        <Stack.Screen
+          name="profile/security"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
+        <Stack.Screen
+          name="profile/legal"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
       </Stack>
       <AppLockModal />
     </>

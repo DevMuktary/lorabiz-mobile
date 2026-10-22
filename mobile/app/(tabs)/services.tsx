@@ -17,8 +17,6 @@ import {
   X,
   Wifi,
 } from "lucide-react-native";
-import { colors as defaultColors } from "../../constants/theme";
-const colors = defaultColors;
 import { useTheme } from "../../context/ThemeContext";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 
@@ -165,6 +163,7 @@ export default function ServicesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [alertConfig, setAlertConfig] = useState<{
@@ -224,7 +223,7 @@ export default function ServicesScreen() {
   };
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <View style={styles.screen}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Stagnant / Fixed Top App Bar */}
@@ -233,23 +232,18 @@ export default function ServicesScreen() {
           styles.topBar,
           {
             paddingTop: Math.max(insets.top, 20) + 12,
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.surfaceBorder,
           },
         ]}
       >
         <TouchableOpacity
           onPress={handleGoBack}
-          style={[
-            styles.backBtn,
-            { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" },
-          ]}
+          style={styles.backBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.7}
         >
           <ArrowLeft size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.topBarTitle, { color: colors.text }]}>Services</Text>
+        <Text style={styles.topBarTitle}>Services</Text>
         <View style={styles.backBtnPlaceholder} />
       </View>
 
@@ -259,17 +253,17 @@ export default function ServicesScreen() {
           styles.contentContainer,
           {
             paddingTop: 12,
-            paddingBottom: 24,
+            paddingBottom: Math.max(insets.bottom, 24) + 24,
           },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* Search Input Bar */}
-        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+        <View style={styles.searchBar}>
           <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            style={styles.searchInput}
             placeholder="Search services (NIN, BVN, CAC, Data...)"
             placeholderTextColor={colors.textMuted}
             value={searchQuery}
@@ -288,21 +282,10 @@ export default function ServicesScreen() {
         {/* Categorized Service Grids */}
         {filteredSections.length > 0 ? (
           filteredSections.map((section) => (
-            <View
-              key={section.id}
-              style={[
-                styles.sectionCard,
-                { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
-              ]}
-            >
-              <View
-                style={[
-                  styles.sectionHeader,
-                  { borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)" },
-                ]}
-              >
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
-                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{section.subtitle}</Text>
+            <View key={section.id} style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
               </View>
 
               <View style={styles.gridContainer}>
@@ -318,14 +301,14 @@ export default function ServicesScreen() {
                         styles.gridIconBox,
                         svc.logo
                           ? {
-                              backgroundColor: "#FFFFFF",
-                              borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.06)",
+                              backgroundColor: isDark ? "rgba(255, 255, 255, 0.96)" : "#FFFFFF",
+                              borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.06)",
                             }
                           : {
                               backgroundColor: svc.iconBg
-                                ? (isDark ? "rgba(255, 255, 255, 0.08)" : svc.iconBg)
+                                ? (isDark ? "rgba(255, 255, 255, 0.10)" : svc.iconBg)
                                 : (isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)"),
-                              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                              borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.06)",
                             },
                       ]}
                     >
@@ -340,7 +323,7 @@ export default function ServicesScreen() {
                       ) : null}
                     </View>
                     <Text
-                      style={[styles.gridLabel, { color: colors.text }]}
+                      style={styles.gridLabel}
                       numberOfLines={2}
                       adjustsFontSizeToFit={true}
                       minimumFontScale={0.75}
@@ -353,10 +336,10 @@ export default function ServicesScreen() {
             </View>
           ))
         ) : (
-          <View style={[styles.emptySearchCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+          <View style={styles.emptySearchCard}>
             <Search size={28} color={colors.textMuted} />
-            <Text style={[styles.emptySearchTitle, { color: colors.text }]}>No services found</Text>
-            <Text style={[styles.emptySearchSubtitle, { color: colors.textSecondary }]}>
+            <Text style={styles.emptySearchTitle}>No services found</Text>
+            <Text style={styles.emptySearchSubtitle}>
               Try searching with another keyword like &quot;NIN&quot;, &quot;BVN&quot;, or &quot;CAC&quot;.
             </Text>
           </View>
@@ -366,7 +349,7 @@ export default function ServicesScreen() {
         <View style={styles.disclaimerBox}>
           <Text style={styles.disclaimerTitle}>Regulatory Notice</Text>
           <Text style={styles.disclaimerText}>
-            Lorabiz is an independent corporate facilitation and business management platform. We are an accredited corporate services facilitator and not an agency of the Corporate Affairs Commission (CAC) or the Federal Government of Nigeria.
+            Lorabiz is an independent corporate facilitation and business management platform. We are an accredited corporate services facilitator and strictly not an agency of the Corporate Affairs Commission (CAC) or any government department.
           </Text>
         </View>
       </ScrollView>
@@ -377,194 +360,174 @@ export default function ServicesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-
-  /* Stagnant / Fixed Top App Bar */
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
-    zIndex: 10,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topBarTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: colors.text,
-    letterSpacing: -0.2,
-  },
-  backBtnPlaceholder: {
-    width: 36,
-  },
-
-  /* Scrollable Container */
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 16,
-  },
-
-  /* Search Input */
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    height: 42,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.06)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    paddingVertical: 0,
-  },
-
-  /* Category Section Card */
-  sectionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingHorizontal: 10,
-    paddingTop: 14,
-    paddingBottom: 10,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  sectionHeader: {
-    marginBottom: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.04)",
-    paddingBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-    letterSpacing: -0.2,
-  },
-  sectionSubtitle: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 15,
-  },
-
-  /* 4-Column Grid Layout */
-  gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "flex-start",
-  },
-  gridItem: {
-    width: "25%",
-    alignItems: "center",
-    paddingHorizontal: 2,
-    marginBottom: 14,
-  },
-  gridIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "#F8FAFC",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.06)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    overflow: "hidden",
-  },
-  gridAgencyLogo: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-  },
-  gridLabel: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    color: colors.text,
-    textAlign: "center",
-    marginTop: 6,
-    lineHeight: 13,
-    paddingHorizontal: 1,
-  },
-
-  /* Empty Search Card */
-  emptySearchCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 24,
-    alignItems: "center",
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-  },
-  emptySearchTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text,
-    marginTop: 8,
-  },
-  emptySearchSubtitle: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 4,
-  },
-
-  /* Disclaimer Box */
-  disclaimerBox: {
-    backgroundColor: "rgba(200, 45, 117, 0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(200, 45, 117, 0.2)",
-    borderRadius: 14,
-    padding: 12,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  disclaimerTitle: {
-    fontSize: 11.5,
-    fontWeight: "800",
-    color: colors.primaryLight,
-    marginBottom: 4,
-  },
-  disclaimerText: {
-    fontSize: 10.5,
-    color: colors.textSecondary,
-    lineHeight: 15,
-  },
-});
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surfaceElevated,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.surfaceBorder,
+      zIndex: 10,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    topBarTitle: {
+      fontSize: 17,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
+    backBtnPlaceholder: {
+      width: 36,
+    },
+    container: {
+      flex: 1,
+    },
+    contentContainer: {
+      paddingHorizontal: 16,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      height: 44,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 3,
+      elevation: 1,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.text,
+      paddingVertical: 0,
+    },
+    sectionCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      padding: 16,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.03,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    sectionHeader: {
+      marginBottom: 14,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.surfaceBorder,
+    },
+    sectionTitle: {
+      fontSize: 14.5,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
+    sectionSubtitle: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    gridContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "flex-start",
+    },
+    gridItem: {
+      width: "25%",
+      alignItems: "center",
+      paddingVertical: 8,
+    },
+    gridIconBox: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      marginBottom: 6,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    gridAgencyLogo: {
+      width: 32,
+      height: 32,
+    },
+    gridLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.text,
+      textAlign: "center",
+      lineHeight: 14,
+      paddingHorizontal: 2,
+    },
+    emptySearchCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      padding: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 20,
+    },
+    emptySearchTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 8,
+    },
+    emptySearchSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: 4,
+    },
+    disclaimerBox: {
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.06)",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(200, 45, 117, 0.25)" : "rgba(200, 45, 117, 0.18)",
+      borderRadius: 14,
+      padding: 12,
+      marginTop: 4,
+      marginBottom: 16,
+    },
+    disclaimerTitle: {
+      fontSize: 11.5,
+      fontWeight: "800",
+      color: colors.primaryLight,
+      marginBottom: 4,
+    },
+    disclaimerText: {
+      fontSize: 10.5,
+      color: colors.textSecondary,
+      lineHeight: 15,
+    },
+  });
