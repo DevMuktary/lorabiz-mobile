@@ -12,6 +12,11 @@
       "android",
       "web"
     ],
+    "splash": {
+      "image": "./assets/logo-white.png",
+      "backgroundColor": "#C82D75",
+      "resizeMode": "contain"
+    },
     "ios": {
       "userInterfaceStyle": "automatic",
       "supportsTablet": true,
@@ -31,10 +36,7 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.USE_FINGERPRINT"
       ],
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false
@@ -53,14 +55,6 @@
         "expo-image-picker",
         {
           "photosPermission": "LoraBiz needs access to your gallery to upload document slips and certificates."
-        }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/logo-white.png",
-          "backgroundColor": "#C82D75",
-          "resizeMode": "contain"
         }
       ]
     ],
