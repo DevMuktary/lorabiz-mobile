@@ -25,6 +25,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useTheme } from "../context/ThemeContext";
+import { resolveMobileRoute } from "../lib/route-mapper";
 
 interface InAppNotification {
   id: string;
@@ -150,17 +151,13 @@ export default function NotificationsScreen() {
       markSingleMutation.mutate(item.id);
     }
 
-    if (item.link) {
-      // Handle mobile internal deep routes
-      const link = item.link.toLowerCase();
-      if (link.includes("wallet") || link.includes("fund")) {
-        router.push("/(tabs)/wallet");
-      } else if (link.includes("services") || link.includes("cac")) {
-        router.push("/(tabs)/services");
-      } else if (link.includes("bills") || link.includes("data") || link.includes("airtime")) {
-        router.push("/(tabs)/bills");
-      } else if (link.includes("profile")) {
-        router.push("/(tabs)/profile");
+    const targetRoute = resolveMobileRoute(item.link, item.title, item.message);
+    if (targetRoute) {
+      try {
+        router.push(targetRoute as any);
+      } catch (err) {
+        console.warn("⚠️ Route navigation failed, falling back to activity:", err);
+        router.push("/(tabs)/activity");
       }
     }
   };

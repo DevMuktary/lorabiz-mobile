@@ -75,10 +75,29 @@ function RootLayoutContent() {
             animation: "slide_from_right",
           }}
         />
-        <Stack.Screen name="services/nin-validation" options={{ headerShown: false, animation: "none" }} />
-        <Stack.Screen name="services/nin-validation-history" options={{ headerShown: false, animation: "none" }} />
-        <Stack.Screen name="services/nin-modification" options={{ headerShown: false, animation: "none" }} />
-        <Stack.Screen name="services/nin-modification-history" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="services/annual-returns" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/annual-returns-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/business-name" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/business-name-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/tax-id" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/tax-id-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/scuml" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/scuml-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-validation" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-validation-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-modification" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-modification-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-personalization" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-personalization-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-ipe" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-ipe-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/nin-slip" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/bvn-slip" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/bvn-retrieval" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/bvn-retrieval-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/bvn-modification" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/bvn-modification-history" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="services/slip-history" options={{ headerShown: false, animation: "slide_from_right" }} />
         <Stack.Screen
           name="profile/personal-details"
           options={{

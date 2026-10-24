@@ -320,8 +320,8 @@ export default function HomeScreen() {
   // Quick Services Grid: Strictly 4 items per row, 2 rows (8 items total)
   const QUICK_SERVICES = [
     {
-      id: "cac_reg",
-      title: "CAC Reg",
+      id: "cac_biz",
+      title: "CAC Biz",
       logo: require("../../assets/cac.png"),
       route: "/services/business-name",
     },
@@ -350,10 +350,10 @@ export default function HomeScreen() {
       route: "/services/scuml",
     },
     {
-      id: "company_llc",
-      title: "Company LLC",
+      id: "annual_returns",
+      title: "Annual Returns",
       logo: require("../../assets/cac.png"),
-      route: "/(tabs)/services",
+      route: "/services/annual-returns",
     },
     {
       id: "data",
