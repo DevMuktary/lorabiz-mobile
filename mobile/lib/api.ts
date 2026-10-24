@@ -18,6 +18,13 @@ export class ApiError extends Error {
   }
 }
 
+type SessionExpiredHandler = () => void;
+let sessionExpiredHandler: SessionExpiredHandler | null = null;
+
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | null) {
+  sessionExpiredHandler = handler;
+}
+
 export async function apiClient<T = any>(
   endpoint: string,
   options: FetchOptions = {}
@@ -83,6 +90,11 @@ export async function apiClient<T = any>(
   if (!response.ok) {
     if (response.status === 401 && requiresAuth) {
       await clearAllAuth();
+      if (sessionExpiredHandler) {
+        try {
+          sessionExpiredHandler();
+        } catch {}
+      }
     }
     const message = data?.message || data?.error || `Request failed with status ${response.status}`;
     throw new ApiError(message, response.status, data);

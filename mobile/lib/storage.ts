@@ -308,5 +308,21 @@ export async function getThemeModePref(): Promise<ThemeMode> {
   }
 }
 
+const LAST_DISMISSED_PROMO_KEY = "lorabiz_last_dismissed_promo_id";
+
+export async function setLastDismissedPromoId(id: string): Promise<void> {
+  try {
+    await setItem(LAST_DISMISSED_PROMO_KEY, id);
+  } catch {}
+}
+
+export async function getLastDismissedPromoId(): Promise<string | null> {
+  try {
+    return await getItem(LAST_DISMISSED_PROMO_KEY);
+  } catch {
+    return null;
+  }
+}
+
 
 

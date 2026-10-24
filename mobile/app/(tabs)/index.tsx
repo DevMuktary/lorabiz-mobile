@@ -39,6 +39,7 @@ import { colors as defaultColors } from "../../constants/theme";
 const colors = defaultColors;
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import PromoPopupModal, { PromoPopupData } from "../../components/PromoPopupModal";
 import {
   getCachedWallet,
   saveCachedWallet,
@@ -185,6 +186,45 @@ export default function HomeScreen() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // 6. Dynamic Promotional Popup Modal Query
+  const { data: popupBannerData } = useQuery({
+    queryKey: ["mobilePromoPopupModal"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/api/banners?target=POPUP");
+        if (res?.banners && Array.isArray(res.banners) && res.banners.length > 0) {
+          return res.banners[0] as PromoPopupData;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // 7. Notifications Query for Header Bell Badge
+  const { data: notificationsData, refetch: refetchNotifications } = useQuery({
+    queryKey: ["inAppNotifications"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/api/notifications");
+        if (res?.notifications && Array.isArray(res.notifications)) {
+          return res.notifications;
+        }
+        return [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const unreadNotificationCount = useMemo(() => {
+    if (!notificationsData || !Array.isArray(notificationsData)) return 0;
+    return notificationsData.filter((n: any) => !n.read).length;
+  }, [notificationsData]);
+
   // Unified Global Refresh Handler - invalidates and refreshes entire app state + dashboard
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -200,6 +240,7 @@ export default function HomeScreen() {
         refetchTx(),
         refetchLoyalty(),
         refetchBanners(),
+        refetchNotifications(),
       ]);
       setIsOffline(false);
       const freshBalance = (walletRes as any)?.data?.balance ?? (walletRes as any)?.data?.wallet?.balance;
@@ -500,12 +541,12 @@ export default function HomeScreen() {
               styles.headerIconBtn,
               { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" },
             ]}
-            onPress={() => router.push("/(tabs)/profile")}
+            onPress={() => router.push("/notifications")}
             activeOpacity={0.75}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Bell size={20} color={colors.text} />
-            <View style={styles.notificationDot} />
+            {unreadNotificationCount > 0 && <View style={styles.notificationDot} />}
           </TouchableOpacity>
         </View>
       </View>
@@ -830,6 +871,9 @@ export default function HomeScreen() {
         )}
 
       </ScrollView>
+
+      {/* Dynamic Admin-Configured Promotional Popup Modal */}
+      <PromoPopupModal banner={popupBannerData || null} />
     </View>
   );
 }

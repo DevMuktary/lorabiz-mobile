@@ -40,6 +40,13 @@ function RootLayoutContent() {
         <Stack.Screen name="(auth)" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen
+          name="notifications"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
+        <Stack.Screen
           name="wallet/fund"
           options={{
             headerShown: false,

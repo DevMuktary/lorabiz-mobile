@@ -27,7 +27,7 @@ import {
   getLastActiveTime,
   setLastActiveTime,
 } from "../lib/storage";
-import { api, BASE_URL } from "../lib/api";
+import { api, BASE_URL, setSessionExpiredHandler } from "../lib/api";
 import { promptBiometricAuth, getBiometricCapabilities } from "../lib/biometrics";
 
 export interface UserProfile {
@@ -126,7 +126,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticatingBiometricsRef = useRef<boolean>(false);
 
   useEffect(() => {
+    setSessionExpiredHandler(() => {
+      logout();
+    });
     initAuth();
+    return () => {
+      setSessionExpiredHandler(null);
+    };
   }, []);
 
   useEffect(() => {
