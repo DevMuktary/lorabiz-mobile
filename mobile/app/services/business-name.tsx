@@ -47,6 +47,7 @@ import { colors } from "../../constants/theme";
 import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { NIGERIA_DATA } from "../../constants/nigeria-data";
 import { CAC_CATEGORIES } from "../../constants/cac-categories";
 import { COUNTRY_CODES } from "../../constants/country-codes";
@@ -882,6 +883,9 @@ export default function BusinessNameScreen() {
           );
         })}
       </View>
+
+      {/* TV Guidance Ticker */}
+      <ServiceTvTicker serviceKey="CAC_BUSINESS_NAME" />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

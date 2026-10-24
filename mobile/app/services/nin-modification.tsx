@@ -42,6 +42,7 @@ import { colors } from "../../constants/theme";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import SearchablePickerModal from "../../components/SearchablePickerModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { NIGERIAN_STATES, getLgasForState } from "../../constants/nigeria-data";
 
 export type ModificationType =
@@ -463,6 +464,9 @@ export default function NinModificationScreen() {
             <Text style={styles.historyNavPillText}>History</Text>
           </TouchableOpacity>
         </View>
+
+        {/* TV Guidance Ticker */}
+        <ServiceTvTicker serviceKey="NIN_MODIFICATION" visible={!isStatusLoading} />
 
         {/* Loading State with Transparent BrandLoader */}
         {isStatusLoading ? (

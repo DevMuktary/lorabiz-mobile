@@ -43,6 +43,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 export const ENROLLING_BANKS = [
   { id: "AGENCY_BVN", name: "Agency BVN" },
@@ -786,6 +787,9 @@ export default function BvnModificationScreen() {
           <Text style={styles.historyBtnText}>History</Text>
         </TouchableOpacity>
       </View>
+
+      {/* TV Guidance Ticker */}
+      <ServiceTvTicker serviceKey="BVN_MODIFICATION" visible={!isLoading} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

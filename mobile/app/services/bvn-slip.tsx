@@ -38,6 +38,7 @@ import { colors as defaultColors } from "../../constants/theme";
 const colors = defaultColors;
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { downloadAndSharePdf } from "../../lib/pdf";
 import { parseDemographics, NormalizedDemographics } from "../../lib/demographics";
 
@@ -322,6 +323,9 @@ export default function BvnSlipScreen() {
             <Text style={styles.historyNavPillText}>History</Text>
           </TouchableOpacity>
         </View>
+
+        {/* TV Guidance Ticker */}
+        <ServiceTvTicker serviceKey="BVN_SLIP" visible={!isStatusLoading} />
 
         {isStatusLoading ? (
           <View style={styles.centerContainer}>
