@@ -179,7 +179,13 @@ export default function NinModificationHistoryScreen() {
     if (!url) return;
     setIsDownloading(true);
     try {
-      const filename = `NIN_Modification_${trackingId}_${Date.now()}.pdf`;
+      const lowerUrl = url.toLowerCase();
+      const ext = lowerUrl.includes(".png")
+        ? "png"
+        : lowerUrl.includes(".jpg") || lowerUrl.includes(".jpeg")
+        ? "jpg"
+        : "pdf";
+      const filename = `NIN_Modification_${trackingId}_${Date.now()}.${ext}`;
       const res = await downloadAndSharePdf({
         source: url,
         filename,
@@ -460,10 +466,10 @@ export default function NinModificationHistoryScreen() {
                   </View>
 
                   {/* Action Link */}
-                  {item.status === "COMPLETED" && item.slipUrl ? (
+                  {item.status === "COMPLETED" && (item.slipUrl || (item as any).resultUrl || (item as any).fileUrl || (item as any).documentUrl) ? (
                     <TouchableOpacity
                       style={styles.downloadSlipBtn}
-                      onPress={() => handleDownloadSlip(item.slipUrl!, item.trackingId)}
+                      onPress={() => handleDownloadSlip((item.slipUrl || (item as any).resultUrl || (item as any).fileUrl || (item as any).documentUrl)!, item.trackingId)}
                       activeOpacity={0.8}
                     >
                       <Download size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
@@ -639,14 +645,14 @@ export default function NinModificationHistoryScreen() {
                   </View>
                 ) : null}
 
-                {selectedRecord.status === "COMPLETED" && selectedRecord.slipUrl ? (
+                {selectedRecord.status === "COMPLETED" && (selectedRecord.slipUrl || (selectedRecord as any).resultUrl || (selectedRecord as any).fileUrl || (selectedRecord as any).documentUrl) ? (
                   <TouchableOpacity
                     style={styles.modalDownloadBtn}
-                    onPress={() => handleDownloadSlip(selectedRecord.slipUrl!, selectedRecord.trackingId)}
+                    onPress={() => handleDownloadSlip((selectedRecord.slipUrl || (selectedRecord as any).resultUrl || (selectedRecord as any).fileUrl || (selectedRecord as any).documentUrl)!, selectedRecord.trackingId)}
                     activeOpacity={0.88}
                   >
                     <Download size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
-                    <Text style={styles.modalDownloadBtnText}>Download Modification Slip (PDF)</Text>
+                    <Text style={styles.modalDownloadBtnText}>Download Modification Slip</Text>
                   </TouchableOpacity>
                 ) : null}
               </ScrollView>

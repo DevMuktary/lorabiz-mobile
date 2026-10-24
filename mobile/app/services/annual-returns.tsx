@@ -43,7 +43,6 @@ import { colors } from "../../constants/theme";
 import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
-import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 export type CompanyType = "BUSINESS_NAME" | "LLC";
 
@@ -383,9 +382,6 @@ export default function AnnualReturnsScreen() {
           <Text style={styles.historyBtnText}>History</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Top Single-Line TV Ticker */}
-      <ServiceTvTicker serviceKey="ANNUAL_RETURNS" visible={!isInitialLoading} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

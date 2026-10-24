@@ -41,7 +41,6 @@ import { colors as defaultColors } from "../../constants/theme";
 const colors = defaultColors;
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
-import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { parseDemographics, NormalizedDemographics } from "../../lib/demographics";
 import { downloadAndSharePdf } from "../../lib/pdf";
 
@@ -424,9 +423,6 @@ export default function NinSlipScreen() {
             <Text style={styles.historyNavPillText}>History</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Edge-to-Edge Single Line TV Ticker */}
-        <ServiceTvTicker serviceKey="NIN_SLIP" visible={!isStatusLoading} />
 
         {isStatusLoading ? (
           <View style={styles.centerContainer}>

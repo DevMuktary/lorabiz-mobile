@@ -39,7 +39,6 @@ import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
-import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface InitialRetrievalData {
   success: boolean;
@@ -340,9 +339,6 @@ export default function BvnRetrievalScreen() {
           )}
         </TouchableOpacity>
       </View>
-
-      {/* Top Single-Line TV Ticker */}
-      <ServiceTvTicker serviceKey="BVN_RETRIEVAL" visible={!isLoading} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}

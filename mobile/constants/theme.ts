@@ -15,6 +15,7 @@ export const lightColors = {
   surfaceElevated: "#FFFFFF",
   surfaceBorder: "#E2E8F0",
   surfaceBorderLight: "rgba(200, 45, 117, 0.15)",
+  border: "#E2E8F0",
 
   // Typography
   text: "#0F172A", // Deep charcoal slate
@@ -46,6 +47,7 @@ export const darkColors = {
   surfaceElevated: "#182238",
   surfaceBorder: "#1E293B",
   surfaceBorderLight: "rgba(200, 45, 117, 0.25)",
+  border: "#1E293B",
 
   // Typography
   text: "#FFFFFF",

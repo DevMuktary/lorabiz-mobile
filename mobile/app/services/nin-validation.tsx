@@ -39,7 +39,6 @@ import { colors } from "../../constants/theme";
 import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
-import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface CategoryPricing {
   price: number;
@@ -300,9 +299,6 @@ export default function NinValidationScreen() {
           <Text style={styles.historyBtnText}>History</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Top Single-Line TV Ticker */}
-      <ServiceTvTicker serviceKey="NIN_VALIDATION" visible={!isLoadingInitial} />
 
       {/* Central Loading State with 100% Transparent BrandLoader */}
       {isLoadingInitial ? (

@@ -41,7 +41,6 @@ import { colors } from "../../constants/theme";
 import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
-import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 export type ScumlType = "BUSINESS_NAME" | "LLC" | "NGO";
 
@@ -467,9 +466,6 @@ export default function ScumlScreen() {
           <Text style={styles.historyBtnText}>History</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Edge-to-Edge Single Line TV Ticker */}
-      <ServiceTvTicker serviceKey="SCUML" />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

@@ -37,7 +37,6 @@ import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
-import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 export type TaxIdType = "INDIVIDUAL" | "CORPORATE";
 
@@ -583,9 +582,6 @@ export default function TaxIdScreen() {
           <Text style={styles.historyBtnText}>History</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Edge-to-Edge Single Line TV Ticker */}
-      <ServiceTvTicker serviceKey="TAX_ID" />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

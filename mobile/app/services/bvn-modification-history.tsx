@@ -587,10 +587,10 @@ export default function BvnModificationHistoryScreen() {
                       <ChevronRight size={13} color={colors.primary} />
                     </TouchableOpacity>
 
-                    {item.status === "COMPLETED" && item.slipUrl ? (
+                    {(item.status === "COMPLETED" || item.slipUrl) && (item.slipUrl || (item as any).resultUrl || (item as any).fileUrl || (item as any).documentUrl) ? (
                       <TouchableOpacity
                         style={styles.downloadSlipBtn}
-                        onPress={() => handleDownloadSlip(item.slipUrl!, item.trackingId)}
+                        onPress={() => handleDownloadSlip((item.slipUrl || (item as any).resultUrl || (item as any).fileUrl || (item as any).documentUrl)!, item.trackingId)}
                         activeOpacity={0.85}
                         disabled={isItemDownloading}
                       >
@@ -910,7 +910,7 @@ export default function BvnModificationHistoryScreen() {
                 ) : null}
 
                 {/* Verified Slip / Snapshot Download Box */}
-                {selectedRecord.slipUrl ? (
+                {(selectedRecord.slipUrl || (selectedRecord as any).resultUrl || (selectedRecord as any).fileUrl || (selectedRecord as any).documentUrl) ? (
                   <View style={styles.slipDownloadCard}>
                     <View style={styles.slipDownloadHeader}>
                       <View style={styles.slipIconBox}>
@@ -926,7 +926,7 @@ export default function BvnModificationHistoryScreen() {
 
                     <TouchableOpacity
                       style={styles.modalDownloadBtn}
-                      onPress={() => handleDownloadSlip(selectedRecord.slipUrl!, selectedRecord.trackingId)}
+                      onPress={() => handleDownloadSlip((selectedRecord.slipUrl || (selectedRecord as any).resultUrl || (selectedRecord as any).fileUrl || (selectedRecord as any).documentUrl)!, selectedRecord.trackingId)}
                       activeOpacity={0.88}
                       disabled={downloadingId === selectedRecord.trackingId}
                     >

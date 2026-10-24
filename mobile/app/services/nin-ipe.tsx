@@ -36,7 +36,6 @@ import { api } from "../../lib/api";
 import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
-import ServiceTvTicker from "../../components/ServiceTvTicker";
 
 interface InitialIpeData {
   success: boolean;
@@ -316,9 +315,6 @@ export default function NinIpeScreen() {
           )}
         </TouchableOpacity>
       </View>
-
-      {/* Top Single-Line TV Ticker */}
-      <ServiceTvTicker serviceKey="NIN_IPE" visible={!isLoading} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}

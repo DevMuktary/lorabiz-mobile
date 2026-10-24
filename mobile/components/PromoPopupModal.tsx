@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { X, Sparkles, ArrowRight } from "lucide-react-native";
+import { X, Sparkles } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import { getLastDismissedPromoId, setLastDismissedPromoId } from "../lib/storage";
 
@@ -163,34 +163,48 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
             },
           ]}
         >
-          {/* Main Promo Card */}
-          <View style={[styles.cardContainer, { backgroundColor: cardBgColor }]}>
-            {/* Top Ribbon Badge */}
-            {banner.tag ? (
-              <View style={styles.ribbonWrapper}>
-                <View style={[styles.ribbonBadge, { backgroundColor: btnAccent }]}>
-                  <Text style={[styles.ribbonText, { color: btnTextColor }]}>
-                    {banner.tag.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-            ) : null}
-
-            {/* Title / Headline */}
-            <View style={styles.headerArea}>
-              <Text style={styles.titleText}>{banner.title}</Text>
-            </View>
-
-            {/* Mascot / Promotion Artwork Container (Containable for tall flyers) */}
-            {banner.imageUrl ? (
-              <View style={styles.imageWrap}>
+          {banner.imageUrl ? (
+            /* Pure Graphic Flyer Mode (Iconic PalmPay Layout) */
+            <View style={[styles.pureCardContainer, { backgroundColor: cardBgColor }]}>
+              {/* Designed Graphic Flyer Image */}
+              <View style={styles.flyerImageContainer}>
                 <Image
                   source={{ uri: banner.imageUrl }}
-                  style={styles.bannerImage}
-                  resizeMode="contain"
+                  style={styles.pureFlyerImage}
+                  resizeMode="cover"
                 />
               </View>
-            ) : (
+
+              {/* Clean CTA Pill Button (No arrow, bold centered text, customizable background) */}
+              <View style={styles.pureCtaWrap}>
+                <TouchableOpacity
+                  style={[styles.pureCtaButton, { backgroundColor: btnAccent }]}
+                  onPress={handlePressCta}
+                  activeOpacity={0.88}
+                >
+                  <Text style={[styles.pureCtaText, { color: btnTextColor }]}>
+                    {banner.cta || "Register Now"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            /* Fallback Typography Card (When no graphic flyer image is uploaded) */
+            <View style={[styles.cardContainer, { backgroundColor: cardBgColor }]}>
+              {banner.tag ? (
+                <View style={styles.ribbonWrapper}>
+                  <View style={[styles.ribbonBadge, { backgroundColor: btnAccent }]}>
+                    <Text style={[styles.ribbonText, { color: btnTextColor }]}>
+                      {banner.tag.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+
+              <View style={styles.headerArea}>
+                <Text style={styles.titleText}>{banner.title}</Text>
+              </View>
+
               <View style={styles.defaultArtworkWrap}>
                 <View style={[styles.haloCircle, { backgroundColor: `${btnAccent}25` }]}>
                   <View style={[styles.innerCircle, { backgroundColor: btnAccent }]}>
@@ -198,38 +212,35 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
                   </View>
                 </View>
               </View>
-            )}
 
-            {/* Description / Terms Copy (Placed below image, right before CTA button) */}
-            {banner.desc ? (
-              <View style={styles.bottomDescArea}>
-                <Text style={styles.descText} numberOfLines={4}>
-                  {banner.desc.replace(/<[^>]*>?/gm, "")}
-                </Text>
+              {banner.desc ? (
+                <View style={styles.bottomDescArea}>
+                  <Text style={styles.descText} numberOfLines={4}>
+                    {banner.desc.replace(/<[^>]*>?/gm, "")}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View style={styles.footerArea}>
+                <TouchableOpacity
+                  style={[styles.ctaButton, { backgroundColor: btnAccent }]}
+                  onPress={handlePressCta}
+                  activeOpacity={0.88}
+                >
+                  <Text style={[styles.ctaButtonText, { color: btnTextColor }]}>
+                    {banner.cta || "Register Now"}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            ) : null}
-
-            {/* Action Button ("Go Now" / "Register Now") */}
-            <View style={styles.footerArea}>
-              <TouchableOpacity
-                style={[styles.ctaButton, { backgroundColor: btnAccent }]}
-                onPress={handlePressCta}
-                activeOpacity={0.88}
-              >
-                <Text style={[styles.ctaButtonText, { color: btnTextColor }]}>
-                  {banner.cta || "Go Now"}
-                </Text>
-                <ArrowRight size={18} color={btnTextColor} style={{ marginLeft: 6 }} />
-              </TouchableOpacity>
             </View>
-          </View>
+          )}
 
           {/* Centered Floating (X) Close Button Below Card (Iconic PalmPay/OPay layout) */}
           <TouchableOpacity
             style={styles.floatingCloseBtn}
             onPress={handleDismiss}
             activeOpacity={0.75}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
           >
             <X size={20} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
@@ -249,8 +260,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalContentWrapper: {
-    width: Math.min(SCREEN_WIDTH - 36, 350),
+    width: Math.min(SCREEN_WIDTH - 44, 335),
     alignItems: "center",
+  },
+  pureCardContainer: {
+    width: "100%",
+    borderRadius: 26,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.45,
+    shadowRadius: 28,
+    elevation: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    alignItems: "center",
+  },
+  flyerImageContainer: {
+    width: "100%",
+    height: Math.min(SCREEN_HEIGHT * 0.52, 380),
+    backgroundColor: "#000000",
+    overflow: "hidden",
+  },
+  pureFlyerImage: {
+    width: "100%",
+    height: "100%",
+  },
+  pureCtaWrap: {
+    width: "100%",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
+  },
+  pureCtaButton: {
+    width: "100%",
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  pureCtaText: {
+    fontSize: 15.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   cardContainer: {
     width: "100%",
