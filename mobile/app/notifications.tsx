@@ -21,6 +21,7 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
+  Trash2,
 } from "lucide-react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
@@ -105,6 +106,53 @@ export default function NotificationsScreen() {
         );
       }
       return { previous };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["inAppNotifications"] });
+    },
+  });
+
+  // Delete single notification mutation
+  const deleteSingleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/notifications?id=${encodeURIComponent(id)}`);
+    },
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ["inAppNotifications"] });
+      const previous = queryClient.getQueryData<InAppNotification[]>(["inAppNotifications"]);
+      if (previous) {
+        queryClient.setQueryData<InAppNotification[]>(
+          ["inAppNotifications"],
+          previous.filter((n) => n.id !== id)
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["inAppNotifications"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["inAppNotifications"] });
+    },
+  });
+
+  // Clear all notifications mutation
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete("/api/notifications?all=true");
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["inAppNotifications"] });
+      const previous = queryClient.getQueryData<InAppNotification[]>(["inAppNotifications"]);
+      queryClient.setQueryData<InAppNotification[]>(["inAppNotifications"], []);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["inAppNotifications"], context.previous);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["inAppNotifications"] });
@@ -223,17 +271,31 @@ export default function NotificationsScreen() {
           </View>
         </View>
 
-        {unreadCount > 0 && (
-          <TouchableOpacity
-            style={[styles.markAllBtn, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#FCE7F3" }]}
-            onPress={() => markAllMutation.mutate()}
-            disabled={markAllMutation.isPending}
-            activeOpacity={0.75}
-          >
-            <CheckCheck size={15} color={colors.primary} />
-            <Text style={[styles.markAllText, { color: colors.primary }]}>Read All</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.headerRightActions}>
+          {unreadCount > 0 && (
+            <TouchableOpacity
+              style={[styles.markAllBtn, { backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#FCE7F3" }]}
+              onPress={() => markAllMutation.mutate()}
+              disabled={markAllMutation.isPending}
+              activeOpacity={0.75}
+            >
+              <CheckCheck size={14} color={colors.primary} />
+              <Text style={[styles.markAllText, { color: colors.primary }]}>Read All</Text>
+            </TouchableOpacity>
+          )}
+
+          {notifications.length > 0 && (
+            <TouchableOpacity
+              style={[styles.clearAllBtn, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEE2E2" }]}
+              onPress={() => clearAllMutation.mutate()}
+              disabled={clearAllMutation.isPending}
+              activeOpacity={0.75}
+            >
+              <Trash2 size={13} color="#EF4444" />
+              <Text style={[styles.clearAllText, { color: "#EF4444" }]}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Filter Tabs */}
@@ -358,6 +420,22 @@ export default function NotificationsScreen() {
                       {formatTimestamp(item.createdAt)}
                     </Text>
                   </View>
+
+                  {/* Individual Delete Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.deleteCardBtn,
+                      { backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9" },
+                    ]}
+                    onPress={(e) => {
+                      e.stopPropagation?.();
+                      deleteSingleMutation.mutate(item.id);
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    activeOpacity={0.7}
+                  >
+                    <Trash2 size={14} color={isDark ? "#94A3B8" : "#64748B"} />
+                  </TouchableOpacity>
                 </View>
 
                 <Text style={[styles.messageText, { color: isDark ? "#CBD5E1" : "#475569" }]}>
@@ -414,6 +492,11 @@ const styles = StyleSheet.create({
     color: "#C82D75",
     marginTop: 1,
   },
+  headerRightActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   markAllBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -425,6 +508,25 @@ const styles = StyleSheet.create({
   markAllText: {
     fontSize: 12,
     fontWeight: "700",
+  },
+  clearAllBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  clearAllText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  deleteCardBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   tabsContainer: {
     flexDirection: "row",

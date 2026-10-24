@@ -9,6 +9,7 @@ import {
   Pressable,
   Animated,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { X, Sparkles } from "lucide-react-native";
@@ -16,13 +17,16 @@ import { useTheme } from "../context/ThemeContext";
 import { getLastDismissedPromoId, setLastDismissedPromoId } from "../lib/storage";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+// Narrower horizontally and taller vertically (Flyer portrait aspect ratio)
+const MODAL_WIDTH = Math.min(SCREEN_WIDTH - 64, 290);
+const MODAL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.62, 450);
 
 export interface PromoPopupData {
   id: string;
   tag?: string;
   title: string;
   desc: string;
-  cta: string;
+  cta?: string;
   route: string;
   color?: string;
   accent?: string;
@@ -45,8 +49,16 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.85));
+
+  // Prefetch image to ensure smooth instantaneous display
+  useEffect(() => {
+    if (banner?.imageUrl) {
+      Image.prefetch(banner.imageUrl).catch(() => {});
+    }
+  }, [banner?.imageUrl]);
 
   const showModal = useCallback(() => {
     setIsVisible(true);
@@ -136,9 +148,8 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
 
   if (!isVisible || !banner) return null;
 
-  // Rich fintech PalmPay / OPay styling palette
-  const cardBgColor = banner.color || "#4C1D95"; // Deep vibrant purple default
-  const btnAccent = banner.accent || "#FBBF24"; // Rich gold default
+  const cardBgColor = banner.color || "#4C1D95";
+  const btnAccent = banner.accent || "#FBBF24";
   const btnTextColor = banner.btnTextColor || "#1E1B4B";
 
   return (
@@ -158,36 +169,44 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
           style={[
             styles.modalContentWrapper,
             {
+              width: MODAL_WIDTH,
               opacity: fadeAnim,
               transform: [{ scale: scaleAnim }],
             },
           ]}
         >
           {banner.imageUrl ? (
-            /* Pure Graphic Flyer Mode (Iconic PalmPay Layout) */
-            <View style={[styles.pureCardContainer, { backgroundColor: cardBgColor }]}>
-              {/* Designed Graphic Flyer Image */}
-              <View style={styles.flyerImageContainer}>
-                <Image
-                  source={{ uri: banner.imageUrl }}
-                  style={styles.pureFlyerImage}
-                  resizeMode="cover"
-                />
-              </View>
+            /* Pure Graphic Flyer Mode: Entire flyer is clickable with destination route */
+            <TouchableOpacity
+              activeOpacity={0.92}
+              onPress={handlePressCta}
+              style={[
+                styles.pureFlyerWrapper,
+                { width: MODAL_WIDTH, height: MODAL_HEIGHT },
+              ]}
+            >
+              <Image
+                source={{ uri: banner.imageUrl }}
+                style={{
+                  width: MODAL_WIDTH,
+                  height: MODAL_HEIGHT,
+                  borderRadius: 22,
+                }}
+                resizeMode="cover"
+                onLoad={() => setImageLoaded(true)}
+              />
 
-              {/* Clean CTA Pill Button (No arrow, bold centered text, customizable background) */}
-              <View style={styles.pureCtaWrap}>
-                <TouchableOpacity
-                  style={[styles.pureCtaButton, { backgroundColor: btnAccent }]}
-                  onPress={handlePressCta}
-                  activeOpacity={0.88}
+              {!imageLoaded && (
+                <View
+                  style={[
+                    styles.imageLoadingOverlay,
+                    { width: MODAL_WIDTH, height: MODAL_HEIGHT },
+                  ]}
                 >
-                  <Text style={[styles.pureCtaText, { color: btnTextColor }]}>
-                    {banner.cta || "Register Now"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                </View>
+              )}
+            </TouchableOpacity>
           ) : (
             /* Fallback Typography Card (When no graphic flyer image is uploaded) */
             <View style={[styles.cardContainer, { backgroundColor: cardBgColor }]}>
@@ -228,14 +247,14 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
                   activeOpacity={0.88}
                 >
                   <Text style={[styles.ctaButtonText, { color: btnTextColor }]}>
-                    {banner.cta || "Register Now"}
+                    {banner.cta || "Explore Now"}
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
 
-          {/* Centered Floating (X) Close Button Below Card (Iconic PalmPay/OPay layout) */}
+          {/* Centered Floating (X) Close Button Below Flyer */}
           <TouchableOpacity
             style={styles.floatingCloseBtn}
             onPress={handleDismiss}
@@ -263,57 +282,31 @@ const styles = StyleSheet.create({
     width: Math.min(SCREEN_WIDTH - 44, 335),
     alignItems: "center",
   },
-  pureCardContainer: {
-    width: "100%",
-    borderRadius: 26,
+  pureFlyerWrapper: {
+    borderRadius: 22,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.55,
     shadowRadius: 28,
     elevation: 16,
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.22)",
-    alignItems: "center",
+    backgroundColor: "#18181B",
+    position: "relative",
   },
-  flyerImageContainer: {
-    width: "100%",
-    height: Math.min(SCREEN_HEIGHT * 0.52, 380),
-    backgroundColor: "#000000",
-    overflow: "hidden",
-  },
-  pureFlyerImage: {
-    width: "100%",
-    height: "100%",
-  },
-  pureCtaWrap: {
-    width: "100%",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 16,
-  },
-  pureCtaButton: {
-    width: "100%",
-    height: 48,
-    borderRadius: 24,
+  imageLoadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  pureCtaText: {
-    fontSize: 15.5,
-    fontWeight: "800",
-    letterSpacing: 0.3,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 22,
   },
   cardContainer: {
     width: "100%",
     minHeight: 440,
     maxHeight: SCREEN_HEIGHT * 0.82,
-    borderRadius: 26,
+    borderRadius: 22,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 16 },
@@ -423,7 +416,7 @@ const styles = StyleSheet.create({
   ctaButton: {
     width: "100%",
     paddingVertical: 14,
-    borderRadius: 28, // Round pill button matching PalmPay style
+    borderRadius: 28, // Round pill button
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

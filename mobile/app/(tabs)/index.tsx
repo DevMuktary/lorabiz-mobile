@@ -72,6 +72,7 @@ export default function HomeScreen() {
     message: "",
   });
   const [isOffline, setIsOffline] = useState(false);
+  const [focusCounter, setFocusCounter] = useState(0);
   const bannerScrollRef = useRef<ScrollView>(null);
 
   // Load cached wallet on mount
@@ -216,9 +217,17 @@ export default function HomeScreen() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Prefetch popup flyer image
+  useEffect(() => {
+    if (popupBannerData?.imageUrl) {
+      Image.prefetch(popupBannerData.imageUrl).catch(() => {});
+    }
+  }, [popupBannerData?.imageUrl]);
+
   useFocusEffect(
     useCallback(() => {
       refetchPopup();
+      setFocusCounter((prev) => prev + 1);
     }, [refetchPopup])
   );
 
@@ -566,7 +575,13 @@ export default function HomeScreen() {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Bell size={20} color={colors.text} />
-            {unreadNotificationCount > 0 && <View style={styles.notificationDot} />}
+            {unreadNotificationCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -907,7 +922,10 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Dynamic Admin-Configured Promotional Popup Modal */}
-      <PromoPopupModal banner={popupBannerData || null} />
+      <PromoPopupModal
+        key={`${popupBannerData?.id || "popup"}-${focusCounter}`}
+        banner={popupBannerData || null}
+      />
 
       {/* Reusable Custom Alert Modal */}
       <CustomAlertModal
@@ -1018,16 +1036,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
   },
-  notificationDot: {
+  notificationBadge: {
     position: "absolute",
-    top: 9,
-    right: 9,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    top: -2,
+    right: -2,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
     backgroundColor: colors.primary,
+    paddingHorizontal: 3,
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1.5,
     borderColor: "#FFFFFF",
+    zIndex: 10,
+  },
+  notificationBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
+    textAlign: "center",
+    lineHeight: 11,
   },
 
   /* Redesigned Luxury Fintech Card */

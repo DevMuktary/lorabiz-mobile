@@ -12,7 +12,7 @@ import {
   Modal,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { Tv, AlertCircle, X } from "lucide-react-native";
+import { AlertCircle, X } from "lucide-react-native";
 import { api } from "../lib/api";
 import { colors } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
@@ -136,28 +136,7 @@ export default function ServiceTvTicker({
 
   // Marquee translation animation
   const animatedTranslate = useRef(new Animated.Value(SCREEN_WIDTH)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
   const loopAnimRef = useRef<Animated.CompositeAnimation | null>(null);
-
-  // Live pulsing dot animation for the TV badge
-  useEffect(() => {
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 0.35,
-          duration: 650,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 650,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseLoop.start();
-    return () => pulseLoop.stop();
-  }, [pulseAnim]);
 
   // Infinite marquee sliding animation
   useEffect(() => {
@@ -223,19 +202,12 @@ export default function ServiceTvTicker({
           style={[
             styles.container,
             {
-              backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.06)",
-              borderColor: isDark ? "rgba(200, 45, 117, 0.28)" : "rgba(200, 45, 117, 0.18)",
+              backgroundColor: isDark ? "rgba(200, 45, 117, 0.10)" : "rgba(200, 45, 117, 0.05)",
+              borderColor: isDark ? "rgba(200, 45, 117, 0.24)" : "rgba(200, 45, 117, 0.16)",
             },
           ]}
         >
-          {/* TV Badge Pill with Pulsing Live Dot */}
-          <View style={styles.badgePill}>
-            <Animated.View style={[styles.pulseDot, { opacity: pulseAnim }]} />
-            <Tv size={11} color="#FFFFFF" style={{ marginRight: 4 }} />
-            <Text style={styles.badgeText}>{badgeLabel}</Text>
-          </View>
-
-          {/* Sliding Marquee Track */}
+          {/* Sliding Marquee Track (Full Width Slim Bar) */}
           <View style={styles.marqueeTrack}>
             <Animated.View
               style={[
@@ -335,40 +307,16 @@ const styles = StyleSheet.create({
   wrapper: {
     width: "100%",
     paddingHorizontal: 16,
-    marginVertical: 6,
+    marginVertical: 4,
   },
   container: {
     flexDirection: "row",
     alignItems: "center",
-    height: 40,
-    borderRadius: 13,
-    paddingHorizontal: 8,
+    height: 30,
+    borderRadius: 8,
+    paddingHorizontal: 10,
     overflow: "hidden",
     borderWidth: 1,
-  },
-  badgePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary, // Iconic Lorabiz Pink #C82D75
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    zIndex: 10,
-    marginRight: 10,
-  },
-  pulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#FFFFFF",
-    marginRight: 4,
-  },
-  badgeText: {
-    color: "#FFFFFF",
-    fontSize: 9.5,
-    fontWeight: "900",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
   },
   marqueeTrack: {
     flex: 1,
