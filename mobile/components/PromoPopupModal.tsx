@@ -15,7 +15,7 @@ import { X, Sparkles, ArrowRight } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import { getLastDismissedPromoId, setLastDismissedPromoId } from "../lib/storage";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export interface PromoPopupData {
   id: string;
@@ -176,17 +176,12 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
               </View>
             ) : null}
 
-            {/* Subtitle & Title */}
+            {/* Title / Headline */}
             <View style={styles.headerArea}>
               <Text style={styles.titleText}>{banner.title}</Text>
-              {banner.desc ? (
-                <Text style={styles.descText} numberOfLines={3}>
-                  {banner.desc}
-                </Text>
-              ) : null}
             </View>
 
-            {/* Mascot / Promotion Artwork */}
+            {/* Mascot / Promotion Artwork Container (Containable for tall flyers) */}
             {banner.imageUrl ? (
               <View style={styles.imageWrap}>
                 <Image
@@ -204,6 +199,15 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
                 </View>
               </View>
             )}
+
+            {/* Description / Terms Copy (Placed below image, right before CTA button) */}
+            {banner.desc ? (
+              <View style={styles.bottomDescArea}>
+                <Text style={styles.descText} numberOfLines={4}>
+                  {banner.desc.replace(/<[^>]*>?/gm, "")}
+                </Text>
+              </View>
+            ) : null}
 
             {/* Action Button ("Go Now" / "Register Now") */}
             <View style={styles.footerArea}>
@@ -235,20 +239,23 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
   );
 }
 
+
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.74)",
+    backgroundColor: "rgba(0, 0, 0, 0.78)",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   modalContentWrapper: {
-    width: Math.min(SCREEN_WIDTH - 44, 340),
+    width: Math.min(SCREEN_WIDTH - 36, 350),
     alignItems: "center",
   },
   cardContainer: {
     width: "100%",
+    minHeight: 440,
+    maxHeight: SCREEN_HEIGHT * 0.82,
     borderRadius: 26,
     overflow: "hidden",
     shadowColor: "#000",
@@ -262,10 +269,11 @@ const styles = StyleSheet.create({
     paddingBottom: 22,
     paddingHorizontal: 20,
     alignItems: "center",
+    justifyContent: "space-between",
   },
   ribbonWrapper: {
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   ribbonBadge: {
     paddingHorizontal: 16,
@@ -284,34 +292,42 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     alignItems: "center",
-    paddingHorizontal: 8,
-    marginBottom: 12,
+    paddingHorizontal: 6,
+    marginBottom: 8,
   },
   titleText: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: "900",
     color: "#FFFFFF",
     textAlign: "center",
     letterSpacing: -0.4,
-    lineHeight: 28,
-    marginBottom: 6,
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    lineHeight: 27,
+    textShadowColor: "rgba(0, 0, 0, 0.35)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
+  bottomDescArea: {
+    width: "100%",
+    paddingHorizontal: 6,
+    marginTop: 4,
+    marginBottom: 10,
+    alignItems: "center",
+  },
   descText: {
     fontSize: 13,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "rgba(255, 255, 255, 0.92)",
     textAlign: "center",
     lineHeight: 18,
     fontWeight: "500",
   },
   imageWrap: {
     width: "100%",
-    height: 190,
+    height: 220,
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 8,
+    marginVertical: 6,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   bannerImage: {
     width: "100%",
@@ -319,7 +335,7 @@ const styles = StyleSheet.create({
   },
   defaultArtworkWrap: {
     width: "100%",
-    height: 140,
+    height: 150,
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 6,
@@ -345,7 +361,7 @@ const styles = StyleSheet.create({
   },
   footerArea: {
     width: "100%",
-    marginTop: 10,
+    marginTop: 4,
   },
   ctaButton: {
     width: "100%",
@@ -366,11 +382,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   floatingCloseBtn: {
-    marginTop: 20,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    marginTop: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
     borderWidth: 1.5,
     borderColor: "#FFFFFF",
     alignItems: "center",
