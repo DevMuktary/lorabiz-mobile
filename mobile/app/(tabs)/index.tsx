@@ -187,7 +187,7 @@ export default function HomeScreen() {
   });
 
   // 6. Dynamic Promotional Popup Modal Query
-  const { data: popupBannerData } = useQuery({
+  const { data: popupBannerData, refetch: refetchPopup } = useQuery({
     queryKey: ["mobilePromoPopupModal"],
     queryFn: async () => {
       try {
@@ -200,8 +200,14 @@ export default function HomeScreen() {
         return null;
       }
     },
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5,
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchPopup();
+    }, [refetchPopup])
+  );
 
   // 7. Notifications Query for Header Bell Badge
   const { data: notificationsData, refetch: refetchNotifications } = useQuery({
@@ -241,6 +247,7 @@ export default function HomeScreen() {
         refetchLoyalty(),
         refetchBanners(),
         refetchNotifications(),
+        refetchPopup(),
       ]);
       setIsOffline(false);
       const freshBalance = (walletRes as any)?.data?.balance ?? (walletRes as any)?.data?.wallet?.balance;

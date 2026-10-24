@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -30,6 +30,7 @@ export interface PromoPopupData {
   imageUrl?: string | null;
   isActive: boolean;
   target?: string;
+  frequency?: "ALWAYS" | "ONCE_PER_SESSION" | "ONCE_UNTIL_DISMISSED" | string;
 }
 
 interface PromoPopupModalProps {
@@ -37,12 +38,32 @@ interface PromoPopupModalProps {
   onDismiss?: () => void;
 }
 
+// In-memory set for ONCE_PER_SESSION persistence
+const sessionDismissedPromoIds = new Set<string>();
+
 export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalProps) {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [scaleAnim] = useState(new Animated.Value(0.9));
+  const [scaleAnim] = useState(new Animated.Value(0.85));
+
+  const showModal = useCallback(() => {
+    setIsVisible(true);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 260,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 65,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, scaleAnim]);
 
   useEffect(() => {
     if (!banner || !banner.isActive) {
@@ -50,36 +71,43 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
       return;
     }
 
-    // Check if user has already dismissed this specific promo in this session/device
-    getLastDismissedPromoId()
-      .then((dismissedId: string | null) => {
-        if (dismissedId !== banner.id) {
-          setIsVisible(true);
-          Animated.parallel([
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 250,
-              useNativeDriver: true,
-            }),
-            Animated.spring(scaleAnim, {
-              toValue: 1,
-              friction: 8,
-              tension: 65,
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }
-      })
-      .catch(() => {
-        setIsVisible(true);
-      });
-  }, [banner]);
+    const freq = banner.frequency || "ALWAYS";
+
+    if (freq === "ONCE_PER_SESSION") {
+      if (sessionDismissedPromoIds.has(banner.id)) {
+        setIsVisible(false);
+        return;
+      }
+      showModal();
+    } else if (freq === "ONCE_UNTIL_DISMISSED") {
+      getLastDismissedPromoId()
+        .then((dismissedId: string | null) => {
+          if (dismissedId !== banner.id) {
+            showModal();
+          } else {
+            setIsVisible(false);
+          }
+        })
+        .catch(() => {
+          showModal();
+        });
+    } else {
+      // "ALWAYS" mode: shows on launch / return
+      showModal();
+    }
+  }, [banner, showModal]);
 
   const handleDismiss = async () => {
+    const freq = banner?.frequency || "ALWAYS";
+
     if (banner) {
-      try {
-        await setLastDismissedPromoId(banner.id);
-      } catch {}
+      if (freq === "ONCE_PER_SESSION") {
+        sessionDismissedPromoIds.add(banner.id);
+      } else if (freq === "ONCE_UNTIL_DISMISSED") {
+        try {
+          await setLastDismissedPromoId(banner.id);
+        } catch {}
+      }
     }
 
     Animated.parallel([
@@ -89,7 +117,7 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
         useNativeDriver: true,
       }),
       Animated.timing(scaleAnim, {
-        toValue: 0.92,
+        toValue: 0.88,
         duration: 180,
         useNativeDriver: true,
       }),
@@ -102,19 +130,16 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
   const handlePressCta = async () => {
     await handleDismiss();
     if (banner?.route) {
-      if (banner.route.startsWith("http")) {
-        router.push(banner.route as any);
-      } else {
-        router.push(banner.route as any);
-      }
+      router.push(banner.route as any);
     }
   };
 
   if (!isVisible || !banner) return null;
 
-  const bgColor = banner.color || (isDark ? "#1E1B4B" : "#831843");
-  const accentColor = banner.accent || "#F472B6";
-  const btnTextColor = banner.btnTextColor || "#FFFFFF";
+  // Rich fintech PalmPay / OPay styling palette
+  const cardBgColor = banner.color || "#4C1D95"; // Deep vibrant purple default
+  const btnAccent = banner.accent || "#FBBF24"; // Rich gold default
+  const btnTextColor = banner.btnTextColor || "#1E1B4B";
 
   return (
     <Modal
@@ -125,88 +150,85 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
       onRequestClose={handleDismiss}
     >
       <View style={styles.backdrop}>
+        {/* Tap outside backdrop to dismiss */}
         <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
 
+        {/* Modal Wrapper containing Card + Bottom Centered Floating (X) */}
         <Animated.View
           style={[
-            styles.cardContainer,
+            styles.modalContentWrapper,
             {
               opacity: fadeAnim,
               transform: [{ scale: scaleAnim }],
-              backgroundColor: bgColor,
             },
           ]}
         >
-          {/* Top Close Icon */}
-          <TouchableOpacity
-            style={styles.topCloseBtn}
-            onPress={handleDismiss}
-            activeOpacity={0.7}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <View style={styles.closeIconCircle}>
-              <X size={16} color="#FFFFFF" />
-            </View>
-          </TouchableOpacity>
-
-          {/* Optional Mascot / Graphic Artwork Area */}
-          {banner.imageUrl ? (
-            <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: banner.imageUrl }}
-                style={styles.bannerImage}
-                resizeMode="cover"
-              />
-            </View>
-          ) : (
-            <View style={styles.mascotBadgeContainer}>
-              <View style={[styles.mascotHalo, { backgroundColor: `${accentColor}33` }]}>
-                <View style={[styles.mascotCircle, { backgroundColor: accentColor }]}>
-                  <Sparkles size={28} color="#FFFFFF" />
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Content Body */}
-          <View style={styles.contentPadding}>
-            {/* Tag Badge */}
+          {/* Main Promo Card */}
+          <View style={[styles.cardContainer, { backgroundColor: cardBgColor }]}>
+            {/* Top Ribbon Badge */}
             {banner.tag ? (
-              <View style={[styles.tagBadge, { backgroundColor: "rgba(255, 255, 255, 0.15)" }]}>
-                <Text style={[styles.tagBadgeText, { color: accentColor }]}>
-                  {banner.tag.toUpperCase()}
-                </Text>
+              <View style={styles.ribbonWrapper}>
+                <View style={[styles.ribbonBadge, { backgroundColor: btnAccent }]}>
+                  <Text style={[styles.ribbonText, { color: btnTextColor }]}>
+                    {banner.tag.toUpperCase()}
+                  </Text>
+                </View>
               </View>
             ) : null}
 
-            {/* Title */}
-            <Text style={styles.titleText}>{banner.title}</Text>
+            {/* Subtitle & Title */}
+            <View style={styles.headerArea}>
+              <Text style={styles.titleText}>{banner.title}</Text>
+              {banner.desc ? (
+                <Text style={styles.descText} numberOfLines={3}>
+                  {banner.desc}
+                </Text>
+              ) : null}
+            </View>
 
-            {/* Description */}
-            <Text style={styles.descText}>{banner.desc}</Text>
+            {/* Mascot / Promotion Artwork */}
+            {banner.imageUrl ? (
+              <View style={styles.imageWrap}>
+                <Image
+                  source={{ uri: banner.imageUrl }}
+                  style={styles.bannerImage}
+                  resizeMode="contain"
+                />
+              </View>
+            ) : (
+              <View style={styles.defaultArtworkWrap}>
+                <View style={[styles.haloCircle, { backgroundColor: `${btnAccent}25` }]}>
+                  <View style={[styles.innerCircle, { backgroundColor: btnAccent }]}>
+                    <Sparkles size={36} color={btnTextColor} />
+                  </View>
+                </View>
+              </View>
+            )}
 
-            {/* Action Button */}
-            <TouchableOpacity
-              style={[styles.ctaButton, { backgroundColor: accentColor }]}
-              onPress={handlePressCta}
-              activeOpacity={0.88}
-            >
-              <Text style={[styles.ctaButtonText, { color: btnTextColor }]}>
-                {banner.cta || "Check It Out"}
-              </Text>
-              <ArrowRight size={17} color={btnTextColor} style={{ marginLeft: 6 }} />
-            </TouchableOpacity>
-
-            {/* Bottom Exit Button */}
-            <TouchableOpacity
-              style={styles.bottomExitBtn}
-              onPress={handleDismiss}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
-            >
-              <Text style={styles.bottomExitText}>Dismiss</Text>
-            </TouchableOpacity>
+            {/* Action Button ("Go Now" / "Register Now") */}
+            <View style={styles.footerArea}>
+              <TouchableOpacity
+                style={[styles.ctaButton, { backgroundColor: btnAccent }]}
+                onPress={handlePressCta}
+                activeOpacity={0.88}
+              >
+                <Text style={[styles.ctaButtonText, { color: btnTextColor }]}>
+                  {banner.cta || "Go Now"}
+                </Text>
+                <ArrowRight size={18} color={btnTextColor} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Centered Floating (X) Close Button Below Card (Iconic PalmPay/OPay layout) */}
+          <TouchableOpacity
+            style={styles.floatingCloseBtn}
+            onPress={handleDismiss}
+            activeOpacity={0.75}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <X size={20} color="#FFFFFF" strokeWidth={2.5} />
+          </TouchableOpacity>
         </Animated.View>
       </View>
     </Modal>
@@ -216,108 +238,103 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.72)",
+    backgroundColor: "rgba(0, 0, 0, 0.74)",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+  },
+  modalContentWrapper: {
+    width: Math.min(SCREEN_WIDTH - 44, 340),
+    alignItems: "center",
   },
   cardContainer: {
-    width: Math.min(SCREEN_WIDTH - 40, 360),
-    borderRadius: 24,
+    width: "100%",
+    borderRadius: 26,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.45,
+    shadowRadius: 28,
+    elevation: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    paddingTop: 18,
+    paddingBottom: 22,
+    paddingHorizontal: 20,
+    alignItems: "center",
   },
-  topCloseBtn: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    zIndex: 10,
+  ribbonWrapper: {
+    alignItems: "center",
+    marginBottom: 10,
   },
-  closeIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  ribbonBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  ribbonText: {
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.6,
+  },
+  headerArea: {
+    alignItems: "center",
+    paddingHorizontal: 8,
+    marginBottom: 12,
+  },
+  titleText: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    textAlign: "center",
+    letterSpacing: -0.4,
+    lineHeight: 28,
+    marginBottom: 6,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  descText: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.9)",
+    textAlign: "center",
+    lineHeight: 18,
+    fontWeight: "500",
+  },
+  imageWrap: {
+    width: "100%",
+    height: 190,
     alignItems: "center",
     justifyContent: "center",
-  },
-  imageContainer: {
-    width: "100%",
-    height: 160,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    marginVertical: 8,
   },
   bannerImage: {
     width: "100%",
     height: "100%",
   },
-  mascotBadgeContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 28,
-    paddingBottom: 4,
-  },
-  mascotHalo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mascotCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  contentPadding: {
-    paddingHorizontal: 22,
-    paddingTop: 16,
-    paddingBottom: 18,
-    alignItems: "center",
-  },
-  tagBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  tagBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  titleText: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    textAlign: "center",
-    lineHeight: 25,
-    marginBottom: 8,
-  },
-  descText: {
-    fontSize: 13,
-    color: "rgba(255, 255, 255, 0.85)",
-    textAlign: "center",
-    lineHeight: 19,
-    marginBottom: 20,
-  },
-  ctaButton: {
+  defaultArtworkWrap: {
     width: "100%",
-    paddingVertical: 14,
-    borderRadius: 14,
-    flexDirection: "row",
+    height: 140,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 6,
+  },
+  haloCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  innerCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -326,19 +343,42 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  footerArea: {
+    width: "100%",
+    marginTop: 10,
+  },
+  ctaButton: {
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 28, // Round pill button matching PalmPay style
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
   ctaButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "900",
+    letterSpacing: 0.2,
   },
-  bottomExitBtn: {
-    marginTop: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-  },
-  bottomExitText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.65)",
-    textDecorationLine: "underline",
+  floatingCloseBtn: {
+    marginTop: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 5,
   },
 });
