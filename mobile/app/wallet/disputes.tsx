@@ -162,6 +162,7 @@ export default function DisputesOverviewScreen() {
         counts,
       };
     },
+    refetchInterval: 5000,
   });
 
   const disputes = data?.disputes || [];

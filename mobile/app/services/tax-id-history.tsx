@@ -388,11 +388,11 @@ export default function TaxIdHistoryScreen() {
           <View style={styles.bannerCard}>
             <View style={styles.bannerHeader}>
               <View style={styles.badgeAgency}>
-                <Text style={styles.badgeAgencyText}>NIGERIA REVENUE SERVICE</Text>
+                <Text style={styles.badgeAgencyText}>NRS TAX ID</Text>
               </View>
               <View style={styles.turnaroundPill}>
                 <Clock size={11} color="#475569" style={{ marginRight: 4 }} />
-                <Text style={styles.turnaroundPillText}>Turnaround Time: 1 – 24 Working Hours</Text>
+                <Text style={styles.turnaroundPillText}>1 – 24 Working Hours</Text>
               </View>
             </View>
             <Text style={styles.bannerTitle}>Tax ID (TIN) Records</Text>
@@ -574,6 +574,8 @@ const getStyles = (colors: any, isDark: boolean) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 6,
       marginBottom: 8,
     },
     badgeAgency: {
@@ -599,6 +601,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       borderRadius: 6,
       borderWidth: 1,
       borderColor: colors.border,
+      flexShrink: 1,
     },
     turnaroundPillText: {
       fontSize: 10,

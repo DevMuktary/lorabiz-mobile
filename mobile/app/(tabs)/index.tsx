@@ -40,6 +40,7 @@ const colors = defaultColors;
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import PromoPopupModal, { PromoPopupData } from "../../components/PromoPopupModal";
+import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import {
   getCachedWallet,
   saveCachedWallet,
@@ -58,6 +59,18 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activePromoIndex, setActivePromoIndex] = useState(0);
   const [cachedWallet, setCachedWallet] = useState<CachedWalletData | null>(null);
+
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    type?: AlertType;
+    title: string;
+    message: string;
+    confirmText?: string;
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+  });
   const [isOffline, setIsOffline] = useState(false);
   const bannerScrollRef = useRef<ScrollView>(null);
 
@@ -764,7 +777,21 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={svc.id}
                 style={styles.gridItem}
-                onPress={() => router.push(svc.route as any)}
+                onPress={() => {
+                  if (svc.id === "data") {
+                    setAlertConfig({
+                      visible: true,
+                      type: "info",
+                      title: "Data & Airtime Bundles",
+                      message: "Data bundles and airtime top-up are launching soon on the mobile app. Check back in the upcoming release!",
+                      confirmText: "Got It",
+                    });
+                    return;
+                  }
+                  if (svc.route) {
+                    router.push(svc.route as any);
+                  }
+                }}
                 activeOpacity={0.75}
               >
                 <View
@@ -881,6 +908,16 @@ export default function HomeScreen() {
 
       {/* Dynamic Admin-Configured Promotional Popup Modal */}
       <PromoPopupModal banner={popupBannerData || null} />
+
+      {/* Reusable Custom Alert Modal */}
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        confirmText={alertConfig.confirmText}
+        onConfirm={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }

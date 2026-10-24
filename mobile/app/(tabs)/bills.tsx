@@ -216,6 +216,26 @@ export default function BillsScreen() {
 
       {billType === "AIRTIME" || billType === "DATA" ? (
         <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+          {/* Coming Soon Notice Banner */}
+          <View style={{
+            backgroundColor: isDark ? "rgba(251, 191, 36, 0.12)" : "#FEF3C7",
+            borderWidth: 1,
+            borderColor: isDark ? "rgba(251, 191, 36, 0.28)" : "#FDE68A",
+            borderRadius: 14,
+            padding: 14,
+            marginBottom: 16,
+          }}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+              <AlertCircle size={16} color="#D97706" style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 13, fontWeight: "800", color: isDark ? "#FCD34D" : "#92400E" }}>
+                Airtime & Data Bundles: Coming Soon
+              </Text>
+            </View>
+            <Text style={{ fontSize: 11, color: isDark ? "#FDE68A" : "#B45309", lineHeight: 16 }}>
+              Utility recharge gateways are undergoing scheduled system integration. Instant airtime and data bundles will be enabled in the upcoming mobile release.
+            </Text>
+          </View>
+
           {/* Network Selector */}
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Select Network</Text>
           <View style={styles.networkGrid}>
@@ -334,20 +354,15 @@ export default function BillsScreen() {
             </View>
           ) : null}
 
-          {/* Submit */}
+          {/* Submit (Disabled in Coming Soon mode) */}
           <TouchableOpacity
-            style={[styles.actionBtn, isLoading && styles.actionBtnDisabled]}
-            onPress={handlePurchaseAirtime}
-            disabled={isLoading}
+            style={[styles.actionBtn, { backgroundColor: isDark ? "#334155" : "#94A3B8" }]}
+            disabled={true}
             activeOpacity={0.8}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.actionBtnText}>
-                Pay ₦{Number(amount || 0).toLocaleString()} from Wallet
-              </Text>
-            )}
+            <Text style={styles.actionBtnText}>
+              Airtime & Data Coming Soon
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (

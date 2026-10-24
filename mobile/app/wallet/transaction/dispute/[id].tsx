@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -29,7 +29,7 @@ import {
   RotateCw,
 } from "lucide-react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { colors } from "../../../../constants/theme";
+import { useTheme } from "../../../../context/ThemeContext";
 import { api } from "../../../../lib/api";
 
 const DISPUTE_REASONS = [
@@ -45,6 +45,8 @@ export default function TransactionDisputeScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   // Filing state
   const [selectedReason, setSelectedReason] = useState(DISPUTE_REASONS[0]);
@@ -75,6 +77,13 @@ export default function TransactionDisputeScreen() {
       }
     },
     enabled: !!id,
+    refetchInterval: (query) => {
+      const data: any = query.state.data;
+      if (data?.dispute && data.dispute.status === "PENDING") {
+        return 4000;
+      }
+      return false;
+    },
   });
 
   const hasDispute = !!tx?.dispute;
@@ -468,43 +477,111 @@ export default function TransactionDisputeScreen() {
             </View>
           </ScrollView>
 
-          {/* Sticky Bottom Comment Bar */}
-          <View style={[styles.bottomCommentBar, { paddingBottom: Math.max(insets.bottom, 12) + 6 }]}>
-            {commentError ? (
-              <Text style={styles.commentErrorText}>{commentError}</Text>
-            ) : null}
-
-            <View style={styles.commentInputRow}>
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Type a follow-up message or detail..."
-                placeholderTextColor="#94A3B8"
-                value={followUpComment}
-                onChangeText={(txt) => {
-                  setFollowUpComment(txt);
-                  if (commentError) setCommentError(null);
-                }}
-                multiline
-                maxLength={500}
-              />
-
-              <TouchableOpacity
+          {/* Bottom Bar: Closed Notice if Resolved/Closed, else Active Comment Bar */}
+          {isDisputeResolved || tx?.dispute?.status === "REJECTED" ? (
+            <View style={[styles.bottomClosedBar, { paddingBottom: Math.max(insets.bottom, 14) + 8 }]}>
+              <View
                 style={[
-                  styles.sendCommentBtn,
-                  (!followUpComment.trim() || isSendingComment) && styles.sendCommentBtnDisabled,
+                  styles.closedNoticeBox,
+                  {
+                    backgroundColor: isDisputeResolved
+                      ? isDark
+                        ? "rgba(16, 185, 129, 0.12)"
+                        : "#ECFDF5"
+                      : isDark
+                      ? "rgba(239, 68, 68, 0.12)"
+                      : "#FEF2F2",
+                    borderColor: isDisputeResolved
+                      ? isDark
+                        ? "rgba(16, 185, 129, 0.3)"
+                        : "#A7F3D0"
+                      : isDark
+                      ? "rgba(239, 68, 68, 0.3)"
+                      : "#FECACA",
+                  },
                 ]}
-                onPress={handleSendFollowUp}
-                disabled={!followUpComment.trim() || isSendingComment}
-                activeOpacity={0.8}
               >
-                {isSendingComment ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                {isDisputeResolved ? (
+                  <CheckCircle2 size={16} color="#10B981" style={{ marginRight: 8, marginTop: 1 }} />
                 ) : (
-                  <Send size={16} color="#FFFFFF" />
+                  <AlertCircle size={16} color="#EF4444" style={{ marginRight: 8, marginTop: 1 }} />
                 )}
-              </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.closedNoticeTitle,
+                      {
+                        color: isDisputeResolved
+                          ? isDark
+                            ? "#34D399"
+                            : "#065F46"
+                          : isDark
+                          ? "#F87171"
+                          : "#991B1B",
+                      },
+                    ]}
+                  >
+                    {isDisputeResolved ? "Dispute Case Resolved" : "Dispute Case Closed"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.closedNoticeSub,
+                      {
+                        color: isDisputeResolved
+                          ? isDark
+                            ? "#A7F3D0"
+                            : "#047857"
+                          : isDark
+                          ? "#FCA5A5"
+                          : "#B91C1C",
+                      },
+                    ]}
+                  >
+                    {isDisputeResolved
+                      ? "This dispute has been resolved and reconciled. Messaging is closed."
+                      : "This dispute case has been reviewed and closed by compliance. Messaging is closed."}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={[styles.bottomCommentBar, { paddingBottom: Math.max(insets.bottom, 12) + 6 }]}>
+              {commentError ? (
+                <Text style={styles.commentErrorText}>{commentError}</Text>
+              ) : null}
+
+              <View style={styles.commentInputRow}>
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder="Type a follow-up message or detail..."
+                  placeholderTextColor={colors.textMuted}
+                  value={followUpComment}
+                  onChangeText={(txt) => {
+                    setFollowUpComment(txt);
+                    if (commentError) setCommentError(null);
+                  }}
+                  multiline
+                  maxLength={500}
+                />
+
+                <TouchableOpacity
+                  style={[
+                    styles.sendCommentBtn,
+                    (!followUpComment.trim() || isSendingComment) && styles.sendCommentBtnDisabled,
+                  ]}
+                  onPress={handleSendFollowUp}
+                  disabled={!followUpComment.trim() || isSendingComment}
+                  activeOpacity={0.8}
+                >
+                  {isSendingComment ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Send size={16} color="#FFFFFF" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
       ) : (
         /* =================================================================== */
@@ -634,564 +711,597 @@ export default function TransactionDisputeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#F8FAFC",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  refreshBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#F8FAFC",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  headerTitleWrap: {
-    flex: 1,
-    alignItems: "center",
-    marginHorizontal: 12,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: "600",
-  },
-  scrollContent: {
-    flex: 1,
-  },
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      paddingBottom: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.surfaceBorder,
+    },
+    backBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: isDark ? colors.surface : "#F8FAFC",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    refreshBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: isDark ? colors.surface : "#F8FAFC",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    headerTitleWrap: {
+      flex: 1,
+      alignItems: "center",
+      marginHorizontal: 12,
+    },
+    headerTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    headerSubtitle: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontWeight: "600",
+    },
+    scrollContent: {
+      flex: 1,
+    },
 
-  /* ------------------------------------------------------------------ */
-  /* ONGOING CASE HUB STYLES (Screen State A)                           */
-  /* ------------------------------------------------------------------ */
-  caseHubContainer: {
-    padding: 16,
-    gap: 16,
-  },
-  caseCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
-  },
-  caseCardHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  caseCardTag: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-    color: "#64748B",
-    marginBottom: 2,
-  },
-  caseIssueType: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#0F172A",
-    lineHeight: 20,
-  },
-  caseStatusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 100,
-    borderWidth: 1,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  caseStatusText: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  caseTxBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginBottom: 12,
-  },
-  caseTxRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EDF2F7",
-  },
-  caseTxLabel: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "600",
-  },
-  caseTxVal: {
-    fontSize: 12,
-    color: "#1E293B",
-    fontWeight: "700",
-  },
-  turnaroundBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  turnaroundBarText: {
-    fontSize: 11,
-    color: "#475569",
-    fontWeight: "500",
-  },
+    /* ------------------------------------------------------------------ */
+    /* ONGOING CASE HUB STYLES (Screen State A)                           */
+    /* ------------------------------------------------------------------ */
+    caseHubContainer: {
+      padding: 16,
+      gap: 16,
+    },
+    caseCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      elevation: 1,
+    },
+    caseCardHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      marginBottom: 14,
+    },
+    caseCardTag: {
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 0.8,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    caseIssueType: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+      lineHeight: 20,
+    },
+    caseStatusBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 100,
+      borderWidth: 1,
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 6,
+    },
+    caseStatusText: {
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+    },
+    caseTxBox: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#F8FAFC",
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      marginBottom: 12,
+    },
+    caseTxRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.surfaceBorder,
+    },
+    caseTxLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "600",
+    },
+    caseTxVal: {
+      fontSize: 12,
+      color: colors.text,
+      fontWeight: "700",
+    },
+    turnaroundBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9",
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+    },
+    turnaroundBarText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
 
-  /* Investigation Stages */
-  stagesCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  stagesTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    color: "#0F172A",
-    textTransform: "uppercase",
-    marginBottom: 16,
-  },
-  stagesList: {
-    paddingLeft: 4,
-  },
-  stageItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  stageIconWrap: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stageIconCompleted: {
-    backgroundColor: "#10B981",
-  },
-  stageIconCurrent: {
-    backgroundColor: "#0F172A",
-  },
-  stageIconPending: {
-    backgroundColor: "#E2E8F0",
-  },
-  pulseInnerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FFFFFF",
-  },
-  stageConnector: {
-    width: 2,
-    height: 22,
-    backgroundColor: "#E2E8F0",
-    marginLeft: 12,
-    marginVertical: 2,
-  },
-  stageConnectorActive: {
-    backgroundColor: "#10B981",
-  },
-  stageContent: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  stageName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  stageDesc: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 1,
-  },
+    /* Investigation Stages */
+    stagesCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    stagesTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+      color: colors.text,
+      textTransform: "uppercase",
+      marginBottom: 16,
+    },
+    stagesList: {
+      paddingLeft: 4,
+    },
+    stageItem: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    stageIconWrap: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    stageIconCompleted: {
+      backgroundColor: "#10B981",
+    },
+    stageIconCurrent: {
+      backgroundColor: isDark ? colors.primaryLight : "#0F172A",
+    },
+    stageIconPending: {
+      backgroundColor: colors.surfaceBorder,
+    },
+    pulseInnerDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "#FFFFFF",
+    },
+    stageConnector: {
+      width: 2,
+      height: 22,
+      backgroundColor: colors.surfaceBorder,
+      marginLeft: 12,
+      marginVertical: 2,
+    },
+    stageConnectorActive: {
+      backgroundColor: "#10B981",
+    },
+    stageContent: {
+      marginLeft: 12,
+      flex: 1,
+    },
+    stageName: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    stageDesc: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
 
-  /* Conversation Thread */
-  threadSection: {
-    marginTop: 4,
-  },
-  threadHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  threadTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#0F172A",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  emptyThreadCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 18,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  emptyThreadText: {
-    fontSize: 12,
-    color: "#94A3B8",
-    fontStyle: "italic",
-  },
-  messagesList: {
-    gap: 12,
-  },
-  messageBubbleWrap: {
-    maxWidth: "92%",
-  },
-  messageBubbleUserWrap: {
-    alignSelf: "flex-end",
-  },
-  messageBubbleSupportWrap: {
-    alignSelf: "flex-start",
-  },
-  messageSenderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-    gap: 6,
-  },
-  supportAvatar: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#0F172A",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  messageSenderName: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#475569",
-  },
-  messageTime: {
-    fontSize: 10,
-    color: "#94A3B8",
-  },
-  messageBubble: {
-    padding: 14,
-    borderRadius: 16,
-  },
-  messageBubbleUser: {
-    backgroundColor: "#0F172A",
-    borderBottomRightRadius: 4,
-  },
-  messageBubbleSupport: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderBottomLeftRadius: 4,
-  },
-  messageText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  messageTextUser: {
-    color: "#FFFFFF",
-    fontWeight: "500",
-  },
-  messageTextSupport: {
-    color: "#1E293B",
-    fontWeight: "500",
-  },
+    /* Conversation Thread */
+    threadSection: {
+      marginTop: 4,
+    },
+    threadHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    threadTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.text,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    emptyThreadCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 18,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    emptyThreadText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      fontStyle: "italic",
+    },
+    messagesList: {
+      gap: 12,
+    },
+    messageBubbleWrap: {
+      maxWidth: "92%",
+    },
+    messageBubbleUserWrap: {
+      alignSelf: "flex-end",
+    },
+    messageBubbleSupportWrap: {
+      alignSelf: "flex-start",
+    },
+    messageSenderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 4,
+      gap: 6,
+    },
+    supportAvatar: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: isDark ? colors.primaryLight : "#0F172A",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    messageSenderName: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    messageTime: {
+      fontSize: 10,
+      color: colors.textMuted,
+    },
+    messageBubble: {
+      padding: 14,
+      borderRadius: 16,
+    },
+    messageBubbleUser: {
+      backgroundColor: colors.primary,
+      borderBottomRightRadius: 4,
+    },
+    messageBubbleSupport: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      borderBottomLeftRadius: 4,
+    },
+    messageText: {
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    messageTextUser: {
+      color: "#FFFFFF",
+      fontWeight: "500",
+    },
+    messageTextSupport: {
+      color: colors.text,
+      fontWeight: "500",
+    },
 
-  /* Sticky Bottom Comment Input Bar */
-  bottomCommentBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  commentErrorText: {
-    fontSize: 11,
-    color: colors.error,
-    marginBottom: 6,
-    fontWeight: "600",
-  },
-  commentInputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 13,
-    color: "#0F172A",
-    maxHeight: 100,
-  },
-  sendCommentBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendCommentBtnDisabled: {
-    backgroundColor: "#CBD5E1",
-  },
+    /* Sticky Bottom Comment Input Bar */
+    bottomCommentBar: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.surfaceBorder,
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    bottomClosedBar: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.surfaceBorder,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    closedNoticeBox: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      padding: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+    },
+    closedNoticeTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+      marginBottom: 2,
+    },
+    closedNoticeSub: {
+      fontSize: 11,
+      lineHeight: 16,
+    },
+    commentErrorText: {
+      fontSize: 11,
+      color: colors.error,
+      marginBottom: 6,
+      fontWeight: "600",
+    },
+    commentInputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    commentInput: {
+      flex: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      borderRadius: 22,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      fontSize: 13,
+      color: colors.text,
+      maxHeight: 100,
+    },
+    sendCommentBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    sendCommentBtnDisabled: {
+      backgroundColor: isDark ? "#334155" : "#CBD5E1",
+    },
 
-  /* ------------------------------------------------------------------ */
-  /* DISPUTE FILING FORM STYLES (Screen State B)                        */
-  /* ------------------------------------------------------------------ */
-  formContainer: {
-    padding: 16,
-  },
-  regulatoryWarningCard: {
-    backgroundColor: "rgba(239, 68, 68, 0.06)",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.2)",
-    padding: 14,
-    marginBottom: 16,
-  },
-  warningHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  warningTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#DC2626",
-  },
-  warningBody: {
-    fontSize: 12,
-    color: "#991B1B",
-    lineHeight: 17,
-  },
-  txMiniCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
-    marginBottom: 20,
-  },
-  txMiniDesc: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  txMiniRef: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 2,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  txMiniAmount: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: 10,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: "#64748B",
-    marginBottom: 10,
-    marginTop: -4,
-  },
-  reasonsList: {
-    gap: 8,
-    marginBottom: 20,
-  },
-  reasonItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  reasonItemActive: {
-    borderColor: colors.primary,
-    backgroundColor: "rgba(200, 45, 117, 0.04)",
-  },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#CBD5E1",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  radioCircleActive: {
-    borderColor: colors.primary,
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-  },
-  reasonText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#334155",
-    flex: 1,
-  },
-  reasonTextActive: {
-    color: colors.primary,
-    fontWeight: "700",
-  },
-  textAreaCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    marginBottom: 16,
-  },
-  textArea: {
-    minHeight: 90,
-    fontSize: 13,
-    color: "#0F172A",
-    lineHeight: 18,
-  },
-  charCounter: {
-    fontSize: 10,
-    color: "#94A3B8",
-    textAlign: "right",
-    marginTop: 4,
-  },
-  turnaroundBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  turnaroundText: {
-    fontSize: 11,
-    color: "#475569",
-    lineHeight: 16,
-    flex: 1,
-  },
-  errorInline: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 14,
-  },
-  errorText: {
-    fontSize: 12,
-    color: colors.error,
-    fontWeight: "600",
-    flex: 1,
-  },
-  submitBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: 15,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  submitBtnText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-  btnDisabled: {
-    opacity: 0.65,
-  },
-});
+    /* ------------------------------------------------------------------ */
+    /* DISPUTE FILING FORM STYLES (Screen State B)                        */
+    /* ------------------------------------------------------------------ */
+    formContainer: {
+      padding: 16,
+    },
+    regulatoryWarningCard: {
+      backgroundColor: "rgba(239, 68, 68, 0.06)",
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "rgba(239, 68, 68, 0.2)",
+      padding: 14,
+      marginBottom: 16,
+    },
+    warningHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 6,
+    },
+    warningTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#DC2626",
+    },
+    warningBody: {
+      fontSize: 12,
+      color: isDark ? "#FCA5A5" : "#991B1B",
+      lineHeight: 17,
+    },
+    txMiniCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      marginBottom: 20,
+    },
+    txMiniDesc: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    txMiniRef: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    },
+    txMiniAmount: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    sectionTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    sectionSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginBottom: 10,
+      marginTop: -4,
+    },
+    reasonsList: {
+      gap: 8,
+      marginBottom: 20,
+    },
+    reasonItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+    },
+    reasonItemActive: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.12)" : "rgba(200, 45, 117, 0.04)",
+    },
+    radioCircle: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.surfaceBorder,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    radioCircleActive: {
+      borderColor: colors.primary,
+    },
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+    },
+    reasonText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.text,
+      flex: 1,
+    },
+    reasonTextActive: {
+      color: colors.primary,
+      fontWeight: "700",
+    },
+    textAreaCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.surfaceBorder,
+      marginBottom: 16,
+    },
+    textArea: {
+      minHeight: 90,
+      fontSize: 13,
+      color: colors.text,
+      lineHeight: 18,
+    },
+    charCounter: {
+      fontSize: 10,
+      color: colors.textMuted,
+      textAlign: "right",
+      marginTop: 4,
+    },
+    turnaroundBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F1F5F9",
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 16,
+    },
+    turnaroundText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      lineHeight: 16,
+      flex: 1,
+    },
+    errorInline: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "rgba(239, 68, 68, 0.08)",
+      padding: 10,
+      borderRadius: 10,
+      marginBottom: 14,
+    },
+    errorText: {
+      fontSize: 12,
+      color: colors.error,
+      fontWeight: "600",
+      flex: 1,
+    },
+    submitBtn: {
+      backgroundColor: colors.primary,
+      paddingVertical: 15,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    submitBtnText: {
+      color: "#FFFFFF",
+      fontSize: 14,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+    },
+    btnDisabled: {
+      opacity: 0.65,
+    },
+  });

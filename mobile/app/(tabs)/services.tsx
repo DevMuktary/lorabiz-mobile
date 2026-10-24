@@ -145,7 +145,6 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         id: "airtime",
         title: "Airtime",
         logo: require("../../assets/airtime.png"),
-        route: "/(tabs)/bills",
       },
       {
         id: "data",
@@ -153,7 +152,6 @@ const SERVICE_SECTIONS: ServiceCategory[] = [
         icon: Wifi,
         iconColor: "#2563EB",
         iconBg: "#EFF6FF",
-        route: "/(tabs)/bills",
       },
     ],
   },
