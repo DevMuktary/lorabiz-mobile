@@ -281,7 +281,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           .catch(() => {});
 
-        // Quiet background session validation
+        // Quiet background profile & session validation (fetches latest user.phone, wallet, and 2FA settings)
+        api
+          .get("/api/user/profile")
+          .then((profileRes) => {
+            if (profileRes?.user) {
+              const p = profileRes.user;
+              setUser((prev) => {
+                const current = prev || storedUser;
+                const updatedUser: UserProfile = {
+                  ...current,
+                  id: p.id || current.id,
+                  email: p.email || current.email,
+                  name: p.name || `${p.firstName || ""} ${p.lastName || ""}`.trim() || current.name,
+                  firstName: p.firstName || current.firstName,
+                  lastName: p.lastName || current.lastName,
+                  phone: p.phone || current.phone,
+                  phoneChangedAt: p.phoneChangedAt || current.phoneChangedAt || null,
+                  role: p.role || current.role,
+                  image: p.image || current.image,
+                  twoFactorEnabled: p.twoFactorEnabled ?? current.twoFactorEnabled,
+                  twoFactorMethod: p.twoFactorMethod || current.twoFactorMethod,
+                  emailLoginAlerts: p.emailLoginAlerts ?? current.emailLoginAlerts,
+                };
+                saveAuthUser(updatedUser);
+                return updatedUser;
+              });
+            }
+          })
+          .catch(() => {});
+
         fetch(`${BASE_URL}/api/auth/session`, {
           credentials: "include",
           headers: {
@@ -296,6 +325,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const updatedUser = {
                   ...(prev || storedUser),
                   ...res.user,
+                  phone: res.user.phone || prev?.phone || storedUser.phone,
+                  phoneChangedAt: res.user.phoneChangedAt || prev?.phoneChangedAt || storedUser.phoneChangedAt,
                   wallet: prev?.wallet || storedUser.wallet,
                 };
                 saveAuthUser(updatedUser);
@@ -424,6 +455,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: sessionData.user.email || trimmedEmail,
               name: sessionData.user.name || userProfile.name,
               firstName: sessionData.user.name?.split(" ")[0] || userProfile.firstName,
+              lastName: sessionData.user.lastName || sessionData.user.name?.split(" ").slice(1).join(" ") || "",
+              phone: sessionData.user.phone || undefined,
+              phoneChangedAt: sessionData.user.phoneChangedAt || null,
               role: sessionData.user.role || "USER",
               image: sessionData.user.image || null,
             };
@@ -471,6 +505,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await saveAuthUser(userProfile);
         setToken(activeToken);
         setUser(userProfile);
+
+        // Immediately fetch complete profile with phone & security preferences
+        try {
+          const profileRes = await fetch(`${BASE_URL}/api/user/profile`, {
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${activeToken}`,
+              Cookie: `next-auth.session-token=${activeToken}; __Secure-next-auth.session-token=${activeToken}`,
+            },
+          }).then((r) => r.json());
+
+          if (profileRes?.user) {
+            const p = profileRes.user;
+            userProfile = {
+              ...userProfile,
+              name: p.name || userProfile.name,
+              firstName: p.firstName || userProfile.firstName,
+              lastName: p.lastName || userProfile.lastName,
+              phone: p.phone || userProfile.phone,
+              phoneChangedAt: p.phoneChangedAt || userProfile.phoneChangedAt || null,
+              twoFactorEnabled: p.twoFactorEnabled ?? false,
+              twoFactorMethod: p.twoFactorMethod || null,
+              emailLoginAlerts: p.emailLoginAlerts ?? true,
+              role: p.role || userProfile.role,
+              image: p.image || userProfile.image,
+            };
+            setUser(userProfile);
+            await saveAuthUser(userProfile);
+          }
+        } catch {
+          // Keep base profile
+        }
 
         const now = Date.now();
         lastActiveRef.current = now;
@@ -652,6 +718,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: data.user.name || user?.name || "",
           firstName: data.user.firstName || data.user.name?.split(" ")[0] || user?.firstName || "User",
           lastName: data.user.lastName || data.user.name?.split(" ").slice(1).join(" ") || user?.lastName || "",
+          phone: data.user.phone || user?.phone,
+          phoneChangedAt: data.user.phoneChangedAt || user?.phoneChangedAt || null,
           role: data.user.role || user?.role || "USER",
           image: data.user.image || user?.image || null,
           isProfileComplete: data.user.isProfileComplete ?? false,
@@ -706,11 +774,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: data.user.name || user?.name || "",
           firstName: data.user.firstName || data.user.name?.split(" ")[0] || user?.firstName || "User",
           lastName: data.user.lastName || data.user.name?.split(" ").slice(1).join(" ") || user?.lastName || "",
+          phone: data.user.phone || user?.phone,
+          phoneChangedAt: data.user.phoneChangedAt || user?.phoneChangedAt || null,
           role: data.user.role || user?.role || "USER",
           image: data.user.image || user?.image || null,
           isProfileComplete: data.user.isProfileComplete ?? false,
           wallet: liveWallet || undefined,
         };
+
+        // Query full profile for phone and 2FA settings
+        try {
+          const profileRes = await fetch(`${BASE_URL}/api/user/profile`, {
+            credentials: "include",
+            headers,
+          }).then((r) => r.json());
+          if (profileRes?.user) {
+            const p = profileRes.user;
+            updatedUser.phone = p.phone || updatedUser.phone;
+            updatedUser.phoneChangedAt = p.phoneChangedAt || updatedUser.phoneChangedAt;
+            updatedUser.twoFactorEnabled = p.twoFactorEnabled ?? updatedUser.twoFactorEnabled;
+            updatedUser.twoFactorMethod = p.twoFactorMethod || updatedUser.twoFactorMethod;
+          }
+        } catch {}
+
         setUser(updatedUser);
         await saveAuthUser(updatedUser);
 

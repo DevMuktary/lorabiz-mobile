@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -59,12 +59,26 @@ export default function PersonalDetailsScreen() {
     message: "",
   });
 
+  const [isRefreshingProfile, setIsRefreshingProfile] = useState(false);
+
+  // Refresh profile on mount so registered phone number is loaded from backend
+  useEffect(() => {
+    let isMounted = true;
+    setIsRefreshingProfile(true);
+    refreshProfile().finally(() => {
+      if (isMounted) setIsRefreshingProfile(false);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const userFirstName = user?.firstName || user?.name?.split(" ")[0] || "User";
   const userLastName = user?.lastName || user?.name?.split(" ").slice(1).join(" ") || "";
 
-  // Check 30-Day Phone Cooldown
+  // Check 30-Day Phone Cooldown (only applicable if a phone number is already registered)
   const isPhoneLocked = () => {
-    if (!user?.phoneChangedAt) return false;
+    if (!user?.phone || !user?.phoneChangedAt) return false;
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     return new Date(user.phoneChangedAt) > thirtyDaysAgo;
   };
@@ -171,6 +185,7 @@ export default function PersonalDetailsScreen() {
       });
 
       if (res?.success) {
+        const hadPreviousPhone = Boolean(user?.phone);
         await refreshProfile();
         setIsPhoneModalVisible(false);
         setPhoneStep("ENTER_PHONE");
@@ -179,8 +194,10 @@ export default function PersonalDetailsScreen() {
         setAlertConfig({
           visible: true,
           type: "success",
-          title: "Phone Number Updated",
-          message: "Your phone number has been securely verified and updated.",
+          title: hadPreviousPhone ? "Phone Number Updated" : "Phone Number Linked",
+          message: hadPreviousPhone
+            ? "Your phone number has been securely verified and updated."
+            : "Your mobile phone number has been verified and linked to your account.",
           confirmText: "Done",
           onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
         });
@@ -363,11 +380,26 @@ export default function PersonalDetailsScreen() {
               <Text style={[styles.phoneLabel, { color: colors.textMuted }]}>
                 Mobile Phone Number
               </Text>
-              <Text style={[styles.phoneNumberText, { color: colors.text }]}>
-                {user?.phone || "No mobile number linked"}
-              </Text>
+              {isRefreshingProfile && !user?.phone ? (
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                  <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.phoneNumberText, { color: colors.textMuted, fontSize: 13.5 }]}>
+                    Checking linked number...
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.phoneNumberText, { color: user?.phone ? colors.text : colors.textMuted }]}>
+                  {user?.phone || "No mobile number linked"}
+                </Text>
+              )}
             </View>
           </View>
+
+          {!user?.phone && !isRefreshingProfile ? (
+            <Text style={[styles.phoneHelperText, { color: colors.textSecondary }]}>
+              No mobile phone number is linked to your account yet. Linking your phone enables security alerts and account recovery.
+            </Text>
+          ) : null}
 
           {isPhoneLocked() ? (
             <View
@@ -386,13 +418,27 @@ export default function PersonalDetailsScreen() {
             </View>
           ) : (
             <TouchableOpacity
-              style={[styles.changePhoneActionBtn, { borderColor: colors.primary }]}
+              style={[
+                styles.changePhoneActionBtn,
+                !user?.phone
+                  ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                  : { borderColor: colors.primary },
+              ]}
               onPress={handleOpenPhoneChange}
               activeOpacity={0.8}
             >
-              <Phone size={15} color={colors.primary} style={{ marginRight: 6 }} />
-              <Text style={[styles.changePhoneActionText, { color: colors.primary }]}>
-                Change Phone Number
+              <Phone
+                size={15}
+                color={!user?.phone ? "#FFFFFF" : colors.primary}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.changePhoneActionText,
+                  { color: !user?.phone ? "#FFFFFF" : colors.primary, fontWeight: "700" },
+                ]}
+              >
+                {user?.phone ? "Change Phone Number" : "Link Mobile Number"}
               </Text>
             </TouchableOpacity>
           )}
@@ -426,10 +472,10 @@ export default function PersonalDetailsScreen() {
             <View style={styles.dialogHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.dialogTitle, { color: colors.text }]}>
-                  Change Phone Number
+                  {user?.phone ? "Change Phone Number" : "Link Mobile Number"}
                 </Text>
                 <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }}>
-                  Update your registered mobile phone
+                  {user?.phone ? "Update your registered mobile phone" : "Connect your mobile phone to your account"}
                 </Text>
               </View>
               <TouchableOpacity
@@ -451,10 +497,14 @@ export default function PersonalDetailsScreen() {
             {phoneStep === "ENTER_PHONE" ? (
               <View style={{ marginTop: 14 }}>
                 <Text style={[styles.dialogExplainer, { color: colors.textSecondary }]}>
-                  Enter your new mobile phone number. We will send a 6-digit confirmation code to your registered email ({user?.email}) to verify ownership.
+                  {user?.phone
+                    ? `Enter your new mobile phone number. We will send a 6-digit confirmation code to your registered email (${user?.email}) to verify ownership.`
+                    : `Enter your mobile phone number. We will send a 6-digit confirmation code to your registered email (${user?.email}) to verify and link your number.`}
                 </Text>
 
-                <Text style={[styles.inputLabel, { color: colors.text }]}>New Phone Number</Text>
+                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                  {user?.phone ? "New Phone Number" : "Mobile Phone Number"}
+                </Text>
                 <TextInput
                   style={[
                     styles.highContrastInput,
@@ -503,7 +553,9 @@ export default function PersonalDetailsScreen() {
                     {isPhoneLoading ? (
                       <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
-                      <Text style={styles.dialogSaveText}>Send Code</Text>
+                      <Text style={styles.dialogSaveText}>
+                        {user?.phone ? "Send Code" : "Send Verification Code"}
+                      </Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -747,6 +799,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 2,
     letterSpacing: 0.3,
+  },
+  phoneHelperText: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginBottom: 14,
   },
   phoneLockNotice: {
     flexDirection: "row",

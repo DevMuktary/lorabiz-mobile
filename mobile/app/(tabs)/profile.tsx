@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Linking,
   Modal,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -43,6 +43,13 @@ export default function ProfileScreen() {
   const { colors, isDark, themeMode } = useTheme();
   const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { user, logout, refreshProfile } = useAuth();
+
+  // Refresh profile data whenever Profile screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshProfile().catch(() => {});
+    }, [])
+  );
 
   // State
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
