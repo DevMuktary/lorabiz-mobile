@@ -20,7 +20,7 @@
     "ios": {
       "userInterfaceStyle": "automatic",
       "supportsTablet": true,
-      "bundleIdentifier": "com.lorabiz.app",
+      "bundleIdentifier": "com.lorabiz.com",
       "infoPlist": {
         "NSCameraUsageDescription": "LoraBiz requires camera access to capture registration documents and passport photographs.",
         "NSFaceIDUsageDescription": "LoraBiz uses Face ID for fast and secure authentication into your wallet and account.",
@@ -28,7 +28,7 @@
       }
     },
     "android": {
-      "package": "com.lorabiz.app",
+      "package": "com.lorabiz.com",
       "adaptiveIcon": {
         "backgroundColor": "#C82D75",
         "foregroundImage": "./assets/android-icon-foreground.png"
