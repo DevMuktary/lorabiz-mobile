@@ -79,22 +79,20 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
     }
 
     const checkAndShow = async () => {
-      const freq = banner.frequency || "ALWAYS";
-
-      if (freq === "ONCE_PER_SESSION" && sessionDismissedPromoIds.has(banner.id)) {
+      // Check session dismissal
+      if (sessionDismissedPromoIds.has(banner.id)) {
         setIsVisible(false);
         return;
       }
 
-      if (freq === "ONCE_UNTIL_DISMISSED") {
-        try {
-          const dismissedId = await getLastDismissedPromoId();
-          if (dismissedId === banner.id) {
-            setIsVisible(false);
-            return;
-          }
-        } catch {}
-      }
+      // Check persistent dismissal
+      try {
+        const dismissedId = await getLastDismissedPromoId();
+        if (dismissedId === banner.id) {
+          setIsVisible(false);
+          return;
+        }
+      } catch {}
 
       // If graphic flyer mode (has imageUrl), ensure image is cached & fully preloaded before showing
       if (banner.imageUrl) {
@@ -124,16 +122,11 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
   }, [banner, showModal]);
 
   const handleDismiss = async () => {
-    const freq = banner?.frequency || "ALWAYS";
-
     if (banner) {
-      if (freq === "ONCE_PER_SESSION") {
-        sessionDismissedPromoIds.add(banner.id);
-      } else if (freq === "ONCE_UNTIL_DISMISSED") {
-        try {
-          await setLastDismissedPromoId(banner.id);
-        } catch {}
-      }
+      sessionDismissedPromoIds.add(banner.id);
+      try {
+        await setLastDismissedPromoId(banner.id);
+      } catch {}
     }
 
     Animated.parallel([

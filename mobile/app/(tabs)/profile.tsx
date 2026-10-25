@@ -230,10 +230,10 @@ export default function ProfileScreen() {
     setAlertConfig({
       visible: true,
       type: "confirm",
-      title: "Deactivate Account",
+      title: "Delete Account",
       message:
-        "Are you sure you want to deactivate your Lorabiz account? Your active session will be signed out and your profile closed. In compliance with financial regulations and anti-money laundering laws, past transaction records are securely retained.",
-      confirmText: "Deactivate",
+        "Are you sure you want to delete your Lorabiz account? Your active session will be signed out and your profile closed.",
+      confirmText: "Delete Account",
       cancelText: "Cancel",
       isDestructive: true,
       onConfirm: async () => {
@@ -245,8 +245,8 @@ export default function ProfileScreen() {
             setAlertConfig({
               visible: true,
               type: "success",
-              title: "Account Deactivated",
-              message: "Your account has been deactivated. You have been signed out.",
+              title: "Account Deleted",
+              message: "Your account has been deleted. You have been signed out.",
               confirmText: "OK",
               onConfirm: async () => {
                 setAlertConfig((prev) => ({ ...prev, visible: false }));
@@ -259,7 +259,7 @@ export default function ProfileScreen() {
               visible: true,
               type: "error",
               title: "Error",
-              message: res?.message || "Could not deactivate account.",
+              message: res?.message || "Could not delete account.",
               confirmText: "OK",
               onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
             });
@@ -415,12 +415,12 @@ export default function ProfileScreen() {
               styles.menuIconBox,
               {
                 backgroundColor: isDark
-                  ? "rgba(59, 130, 246, 0.15)"
-                  : "rgba(59, 130, 246, 0.10)",
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "#F1F5F9",
               },
             ]}
           >
-            <UserCheck size={20} color="#3B82F6" />
+            <UserCheck size={20} color={colors.text} />
           </View>
           <View style={styles.menuTexts}>
             <Text style={[styles.menuTitle, { color: colors.text }]}>Personal Details</Text>
@@ -449,12 +449,12 @@ export default function ProfileScreen() {
               styles.menuIconBox,
               {
                 backgroundColor: isDark
-                  ? "rgba(200, 45, 117, 0.15)"
-                  : "rgba(200, 45, 117, 0.10)",
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "#F1F5F9",
               },
             ]}
           >
-            <Settings size={20} color={colors.primary} />
+            <Settings size={20} color={colors.text} />
           </View>
           <View style={styles.menuTexts}>
             <Text style={[styles.menuTitle, { color: colors.text }]}>Settings & Preferences</Text>
@@ -483,12 +483,12 @@ export default function ProfileScreen() {
               styles.menuIconBox,
               {
                 backgroundColor: isDark
-                  ? "rgba(16, 185, 129, 0.15)"
-                  : "rgba(16, 185, 129, 0.10)",
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "#F1F5F9",
               },
             ]}
           >
-            <Shield size={20} color={colors.success} />
+            <Shield size={20} color={colors.text} />
           </View>
           <View style={styles.menuTexts}>
             <Text style={[styles.menuTitle, { color: colors.text }]}>Security</Text>
@@ -517,12 +517,12 @@ export default function ProfileScreen() {
               styles.menuIconBox,
               {
                 backgroundColor: isDark
-                  ? "rgba(200, 45, 117, 0.15)"
-                  : "rgba(200, 45, 117, 0.10)",
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "#F1F5F9",
               },
             ]}
           >
-            <Headphones size={20} color={colors.primary} />
+            <Headphones size={20} color={colors.text} />
           </View>
           <View style={styles.menuTexts}>
             <Text style={[styles.menuTitle, { color: colors.text }]}>Customer Support</Text>
@@ -544,12 +544,12 @@ export default function ProfileScreen() {
               styles.menuIconBox,
               {
                 backgroundColor: isDark
-                  ? "rgba(139, 92, 246, 0.15)"
-                  : "rgba(139, 92, 246, 0.10)",
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "#F1F5F9",
               },
             ]}
           >
-            <Scale size={20} color={colors.purple} />
+            <Scale size={20} color={colors.text} />
           </View>
           <View style={styles.menuTexts}>
             <Text style={[styles.menuTitle, { color: colors.text }]}>Legal & Compliance</Text>
@@ -584,7 +584,7 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.menuIconBox,
-              { backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2" },
+              { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" },
             ]}
           >
             <LogOut size={19} color={colors.error} />
@@ -598,7 +598,7 @@ export default function ProfileScreen() {
           <ChevronRight size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Deactivate Account */}
+        {/* Delete Account */}
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomWidth: 0 }]}
           onPress={handleCloseAccount}
@@ -618,9 +618,9 @@ export default function ProfileScreen() {
             )}
           </View>
           <View style={styles.menuTexts}>
-            <Text style={[styles.menuTitle, { color: colors.error }]}>Deactivate Account</Text>
+            <Text style={[styles.menuTitle, { color: colors.error }]}>Delete Account</Text>
             <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
-              Close profile & sign out
+              Permanently delete account & sign out
             </Text>
           </View>
           <ChevronRight size={18} color={colors.textMuted} />

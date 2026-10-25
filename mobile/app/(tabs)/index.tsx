@@ -549,7 +549,11 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <View style={[styles.avatarOrb, { borderColor: tierColor, borderWidth: 2 }]}>
-              <Text style={styles.avatarText}>{userInitial}</Text>
+              {user?.image ? (
+                <Image source={{ uri: user.image }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>{userInitial}</Text>
+              )}
             </View>
             <View style={[styles.avatarTierBadge, { backgroundColor: tierColor }]}>
               <Crown size={9} color="#FFFFFF" />
@@ -996,6 +1000,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 21,
   },
   avatarText: {
     color: "#FFFFFF",

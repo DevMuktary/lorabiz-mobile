@@ -44,7 +44,6 @@ export default function SettingsScreen() {
 
   const [emailAlerts, setEmailAlerts] = useState(user?.emailLoginAlerts ?? true);
   const [isAutoLockModalVisible, setIsAutoLockModalVisible] = useState(false);
-  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
   // Sync state with user profile
   React.useEffect(() => {
@@ -372,136 +371,7 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
-
-        {/* Section 4: Account Management (Google Play Compliance) */}
-        <Text style={[styles.sectionHeading, { color: colors.textSecondary, marginTop: 24 }]}>
-          Account Management
-        </Text>
-        <View
-          style={[
-            styles.menuCard,
-            { backgroundColor: colors.surface, borderColor: colors.surfaceBorder },
-          ]}
-        >
-          <TouchableOpacity
-            style={[styles.menuItem, { borderBottomWidth: 0 }]}
-            onPress={() => setIsDeleteModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.menuIconBox,
-                { backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2" },
-              ]}
-            >
-              <UserX size={19} color={colors.error} />
-            </View>
-            <View style={styles.menuTexts}>
-              <Text style={[styles.menuTitle, { color: colors.error }]}>Delete Account</Text>
-              <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
-                Permanently close account and erase profile data
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        </View>
       </ScrollView>
-
-      {/* Account Deletion Modal (Google Play Compliance) */}
-      <Modal
-        visible={isDeleteModalVisible}
-        transparent={true}
-        animationType="slide"
-        statusBarTranslucent={true}
-        onRequestClose={() => setIsDeleteModalVisible(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setIsDeleteModalVisible(false)}
-          />
-          <View
-            style={[
-              styles.bottomSheetCard,
-              {
-                backgroundColor: colors.surfaceElevated,
-                borderColor: colors.surfaceBorder,
-                paddingBottom: Math.max(insets.bottom, 20) + 16,
-              },
-            ]}
-          >
-            <View style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#CBD5E1" }]} />
-            <View style={styles.dialogHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.dialogTitle, { color: colors.error }]}>
-                  Request Account Deletion
-                </Text>
-                <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }}>
-                  Statutory data erasure under NDPA 2023 regulations
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setIsDeleteModalVisible(false)}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={[styles.closeIconCircle, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9" }]}
-              >
-                <X size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ marginTop: 16 }}>
-              <View
-                style={{
-                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2",
-                  borderWidth: 1,
-                  borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#FCA5A5",
-                  borderRadius: 14,
-                  padding: 14,
-                  marginBottom: 16,
-                }}
-              >
-                <Text style={{ fontSize: 12.5, lineHeight: 18, color: isDark ? "#FCA5A5" : "#991B1B" }}>
-                  Closing your account permanently disables your login credentials and schedules your personal profile data for erasure. Statutory audit records of completed financial transactions will be preserved strictly for anti-money laundering compliance.
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.error,
-                  borderRadius: 14,
-                  paddingVertical: 14,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 10,
-                }}
-                onPress={() => {
-                  setIsDeleteModalVisible(false);
-                  router.push("/profile/legal");
-                }}
-                activeOpacity={0.88}
-              >
-                <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>
-                  View Deletion Policy & Contact Support
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{
-                  paddingVertical: 12,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                onPress={() => setIsDeleteModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={{ fontSize: 13.5, fontWeight: "600", color: colors.textSecondary }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Auto-Lock Native Modal Picker (Bottom Sheet Presentation) */}
       <Modal
