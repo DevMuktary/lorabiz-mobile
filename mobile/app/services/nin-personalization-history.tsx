@@ -13,9 +13,12 @@ import {
   ScrollView,
   Platform,
   Image,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 import {
   ArrowLeft,
   Search,
@@ -580,7 +583,20 @@ export default function NinPersonalizationHistoryScreen() {
           onRequestClose={() => setActiveModalTicket(null)}
         >
           <View style={styles.modalBackdrop}>
-            <View style={[styles.modalCard, { maxHeight: "88%", paddingBottom: Math.max(insets.bottom, 20) + 12 }]}>
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => setActiveModalTicket(null)}
+            />
+            <View
+              style={[
+                styles.modalCard,
+                {
+                  height: Math.min(SCREEN_HEIGHT * 0.85, 760),
+                  paddingBottom: Math.max(insets.bottom, 16) + 10,
+                },
+              ]}
+            >
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
@@ -603,7 +619,11 @@ export default function NinPersonalizationHistoryScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={styles.modalScroll}
+                contentContainerStyle={styles.modalScrollContent}
+              >
                 {/* Status Bar with Live Sync Button */}
                 <View
                   style={[
@@ -1240,7 +1260,21 @@ const getStyles = (colors: any, isDark: boolean) =>
       backgroundColor: colors.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 20,
+    },
+    modalScroll: {
+      flex: 1,
+    },
+    modalScrollContent: {
+      paddingBottom: 24,
     },
     modalHeader: {
       flexDirection: "row",

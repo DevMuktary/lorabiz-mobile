@@ -12,8 +12,11 @@ import {
   ScrollView,
   StatusBar,
   Platform,
+  Dimensions,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowLeft,
@@ -517,369 +520,408 @@ export default function NinIpeHistoryScreen() {
       )}
 
       {/* Ticket Details Modal */}
-      {activeModalTicket && (
-        <Modal
-          visible={!!activeModalTicket}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setActiveModalTicket(null)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={[styles.modalCard, { maxHeight: "88%", paddingBottom: Math.max(insets.bottom, 20) + 12 }]}>
-              {/* Modal Header */}
-              <View style={styles.modalHeader}>
-                <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                  <View style={styles.modalHeaderIconWrap}>
-                    <Key size={20} color={colors.primary} />
+      {activeModalTicket && (() => {
+        const modalNin =
+          activeModalTicket.resolvedNin ||
+          activeModalTicket.apiResponse?.newNIN ||
+          activeModalTicket.apiResponse?.resolvedNin ||
+          activeModalTicket.apiResponse?.nin ||
+          null;
+
+        const modalNewTrackingId =
+          activeModalTicket.newTrackingId ||
+          activeModalTicket.apiResponse?.newTrackingID ||
+          activeModalTicket.apiResponse?.newTrackingId ||
+          null;
+
+        const modalMessage =
+          activeModalTicket.apiMessage ||
+          activeModalTicket.apiResponse?.message ||
+          (activeModalTicket.status === "COMPLETED"
+            ? "IPE Clearance completed successfully. Your NIN has been released."
+            : null);
+
+        return (
+          <Modal
+            visible={!!activeModalTicket}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setActiveModalTicket(null)}
+          >
+            <View style={styles.modalBackdrop}>
+              <TouchableOpacity
+                style={StyleSheet.absoluteFill}
+                activeOpacity={1}
+                onPress={() => setActiveModalTicket(null)}
+              />
+              <View
+                style={[
+                  styles.modalCard,
+                  {
+                    height: Math.min(SCREEN_HEIGHT * 0.85, 760),
+                    paddingBottom: Math.max(insets.bottom, 16) + 10,
+                  },
+                ]}
+              >
+                {/* Modal Header */}
+                <View style={styles.modalHeader}>
+                  <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                    <View style={styles.modalHeaderIconWrap}>
+                      <Key size={20} color={colors.primary} />
+                    </View>
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                      <Text style={styles.modalTitle}>Clearance Details</Text>
+                      <Text style={styles.modalRefText} numberOfLines={1}>
+                        Ref: {activeModalTicket.reference}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={{ marginLeft: 10, flex: 1 }}>
-                    <Text style={styles.modalTitle}>Clearance Details</Text>
-                    <Text style={styles.modalRefText} numberOfLines={1}>
-                      Ref: {activeModalTicket.reference}
-                    </Text>
-                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => setActiveModalTicket(null)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <X size={20} color={colors.text} />
+                  </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  onPress={() => setActiveModalTicket(null)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
                 >
-                  <X size={20} color={colors.text} />
-                </TouchableOpacity>
-              </View>
+                  {/* Status Banner */}
+                  <View
+                    style={[
+                      styles.modalStatusBanner,
+                      activeModalTicket.status === "COMPLETED"
+                        ? styles.bannerCompleted
+                        : activeModalTicket.status === "FAILED"
+                        ? styles.bannerFailed
+                        : styles.bannerProcessing,
+                    ]}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                      {activeModalTicket.status === "COMPLETED" ? (
+                        <CheckCircle2 size={16} color="#059669" style={{ marginRight: 8 }} />
+                      ) : activeModalTicket.status === "FAILED" ? (
+                        <AlertCircle size={16} color={colors.error} style={{ marginRight: 8 }} />
+                      ) : (
+                        <Clock size={16} color="#D97706" style={{ marginRight: 8 }} />
+                      )}
+                      <Text
+                        style={[
+                          styles.modalStatusBannerText,
+                          activeModalTicket.status === "COMPLETED"
+                            ? { color: "#059669" }
+                            : activeModalTicket.status === "FAILED"
+                            ? { color: colors.error }
+                            : { color: "#D97706" },
+                        ]}
+                      >
+                        {activeModalTicket.status === "PROCESSING"
+                          ? "Clearance In Processing (24 – 72 Working Hours)"
+                          : activeModalTicket.status === "COMPLETED"
+                          ? "In-Processing Error Cleared"
+                          : "Clearance Unsuccessful"}
+                      </Text>
+                    </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-                {/* Status Banner */}
-                <View
-                  style={[
-                    styles.modalStatusBanner,
-                    activeModalTicket.status === "COMPLETED"
-                      ? styles.bannerCompleted
-                      : activeModalTicket.status === "FAILED"
-                      ? styles.bannerFailed
-                      : styles.bannerProcessing,
-                  ]}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                    {activeModalTicket.status === "COMPLETED" ? (
-                      <CheckCircle2 size={16} color="#059669" style={{ marginRight: 8 }} />
-                    ) : activeModalTicket.status === "FAILED" ? (
-                      <AlertCircle size={16} color={colors.error} style={{ marginRight: 8 }} />
-                    ) : (
-                      <Clock size={16} color="#D97706" style={{ marginRight: 8 }} />
+                    {/* Sync Live Status Button (if Processing) */}
+                    {activeModalTicket.status === "PROCESSING" && (
+                      <TouchableOpacity
+                        style={styles.syncBtn}
+                        onPress={() => handleSyncStatus(activeModalTicket)}
+                        disabled={isSyncing}
+                        activeOpacity={0.8}
+                      >
+                        {isSyncing ? (
+                          <ActivityIndicator size="small" color="#059669" />
+                        ) : (
+                          <>
+                            <RotateCw size={13} color="#059669" style={{ marginRight: 4 }} />
+                            <Text style={styles.syncBtnText}>Sync Status</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
                     )}
-                    <Text
-                      style={[
-                        styles.modalStatusBannerText,
-                        activeModalTicket.status === "COMPLETED"
-                          ? { color: "#059669" }
-                          : activeModalTicket.status === "FAILED"
-                          ? { color: colors.error }
-                          : { color: "#D97706" },
-                      ]}
-                    >
-                      {activeModalTicket.status === "PROCESSING"
-                        ? "Clearance In Processing (24 – 72 Working Hours)"
-                        : activeModalTicket.status === "COMPLETED"
-                        ? "In-Processing Error Cleared"
-                        : "Clearance Unsuccessful"}
-                    </Text>
                   </View>
 
-                  {/* Sync Live Status Button (if Processing) */}
-                  {activeModalTicket.status === "PROCESSING" && (
+                  {/* When Completed: 1. Resolved NIN Box */}
+                  {modalNin ? (
+                    <View style={styles.resolvedNinBox}>
+                      <View style={styles.resolvedNinTopRow}>
+                        <Text style={styles.resolvedNinBoxLabel}>RESOLVED 11-DIGIT NIN</Text>
+                        <TouchableOpacity
+                          style={styles.maskToggleBtn}
+                          onPress={() => setIsNinMasked(!isNinMasked)}
+                          activeOpacity={0.7}
+                        >
+                          {isNinMasked ? (
+                            <>
+                              <Eye size={13} color="#94A3B8" style={{ marginRight: 4 }} />
+                              <Text style={styles.maskToggleText}>Show</Text>
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff size={13} color="#94A3B8" style={{ marginRight: 4 }} />
+                              <Text style={styles.maskToggleText}>Mask</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.resolvedNinRow}>
+                        <Text style={styles.resolvedNinLarge}>
+                          {isNinMasked
+                            ? `${modalNin.slice(0, 3)}•••••${modalNin.slice(-3)}`
+                            : modalNin}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.copyNinBtn}
+                          onPress={() => handleCopy("MODAL_NIN", modalNin)}
+                          activeOpacity={0.8}
+                        >
+                          {copiedKey === "MODAL_NIN" ? (
+                            <>
+                              <Check size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                              <Text style={styles.copyNinBtnText}>Copied</Text>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                              <Text style={styles.copyNinBtnText}>Copy NIN</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {/* Direct Action: Generate NIN Slip */}
+                  {modalNin ? (
                     <TouchableOpacity
-                      style={styles.syncBtn}
-                      onPress={() => handleSyncStatus(activeModalTicket)}
-                      disabled={isSyncing}
-                      activeOpacity={0.8}
+                      style={styles.generateSlipCta}
+                      onPress={() => {
+                        const nin = modalNin;
+                        setActiveModalTicket(null);
+                        router.push({
+                          pathname: "/services/nin-slip",
+                          params: { nin },
+                        } as any);
+                      }}
+                      activeOpacity={0.85}
                     >
-                      {isSyncing ? (
-                        <ActivityIndicator size="small" color="#059669" />
-                      ) : (
+                      <Sparkles size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.generateSlipCtaText}>Generate NIN Slip</Text>
+                      <ExternalLink size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                    </TouchableOpacity>
+                  ) : null}
+
+                  {/* When Completed: 2. New Tracking ID Box */}
+                  {modalNewTrackingId ? (
+                    <View style={styles.newTrackingBox}>
+                      <Text style={styles.newTrackingBoxLabel}>NEW NIMC TRACKING ID</Text>
+                      <View style={styles.newTrackingRow}>
+                        <Text style={styles.newTrackingLarge}>{modalNewTrackingId}</Text>
+                        <TouchableOpacity
+                          style={styles.copyTrackingBtn}
+                          onPress={() => handleCopy("MODAL_TRACKING", modalNewTrackingId)}
+                          activeOpacity={0.8}
+                        >
+                          {copiedKey === "MODAL_TRACKING" ? (
+                            <>
+                              <Check size={13} color="#059669" style={{ marginRight: 4 }} />
+                              <Text style={styles.copyTrackingBtnText}>Copied</Text>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} color="#059669" style={{ marginRight: 4 }} />
+                              <Text style={styles.copyTrackingBtnText}>Copy ID</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {/* Provider Message / Confirmation Pill */}
+                  {activeModalTicket.status === "COMPLETED" && (
+                    <View style={styles.providerSuccessBox}>
+                      <CheckCircle2 size={16} color="#059669" style={{ marginRight: 8, marginTop: 1 }} />
+                      <Text style={styles.providerSuccessText}>
+                        {modalMessage}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* When Failed: Failure Reason & Refund Notice */}
+                  {activeModalTicket.status === "FAILED" && (
+                    <View style={styles.failureDetailBox}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <AlertCircle size={16} color={colors.error} />
+                        <Text style={styles.failureDetailTitle}>Clearance Rejected</Text>
+                      </View>
+                      <Text style={styles.failureDetailReason}>
+                        {activeModalTicket.failureReason ||
+                          activeModalTicket.apiMessage ||
+                          "Your IPE clearance request has failed. Please contact support for more details."}
+                      </Text>
+
+                      {/* Green Refund Reassurance Banner */}
+                      <View style={styles.refundNoticeBanner}>
+                        <Sparkles size={16} color="#059669" style={{ marginRight: 8, marginTop: 1 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.refundNoticeTitle}>100% Wallet Refund Credited</Text>
+                          <Text style={styles.refundNoticeText}>
+                            The full processing fee of ₦{Number(activeModalTicket.amountCharged).toLocaleString()} has been automatically refunded to your wallet.
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Processing Advisory Banner */}
+                  {activeModalTicket.status === "PROCESSING" && (
+                    <View style={styles.processingAdvisoryBox}>
+                      <Clock size={18} color="#D97706" style={{ marginRight: 10, marginTop: 1 }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.processingAdvisoryTitle}>Clearance Under Review</Text>
+                        <Text style={styles.processingAdvisoryText}>
+                          This request is actively being synchronized at the NIMC backend. Clearance typically completes within 24 to 72 Working Hours. Use the "Sync Status" button above to check live gateway progress.
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Audit Order Specifications */}
+                  <View style={styles.techSection}>
+                    <Text style={styles.sectionHeader}>TRANSACTION SPECIFICATIONS</Text>
+                    <View style={styles.techBox}>
+                      <View style={styles.techRow}>
+                        <Text style={styles.techLabel}>Submitted Tracking ID:</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                          <Text style={[styles.techValue, styles.fontMono]}>
+                            {activeModalTicket.trackingId}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => handleCopy("AUDIT_TRACKING", activeModalTicket.trackingId)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            {copiedKey === "AUDIT_TRACKING" ? (
+                              <Check size={12} color="#059669" />
+                            ) : (
+                              <Copy size={12} color={colors.textMuted} />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+
+                      {modalNewTrackingId ? (
                         <>
-                          <RotateCw size={13} color="#059669" style={{ marginRight: 4 }} />
-                          <Text style={styles.syncBtnText}>Sync Status</Text>
+                          <View style={styles.techDivider} />
+                          <View style={styles.techRow}>
+                            <Text style={styles.techLabel}>New Tracking ID:</Text>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                              <Text style={[styles.techValue, styles.fontMono]}>
+                                {modalNewTrackingId}
+                              </Text>
+                              <TouchableOpacity
+                                onPress={() => handleCopy("AUDIT_NEW_TRACKING", modalNewTrackingId)}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              >
+                                {copiedKey === "AUDIT_NEW_TRACKING" ? (
+                                  <Check size={12} color="#059669" />
+                                ) : (
+                                  <Copy size={12} color={colors.textMuted} />
+                                )}
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </>
+                      ) : null}
+
+                      <View style={styles.techDivider} />
+
+                      <View style={styles.techRow}>
+                        <Text style={styles.techLabel}>Reference:</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                          <Text style={[styles.techValue, styles.fontMono]}>
+                            {activeModalTicket.reference}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => handleCopy("AUDIT_REF", activeModalTicket.reference)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            {copiedKey === "AUDIT_REF" ? (
+                              <Check size={12} color="#059669" />
+                            ) : (
+                              <Copy size={12} color={colors.textMuted} />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+
+                      <View style={styles.techDivider} />
+
+                      <View style={styles.techRow}>
+                        <Text style={styles.techLabel}>Amount Charged:</Text>
+                        <Text style={[styles.techValue, { fontWeight: "800", color: colors.text }]}>
+                          ₦{Number(activeModalTicket.amountCharged).toLocaleString()}
+                        </Text>
+                      </View>
+
+                      <View style={styles.techDivider} />
+
+                      <View style={styles.techRow}>
+                        <Text style={styles.techLabel}>Submitted Date:</Text>
+                        <Text style={styles.techValue}>
+                          {formatDate(activeModalTicket.createdAt)}
+                        </Text>
+                      </View>
+
+                      {activeModalTicket.completedAt && (
+                        <>
+                          <View style={styles.techDivider} />
+                          <View style={styles.techRow}>
+                            <Text style={styles.techLabel}>Completed Date:</Text>
+                            <Text style={[styles.techValue, { color: "#059669", fontWeight: "700" }]}>
+                              {formatDate(activeModalTicket.completedAt)}
+                            </Text>
+                          </View>
                         </>
                       )}
-                    </TouchableOpacity>
-                  )}
-                </View>
 
-                {/* When Completed: 1. Resolved NIN Box */}
-                {activeModalTicket.resolvedNin && (
-                  <View style={styles.resolvedNinBox}>
-                    <View style={styles.resolvedNinTopRow}>
-                      <Text style={styles.resolvedNinBoxLabel}>RESOLVED 11-DIGIT NIN</Text>
-                      <TouchableOpacity
-                        style={styles.maskToggleBtn}
-                        onPress={() => setIsNinMasked(!isNinMasked)}
-                        activeOpacity={0.7}
-                      >
-                        {isNinMasked ? (
-                          <>
-                            <Eye size={13} color="#94A3B8" style={{ marginRight: 4 }} />
-                            <Text style={styles.maskToggleText}>Show</Text>
-                          </>
-                        ) : (
-                          <>
-                            <EyeOff size={13} color="#94A3B8" style={{ marginRight: 4 }} />
-                            <Text style={styles.maskToggleText}>Mask</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.resolvedNinRow}>
-                      <Text style={styles.resolvedNinLarge}>
-                        {isNinMasked
-                          ? `${activeModalTicket.resolvedNin.slice(0, 3)}•••••${activeModalTicket.resolvedNin.slice(-3)}`
-                          : activeModalTicket.resolvedNin}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.copyNinBtn}
-                        onPress={() => handleCopy("MODAL_NIN", activeModalTicket.resolvedNin!)}
-                        activeOpacity={0.8}
-                      >
-                        {copiedKey === "MODAL_NIN" ? (
-                          <>
-                            <Check size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
-                            <Text style={styles.copyNinBtnText}>Copied</Text>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
-                            <Text style={styles.copyNinBtnText}>Copy NIN</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-
-                {/* Direct Action: Generate NIN Slip */}
-                {activeModalTicket.resolvedNin && (
-                  <TouchableOpacity
-                    style={styles.generateSlipCta}
-                    onPress={() => {
-                      const nin = activeModalTicket.resolvedNin;
-                      setActiveModalTicket(null);
-                      router.push({
-                        pathname: "/services/nin-slip",
-                        params: { nin },
-                      } as any);
-                    }}
-                    activeOpacity={0.85}
-                  >
-                    <Sparkles size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                    <Text style={styles.generateSlipCtaText}>Generate NIN Slip</Text>
-                    <ExternalLink size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
-                  </TouchableOpacity>
-                )}
-
-                {/* When Completed: 2. New Tracking ID Box */}
-                {activeModalTicket.newTrackingId && (
-                  <View style={styles.newTrackingBox}>
-                    <Text style={styles.newTrackingBoxLabel}>NEW NIMC TRACKING ID</Text>
-                    <View style={styles.newTrackingRow}>
-                      <Text style={styles.newTrackingLarge}>{activeModalTicket.newTrackingId}</Text>
-                      <TouchableOpacity
-                        style={styles.copyTrackingBtn}
-                        onPress={() => handleCopy("MODAL_TRACKING", activeModalTicket.newTrackingId!)}
-                        activeOpacity={0.8}
-                      >
-                        {copiedKey === "MODAL_TRACKING" ? (
-                          <>
-                            <Check size={13} color="#059669" style={{ marginRight: 4 }} />
-                            <Text style={styles.copyTrackingBtnText}>Copied</Text>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={13} color="#059669" style={{ marginRight: 4 }} />
-                            <Text style={styles.copyTrackingBtnText}>Copy ID</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-
-                {/* Provider Message / Confirmation Pill */}
-                {activeModalTicket.status === "COMPLETED" && (
-                  <View style={styles.providerSuccessBox}>
-                    <CheckCircle2 size={16} color="#059669" style={{ marginRight: 8, marginTop: 1 }} />
-                    <Text style={styles.providerSuccessText}>
-                      {activeModalTicket.apiMessage || "IPE Clearance completed successfully. Your NIN has been released."}
-                    </Text>
-                  </View>
-                )}
-
-                {/* When Failed: Failure Reason & Refund Notice */}
-                {activeModalTicket.status === "FAILED" && (
-                  <View style={styles.failureDetailBox}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <AlertCircle size={16} color={colors.error} />
-                      <Text style={styles.failureDetailTitle}>Clearance Rejected</Text>
-                    </View>
-                    <Text style={styles.failureDetailReason}>
-                      {activeModalTicket.failureReason ||
-                        activeModalTicket.apiMessage ||
-                        "Your IPE clearance request has failed. Please contact support for more details."}
-                    </Text>
-
-                    {/* Green Refund Reassurance Banner */}
-                    <View style={styles.refundNoticeBanner}>
-                      <Sparkles size={16} color="#059669" style={{ marginRight: 8, marginTop: 1 }} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.refundNoticeTitle}>100% Wallet Refund Credited</Text>
-                        <Text style={styles.refundNoticeText}>
-                          The full processing fee of ₦{Number(activeModalTicket.amountCharged).toLocaleString()} has been automatically refunded to your wallet.
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                )}
-
-                {/* Processing Advisory Banner */}
-                {activeModalTicket.status === "PROCESSING" && (
-                  <View style={styles.processingAdvisoryBox}>
-                    <Clock size={18} color="#D97706" style={{ marginRight: 10, marginTop: 1 }} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.processingAdvisoryTitle}>Clearance Under Review</Text>
-                      <Text style={styles.processingAdvisoryText}>
-                        This request is actively being synchronized at the NIMC backend. Clearance typically completes within 24 to 72 Working Hours. Use the "Sync Status" button above to check live gateway progress.
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                {/* Audit Order Specifications */}
-                <View style={styles.techSection}>
-                  <Text style={styles.sectionHeader}>TRANSACTION SPECIFICATIONS</Text>
-                  <View style={styles.techBox}>
-                    <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>Submitted Tracking ID:</Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                        <Text style={[styles.techValue, styles.fontMono]}>
-                          {activeModalTicket.trackingId}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => handleCopy("AUDIT_TRACKING", activeModalTicket.trackingId)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          {copiedKey === "AUDIT_TRACKING" ? (
-                            <Check size={12} color="#059669" />
-                          ) : (
-                            <Copy size={12} color={colors.textMuted} />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    {activeModalTicket.newTrackingId ? (
-                      <>
-                        <View style={styles.techDivider} />
-                        <View style={styles.techRow}>
-                          <Text style={styles.techLabel}>New Tracking ID:</Text>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                            <Text style={[styles.techValue, styles.fontMono]}>
-                              {activeModalTicket.newTrackingId}
+                      {activeModalTicket.adminNotes && (
+                        <>
+                          <View style={styles.techDivider} />
+                          <View style={styles.techRow}>
+                            <Text style={styles.techLabel}>Operational Remarks:</Text>
+                            <Text style={[styles.techValue, { color: colors.text, fontWeight: "600" }]}>
+                              {activeModalTicket.adminNotes}
                             </Text>
-                            <TouchableOpacity
-                              onPress={() => handleCopy("AUDIT_NEW_TRACKING", activeModalTicket.newTrackingId!)}
-                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                            >
-                              {copiedKey === "AUDIT_NEW_TRACKING" ? (
-                                <Check size={12} color="#059669" />
-                              ) : (
-                                <Copy size={12} color={colors.textMuted} />
-                              )}
-                            </TouchableOpacity>
                           </View>
-                        </View>
-                      </>
-                    ) : null}
-
-                    <View style={styles.techDivider} />
-
-                    <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>Reference:</Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                        <Text style={[styles.techValue, styles.fontMono]}>
-                          {activeModalTicket.reference}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => handleCopy("AUDIT_REF", activeModalTicket.reference)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          {copiedKey === "AUDIT_REF" ? (
-                            <Check size={12} color="#059669" />
-                          ) : (
-                            <Copy size={12} color={colors.textMuted} />
-                          )}
-                        </TouchableOpacity>
-                      </View>
+                        </>
+                      )}
                     </View>
-
-                    <View style={styles.techDivider} />
-
-                    <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>Amount Charged:</Text>
-                      <Text style={[styles.techValue, { fontWeight: "800", color: colors.text }]}>
-                        ₦{Number(activeModalTicket.amountCharged).toLocaleString()}
-                      </Text>
-                    </View>
-
-                    <View style={styles.techDivider} />
-
-                    <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>Submitted Date:</Text>
-                      <Text style={styles.techValue}>
-                        {formatDate(activeModalTicket.createdAt)}
-                      </Text>
-                    </View>
-
-                    {activeModalTicket.completedAt && (
-                      <>
-                        <View style={styles.techDivider} />
-                        <View style={styles.techRow}>
-                          <Text style={styles.techLabel}>Completed Date:</Text>
-                          <Text style={[styles.techValue, { color: "#059669", fontWeight: "700" }]}>
-                            {formatDate(activeModalTicket.completedAt)}
-                          </Text>
-                        </View>
-                      </>
-                    )}
-
-                    {activeModalTicket.adminNotes && (
-                      <>
-                        <View style={styles.techDivider} />
-                        <View style={styles.techRow}>
-                          <Text style={styles.techLabel}>Operational Remarks:</Text>
-                          <Text style={[styles.techValue, { color: colors.text, fontWeight: "600" }]}>
-                            {activeModalTicket.adminNotes}
-                          </Text>
-                        </View>
-                      </>
-                    )}
                   </View>
-                </View>
-              </ScrollView>
+                </ScrollView>
 
-              {/* Modal Footer */}
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={styles.modalCloseBtn}
-                  onPress={() => setActiveModalTicket(null)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.modalCloseBtnText}>Close</Text>
-                </TouchableOpacity>
+                {/* Modal Footer */}
+                <View style={styles.modalFooter}>
+                  <TouchableOpacity
+                    style={styles.modalCloseBtn}
+                    onPress={() => setActiveModalTicket(null)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.modalCloseBtnText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
 
       {/* Global Custom Alert Modal */}
       <CustomAlertModal
@@ -1287,7 +1329,21 @@ const getStyles = (colors: any, isDark: boolean) =>
       backgroundColor: colors.surface,
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 20,
+    },
+    modalScroll: {
+      flex: 1,
+    },
+    modalScrollContent: {
+      paddingBottom: 24,
     },
     modalHeader: {
       flexDirection: "row",
