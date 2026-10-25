@@ -5,12 +5,12 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Image,
   Pressable,
   Animated,
   Dimensions,
   ActivityIndicator,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import { X, Sparkles } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
@@ -53,13 +53,6 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.85));
 
-  // Prefetch image to ensure smooth instantaneous display
-  useEffect(() => {
-    if (banner?.imageUrl) {
-      Image.prefetch(banner.imageUrl).catch(() => {});
-    }
-  }, [banner?.imageUrl]);
-
   const showModal = useCallback(() => {
     setIsVisible(true);
     Animated.parallel([
@@ -78,35 +71,56 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
   }, [fadeAnim, scaleAnim]);
 
   useEffect(() => {
+    let isCancelled = false;
+
     if (!banner || !banner.isActive) {
       setIsVisible(false);
       return;
     }
 
-    const freq = banner.frequency || "ALWAYS";
+    const checkAndShow = async () => {
+      const freq = banner.frequency || "ALWAYS";
 
-    if (freq === "ONCE_PER_SESSION") {
-      if (sessionDismissedPromoIds.has(banner.id)) {
+      if (freq === "ONCE_PER_SESSION" && sessionDismissedPromoIds.has(banner.id)) {
         setIsVisible(false);
         return;
       }
-      showModal();
-    } else if (freq === "ONCE_UNTIL_DISMISSED") {
-      getLastDismissedPromoId()
-        .then((dismissedId: string | null) => {
-          if (dismissedId !== banner.id) {
-            showModal();
-          } else {
+
+      if (freq === "ONCE_UNTIL_DISMISSED") {
+        try {
+          const dismissedId = await getLastDismissedPromoId();
+          if (dismissedId === banner.id) {
             setIsVisible(false);
+            return;
           }
-        })
-        .catch(() => {
-          showModal();
-        });
-    } else {
-      // "ALWAYS" mode: shows on launch / return
-      showModal();
-    }
+        } catch {}
+      }
+
+      // If graphic flyer mode (has imageUrl), ensure image is cached & fully preloaded before showing
+      if (banner.imageUrl) {
+        try {
+          const prefetchPromise = ExpoImage.prefetch(banner.imageUrl, "memory-disk");
+          const timeoutPromise = new Promise<boolean>((_, reject) =>
+            setTimeout(() => reject(new Error("Flyer preload timeout")), 6000)
+          );
+          const isPrefetched = await Promise.race([prefetchPromise, timeoutPromise]);
+          if (!isPrefetched || isCancelled) return;
+        } catch {
+          // If the flyer fails to prefetch (e.g. offline or slow network), do NOT present an unloaded, broken popup
+          return;
+        }
+      }
+
+      if (!isCancelled) {
+        showModal();
+      }
+    };
+
+    checkAndShow();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [banner, showModal]);
 
   const handleDismiss = async () => {
@@ -185,14 +199,16 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
                 { width: MODAL_WIDTH, height: MODAL_HEIGHT },
               ]}
             >
-              <Image
+              <ExpoImage
                 source={{ uri: banner.imageUrl }}
                 style={{
                   width: MODAL_WIDTH,
                   height: MODAL_HEIGHT,
                   borderRadius: 22,
                 }}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={200}
                 onLoad={() => setImageLoaded(true)}
               />
 

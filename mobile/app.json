@@ -56,7 +56,8 @@
         {
           "photosPermission": "LoraBiz needs access to your gallery to upload document slips and certificates."
         }
-      ]
+      ],
+      "expo-image"
     ],
     "extra": {
       "router": {},

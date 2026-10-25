@@ -46,6 +46,7 @@ import {
   saveCachedWallet,
   CachedWalletData,
 } from "../../lib/storage";
+import { updateAppIconBadge, requestBadgePermissions } from "../../lib/badge";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BANNER_WIDTH = SCREEN_WIDTH - 32;
@@ -252,6 +253,16 @@ export default function HomeScreen() {
     if (!notificationsData || !Array.isArray(notificationsData)) return 0;
     return notificationsData.filter((n: any) => !n.read).length;
   }, [notificationsData]);
+
+  // Request badge permissions on mount
+  useEffect(() => {
+    requestBadgePermissions();
+  }, []);
+
+  // Synchronize launcher app icon badge count (1, 2, 3...) on phone home screen
+  useEffect(() => {
+    updateAppIconBadge(unreadNotificationCount);
+  }, [unreadNotificationCount]);
 
   // Unified Global Refresh Handler - invalidates and refreshes entire app state + dashboard
   const onRefresh = useCallback(async () => {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useTheme } from "../context/ThemeContext";
 import { resolveMobileRoute } from "../lib/route-mapper";
+import { updateAppIconBadge } from "../lib/badge";
 
 interface InAppNotification {
   id: string;
@@ -162,6 +163,11 @@ export default function NotificationsScreen() {
   const unreadCount = useMemo(() => {
     return notifications.filter((n) => !n.read).length;
   }, [notifications]);
+
+  // Keep launcher app icon badge in sync when reading or clearing notifications
+  useEffect(() => {
+    updateAppIconBadge(unreadCount);
+  }, [unreadCount]);
 
   // Filtered notifications by tab
   const filteredNotifications = useMemo(() => {

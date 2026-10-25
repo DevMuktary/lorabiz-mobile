@@ -12,6 +12,7 @@ import {
   ScrollView,
   StatusBar,
   Platform,
+  Image,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -31,6 +32,8 @@ import {
   EyeOff,
   Sparkles,
   ShieldAlert,
+  User,
+  ExternalLink,
 } from "lucide-react-native";
 import { api } from "../../lib/api";
 import { useTheme } from "../../context/ThemeContext";
@@ -45,6 +48,11 @@ export interface IpeTicket {
   status: "PROCESSING" | "COMPLETED" | "FAILED";
   resolvedNin?: string | null;
   newTrackingId?: string | null;
+  fullName?: string | null;
+  dob?: string | null;
+  gender?: string | null;
+  photoUrl?: string | null;
+  adminNotes?: string | null;
   apiMessage?: string | null;
   failureReason?: string | null;
   amountCharged: number | string;
@@ -271,6 +279,14 @@ export default function NinIpeHistoryScreen() {
                 )}
               </TouchableOpacity>
             </View>
+            {item.fullName ? (
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                <User size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
+                <Text style={styles.cardClientName} numberOfLines={1}>
+                  {item.fullName}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           {isCompleted && (
@@ -651,6 +667,70 @@ export default function NinIpeHistoryScreen() {
                   </View>
                 )}
 
+                {/* Direct Action: Generate Verified NIN Slip */}
+                {activeModalTicket.resolvedNin && (
+                  <TouchableOpacity
+                    style={styles.generateSlipCta}
+                    onPress={() => {
+                      const nin = activeModalTicket.resolvedNin;
+                      setActiveModalTicket(null);
+                      router.push({
+                        pathname: "/services/nin-slip",
+                        params: { nin },
+                      } as any);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Sparkles size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.generateSlipCtaText}>Generate Verified NIN Slip</Text>
+                    <ExternalLink size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                  </TouchableOpacity>
+                )}
+
+                {/* Applicant Demographic Profile (When available) */}
+                {(activeModalTicket.fullName || activeModalTicket.dob || activeModalTicket.gender || activeModalTicket.photoUrl) && (
+                  <View style={styles.demographicCard}>
+                    <View style={styles.demographicHeader}>
+                      <User size={15} color={colors.primary} style={{ marginRight: 6 }} />
+                      <Text style={styles.demographicTitle}>Applicant Identity Profile</Text>
+                    </View>
+                    <View style={styles.demographicBody}>
+                      {activeModalTicket.photoUrl ? (
+                        <Image
+                          source={{ uri: activeModalTicket.photoUrl }}
+                          style={styles.demographicPhoto}
+                        />
+                      ) : (
+                        <View style={styles.demographicAvatarFallback}>
+                          <User size={24} color={colors.primary} />
+                        </View>
+                      )}
+                      <View style={{ flex: 1, gap: 5 }}>
+                        {activeModalTicket.fullName && (
+                          <View>
+                            <Text style={styles.demoLabel}>FULL NAME</Text>
+                            <Text style={styles.demoValue}>{activeModalTicket.fullName}</Text>
+                          </View>
+                        )}
+                        <View style={{ flexDirection: "row", gap: 16 }}>
+                          {activeModalTicket.dob && (
+                            <View>
+                              <Text style={styles.demoLabel}>DATE OF BIRTH</Text>
+                              <Text style={styles.demoValue}>{activeModalTicket.dob}</Text>
+                            </View>
+                          )}
+                          {activeModalTicket.gender && (
+                            <View>
+                              <Text style={styles.demoLabel}>GENDER</Text>
+                              <Text style={styles.demoValue}>{activeModalTicket.gender}</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
                 {/* When Completed: 2. New Tracking ID Box */}
                 {activeModalTicket.newTrackingId && (
                   <View style={styles.newTrackingBox}>
@@ -796,6 +876,18 @@ export default function NinIpeHistoryScreen() {
                           <Text style={styles.techLabel}>Completed Date:</Text>
                           <Text style={[styles.techValue, { color: "#059669", fontWeight: "700" }]}>
                             {formatDate(activeModalTicket.completedAt)}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+
+                    {activeModalTicket.adminNotes && (
+                      <>
+                        <View style={styles.techDivider} />
+                        <View style={styles.techRow}>
+                          <Text style={styles.techLabel}>Operational Remarks:</Text>
+                          <Text style={[styles.techValue, { color: colors.text, fontWeight: "600" }]}>
+                            {activeModalTicket.adminNotes}
                           </Text>
                         </View>
                       </>
@@ -1046,6 +1138,11 @@ const getStyles = (colors: any, isDark: boolean) =>
       fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
       color: colors.text,
       letterSpacing: 0.8,
+    },
+    cardClientName: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.textSecondary,
     },
     badgeCompleted: {
       flexDirection: "row",
@@ -1349,6 +1446,79 @@ const getStyles = (colors: any, isDark: boolean) =>
       fontSize: 12,
       fontWeight: "800",
       color: "#FFFFFF",
+    },
+    generateSlipCta: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      marginBottom: 14,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    generateSlipCtaText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    demographicCard: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    demographicHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 10,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    demographicTitle: {
+      fontSize: 11,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: 0.3,
+    },
+    demographicBody: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    demographicPhoto: {
+      width: 52,
+      height: 52,
+      borderRadius: 12,
+      backgroundColor: isDark ? "#1E293B" : "#E2E8F0",
+    },
+    demographicAvatarFallback: {
+      width: 52,
+      height: 52,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "#FCE7F3",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    demoLabel: {
+      fontSize: 9,
+      fontWeight: "800",
+      color: colors.textMuted,
+      letterSpacing: 0.5,
+    },
+    demoValue: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.text,
+      marginTop: 1,
     },
     // New Tracking Box
     newTrackingBox: {
