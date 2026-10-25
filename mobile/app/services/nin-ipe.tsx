@@ -194,7 +194,7 @@ export default function NinIpeScreen() {
         confirmText: "Fund Wallet",
         onConfirm: () => {
           setAlertConfig((prev) => ({ ...prev, visible: false }));
-          router.push("/wallet" as any);
+          router.push("/wallet/fund" as any);
         },
       });
       return;
@@ -490,7 +490,7 @@ export default function NinIpeScreen() {
                   </View>
                   {!isBalanceSufficient ? (
                     <TouchableOpacity
-                      onPress={() => router.push("/wallet" as any)}
+                      onPress={() => router.push("/wallet/fund" as any)}
                       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     >
                       <Text style={styles.fundWalletLink}>+ Top Up Wallet</Text>

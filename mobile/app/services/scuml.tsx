@@ -307,7 +307,7 @@ export default function ScumlScreen() {
         confirmText: "Fund Wallet",
         onConfirm: () => {
           setAlertConfig((prev) => ({ ...prev, visible: false }));
-          router.push("/(tabs)/wallet" as any);
+          router.push("/wallet/fund" as any);
         },
       });
       return;
@@ -949,7 +949,7 @@ export default function ScumlScreen() {
                   style={[styles.confirmPayBtn, { backgroundColor: "#D97706" }]}
                   onPress={() => {
                     setIsConfirmModalOpen(false);
-                    router.push("/(tabs)/wallet" as any);
+                    router.push("/wallet/fund" as any);
                   }}
                   activeOpacity={0.85}
                 >

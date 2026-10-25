@@ -475,13 +475,19 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={[styles.root, isDark && { backgroundColor: themeColors.background }]}
       behavior={Platform.OS === "ios" ? undefined : "height"}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? themeColors.background : "#FFFFFF"}
+      />
 
       {/* Subtle Angled Background Brand Watermark (Matching ALAT) */}
-      <View style={styles.watermarkContainer} pointerEvents="none">
+      <View
+        style={[styles.watermarkContainer, isDark && { opacity: 0.02 }]}
+        pointerEvents="none"
+      >
         <Image
           source={require("../../assets/logo-pink.png")}
           style={styles.watermarkImage}
@@ -492,14 +498,28 @@ export default function LoginScreen() {
       {/* Top Bar: Left Circular Back Button + Right Top Orb (Matching ALAT Screenshots 1 & 2) */}
       <View style={[styles.topBar, { top: topSafePadding }]}>
         <TouchableOpacity
-          style={styles.circularBackButton}
+          style={[
+            styles.circularBackButton,
+            isDark && {
+              backgroundColor: "rgba(255, 255, 255, 0.08)",
+              borderColor: "rgba(255, 255, 255, 0.16)",
+            },
+          ]}
           onPress={handleBackToWelcome}
           activeOpacity={0.7}
         >
-          <ChevronLeftIcon size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
+          <ChevronLeftIcon size={20} color={isDark ? "#FFFFFF" : "#0F172A"} />
         </TouchableOpacity>
 
-        <View style={styles.topRightOrb}>
+        <View
+          style={[
+            styles.topRightOrb,
+            isDark && {
+              backgroundColor: "rgba(255, 255, 255, 0.08)",
+              borderColor: "rgba(200, 45, 117, 0.35)",
+            },
+          ]}
+        >
           <Image
             source={require("../../assets/icon.png")}
             style={styles.topRightOrbImage}
@@ -531,10 +551,10 @@ export default function LoginScreen() {
               <View style={styles.iconCircle}>
                 <ShieldCheck size={32} color={colors.primary} />
               </View>
-              <Text style={styles.title}>
+              <Text style={[styles.title, isDark && { color: "#FFFFFF" }]}>
                 {useBackupCode ? "Recovery Code" : "Two-Factor Auth"}
               </Text>
-              <Text style={styles.subtitleMuted}>
+              <Text style={[styles.subtitleMuted, isDark && { color: "#94A3B8" }]}>
                 {useBackupCode
                   ? "Enter one of your 8-digit emergency backup recovery codes."
                   : twoFactorMethod === "AUTHENTICATOR"
@@ -543,7 +563,7 @@ export default function LoginScreen() {
               </Text>
             </View>
 
-            <View style={styles.alatInputCard}>
+            <View style={[styles.alatInputCard, isDark && { backgroundColor: "rgba(255, 255, 255, 0.06)", borderColor: "rgba(255, 255, 255, 0.12)" }]}>
               <TextInput
                 style={[styles.otpInput, useBackupCode && styles.recoveryCodeInput]}
                 placeholder={useBackupCode ? "XXXXXXXX" : "123456"}
@@ -605,7 +625,7 @@ export default function LoginScreen() {
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.backupToggleText}>
+              <Text style={[styles.backupToggleText, isDark && { color: "#94A3B8" }]}>
                 {useBackupCode ? "Use 6-digit verification code" : "Use emergency recovery code instead"}
               </Text>
             </TouchableOpacity>
@@ -619,7 +639,7 @@ export default function LoginScreen() {
                 setErrorMsg(null);
               }}
             >
-              <Text style={styles.switchButtonText}>Back to password</Text>
+              <Text style={[styles.switchButtonText, isDark && { color: "#94A3B8" }]}>Back to password</Text>
             </TouchableOpacity>
           </View>
         ) : isReturningUser && savedProfile ? (
@@ -643,12 +663,15 @@ export default function LoginScreen() {
                     ? { uri: savedProfile.image }
                     : require("../../assets/default-avatar.png")
                 }
-                style={styles.returningAvatarImage}
+                style={[
+                  styles.returningAvatarImage,
+                  isDark && { borderColor: "rgba(255, 255, 255, 0.16)", backgroundColor: "#1E293B" },
+                ]}
                 resizeMode="cover"
               />
               <View style={styles.returningNameColumn}>
-                <Text style={styles.returningWelcomeText}>Welcome Back</Text>
-                <Text style={styles.returningUserName} numberOfLines={1}>
+                <Text style={[styles.returningWelcomeText, isDark && { color: "#94A3B8" }]}>Welcome Back</Text>
+                <Text style={[styles.returningUserName, isDark && { color: "#FFFFFF" }]} numberOfLines={1}>
                   {savedProfile.firstName || savedProfile.name || "User"}
                 </Text>
               </View>
@@ -656,33 +679,52 @@ export default function LoginScreen() {
 
             {/* Masked Email Pill with Edit Pencil */}
             <TouchableOpacity
-              style={styles.maskedEmailPill}
+              style={[
+                styles.maskedEmailPill,
+                isDark && {
+                  backgroundColor: "rgba(255, 255, 255, 0.06)",
+                  borderColor: "rgba(255, 255, 255, 0.14)",
+                },
+              ]}
               onPress={handleSwitchAccount}
               activeOpacity={0.75}
             >
-              <Text style={styles.maskedEmailText}>
+              <Text style={[styles.maskedEmailText, isDark && { color: "#FFFFFF" }]}>
                 {savedProfile.maskedEmail || savedProfile.email}
               </Text>
-              <View style={styles.pillDivider} />
-              <EditPencilIcon size={14} color="#475569" />
+              <View style={[styles.pillDivider, isDark && { backgroundColor: "rgba(255, 255, 255, 0.2)" }]} />
+              <EditPencilIcon size={14} color={isDark ? "#94A3B8" : "#475569"} />
             </TouchableOpacity>
 
             {/* Auth Section based on provider */}
             {(overrideProvider || savedProfile.authProvider || "credentials") === "google" ? (
               <View style={styles.fieldGroup}>
                 <TouchableOpacity
-                  style={[styles.googleButton, { marginTop: 16 }]}
+                  style={[
+                    styles.googleButton,
+                    { marginTop: 16 },
+                    isDark && {
+                      backgroundColor: "rgba(255, 255, 255, 0.08)",
+                      borderColor: "rgba(255, 255, 255, 0.16)",
+                    },
+                  ]}
                   onPress={handleGoogleSignIn}
                   disabled={isLoading}
                   activeOpacity={0.85}
                 >
                   <GoogleIcon size={20} />
-                  <Text style={[styles.googleButtonText, isDark && { color: "#F8FAFC" }]}>Continue with Google</Text>
+                  <Text style={[styles.googleButtonText, isDark && { color: "#FFFFFF" }]}>Continue with Google</Text>
                 </TouchableOpacity>
 
                 {/* Inline Toggle: Switch to Password */}
                 <TouchableOpacity
-                  style={styles.switchProviderBtn}
+                  style={[
+                    styles.switchProviderBtn,
+                    isDark && {
+                      backgroundColor: "rgba(200, 45, 117, 0.12)",
+                      borderColor: "rgba(200, 45, 117, 0.28)",
+                    },
+                  ]}
                   onPress={() => {
                     setOverrideProvider("credentials");
                     if (errorMsg) setErrorMsg(null);
@@ -702,14 +744,18 @@ export default function LoginScreen() {
             ) : (
               /* Password Section for credentials users */
               <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, isDark && { color: "#94A3B8" }]}>Password</Text>
+                <Text style={[styles.fieldLabel, isDark && { color: "#E2E8F0" }]}>Password</Text>
                 <Pressable
-                  style={[styles.alatInputCard, isDark && { backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }, passwordFocused && [styles.alatInputCardActive, isDark && { backgroundColor: "rgba(255, 255, 255, 0.08)" }]]}
+                  style={[
+                    styles.alatInputCard,
+                    isDark && { backgroundColor: "rgba(255, 255, 255, 0.06)", borderColor: "rgba(255, 255, 255, 0.12)" },
+                    passwordFocused && [styles.alatInputCardActive, isDark && { backgroundColor: "rgba(255, 255, 255, 0.09)" }],
+                  ]}
                   onPress={() => passwordInputRef.current?.focus()}
                 >
                   <TextInput
                     ref={passwordInputRef}
-                    style={[styles.alatTextInput, isDark && { color: "#F8FAFC" }]}
+                    style={[styles.alatTextInput, isDark && { color: "#FFFFFF" }]}
                     placeholder="Enter your password"
                     placeholderTextColor="#94A3B8"
                     value={password}
@@ -730,9 +776,9 @@ export default function LoginScreen() {
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   >
                     {showPassword ? (
-                      <EyeOff size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
+                      <EyeOff size={20} color={isDark ? "#E2E8F0" : "#0F172A"} />
                     ) : (
-                      <Eye size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
+                      <Eye size={20} color={isDark ? "#E2E8F0" : "#0F172A"} />
                     )}
                   </TouchableOpacity>
                 </Pressable>
@@ -770,7 +816,13 @@ export default function LoginScreen() {
 
                 {/* Inline Toggle: Continue with Google */}
                 <TouchableOpacity
-                  style={styles.switchProviderBtn}
+                  style={[
+                    styles.switchProviderBtn,
+                    isDark && {
+                      backgroundColor: "rgba(200, 45, 117, 0.12)",
+                      borderColor: "rgba(200, 45, 117, 0.28)",
+                    },
+                  ]}
                   onPress={() => {
                     setOverrideProvider("google");
                     if (errorMsg) setErrorMsg(null);
@@ -783,7 +835,7 @@ export default function LoginScreen() {
 
                 {/* Footer: Don't have an account? Sign up */}
                 <View style={styles.footerRow}>
-                  <Text style={styles.footerMuted}>Don't have an account? </Text>
+                  <Text style={[styles.footerMuted, isDark && { color: "#94A3B8" }]}>Don't have an account? </Text>
                   <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
                     <Text style={styles.footerLinkPink}>Sign up</Text>
                   </TouchableOpacity>
@@ -801,12 +853,18 @@ export default function LoginScreen() {
             {biometricAvailable ? (
               <View style={styles.faceIdSection}>
                 <TouchableOpacity
-                  style={styles.faceIdCircleButton}
+                  style={[
+                    styles.faceIdCircleButton,
+                    isDark && {
+                      backgroundColor: "rgba(255, 255, 255, 0.08)",
+                      borderColor: "rgba(255, 255, 255, 0.18)",
+                    },
+                  ]}
                   onPress={handleBiometricLogin}
                   activeOpacity={0.75}
                   disabled={isLoading}
                 >
-                  <AppleFaceIdIcon size={30} color={isDark ? "#F8FAFC" : "#0F172A"} />
+                  <AppleFaceIdIcon size={30} color={isDark ? "#FFFFFF" : "#0F172A"} />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -826,7 +884,7 @@ export default function LoginScreen() {
 
             {/* Header: Left Avatar Orb + Right "Glad to have you!" & bold "Log in to your account" */}
             <View style={styles.standardHeaderRow}>
-              <View style={[styles.headerOrbWrapper, isDark && { backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }]}>
+              <View style={[styles.headerOrbWrapper, isDark && { backgroundColor: "rgba(200, 45, 117, 0.15)", borderColor: "rgba(200, 45, 117, 0.3)" }]}>
                 <Image
                   source={require("../../assets/logo-pink.png")}
                   style={styles.headerOrbImage}
@@ -834,22 +892,26 @@ export default function LoginScreen() {
                 />
               </View>
               <View style={styles.standardHeaderTexts}>
-                <Text style={styles.standardGreetingText}>Glad to have you!</Text>
-                <Text style={styles.standardMainTitle}>Log in to your account</Text>
+                <Text style={[styles.standardGreetingText, isDark && { color: "#94A3B8" }]}>Glad to have you!</Text>
+                <Text style={[styles.standardMainTitle, isDark && { color: "#FFFFFF" }]}>Log in to your account</Text>
               </View>
             </View>
 
             {/* Inputs Section */}
             <View style={styles.fieldGroup}>
               {/* Field 1: Email */}
-              <Text style={styles.fieldLabel}>Email</Text>
+              <Text style={[styles.fieldLabel, isDark && { color: "#E2E8F0" }]}>Email</Text>
               <Pressable
-                style={[styles.alatInputCard, isDark && { backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }, emailFocused && [styles.alatInputCardActive, isDark && { backgroundColor: "rgba(255, 255, 255, 0.08)" }]]}
+                style={[
+                  styles.alatInputCard,
+                  isDark && { backgroundColor: "rgba(255, 255, 255, 0.06)", borderColor: "rgba(255, 255, 255, 0.12)" },
+                  emailFocused && [styles.alatInputCardActive, isDark && { backgroundColor: "rgba(255, 255, 255, 0.09)" }],
+                ]}
                 onPress={() => emailInputRef.current?.focus()}
               >
                 <TextInput
                   ref={emailInputRef}
-                  style={[styles.alatTextInput, isDark && { color: "#F8FAFC" }]}
+                  style={[styles.alatTextInput, isDark && { color: "#FFFFFF" }]}
                   placeholder="Enter your email"
                   placeholderTextColor="#94A3B8"
                   value={email}
@@ -869,14 +931,18 @@ export default function LoginScreen() {
               </Pressable>
 
               {/* Field 2: Password */}
-              <Text style={styles.fieldLabel}>Password</Text>
+              <Text style={[styles.fieldLabel, isDark && { color: "#E2E8F0" }]}>Password</Text>
               <Pressable
-                style={[styles.alatInputCard, passwordFocused && styles.alatInputCardActive]}
+                style={[
+                  styles.alatInputCard,
+                  isDark && { backgroundColor: "rgba(255, 255, 255, 0.06)", borderColor: "rgba(255, 255, 255, 0.12)" },
+                  passwordFocused && [styles.alatInputCardActive, isDark && { backgroundColor: "rgba(255, 255, 255, 0.09)" }],
+                ]}
                 onPress={() => passwordInputRef.current?.focus()}
               >
                 <TextInput
                   ref={passwordInputRef}
-                  style={[styles.alatTextInput, isDark && { color: "#F8FAFC" }]}
+                  style={[styles.alatTextInput, isDark && { color: "#FFFFFF" }]}
                   placeholder="Enter your password"
                   placeholderTextColor="#94A3B8"
                   value={password}
@@ -897,9 +963,9 @@ export default function LoginScreen() {
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
+                    <EyeOff size={20} color={isDark ? "#E2E8F0" : "#0F172A"} />
                   ) : (
-                    <Eye size={20} color={isDark ? "#F8FAFC" : "#0F172A"} />
+                    <Eye size={20} color={isDark ? "#E2E8F0" : "#0F172A"} />
                   )}
                 </TouchableOpacity>
               </Pressable>
@@ -940,7 +1006,7 @@ export default function LoginScreen() {
 
               {/* Footer: Don't have an account? Sign up */}
               <View style={styles.footerRow}>
-                <Text style={styles.footerMuted}>Don't have an account? </Text>
+                <Text style={[styles.footerMuted, isDark && { color: "#94A3B8" }]}>Don't have an account? </Text>
                 <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
                   <Text style={styles.footerLinkPink}>Sign up</Text>
                 </TouchableOpacity>
@@ -948,32 +1014,44 @@ export default function LoginScreen() {
 
               {/* Divider: "or" */}
               <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
+                <View style={[styles.dividerLine, isDark && { backgroundColor: "rgba(255, 255, 255, 0.14)" }]} />
+                <Text style={[styles.dividerText, isDark && { color: "#64748B" }]}>or</Text>
+                <View style={[styles.dividerLine, isDark && { backgroundColor: "rgba(255, 255, 255, 0.14)" }]} />
               </View>
 
               {/* Prominent "Continue with Google" In-App Browser Sheet */}
               <TouchableOpacity
-                style={styles.googleButton}
+                style={[
+                  styles.googleButton,
+                  isDark && {
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    borderColor: "rgba(255, 255, 255, 0.16)",
+                  },
+                ]}
                 onPress={handleGoogleSignIn}
                 disabled={isLoading}
                 activeOpacity={0.85}
               >
                 <GoogleIcon size={20} />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                <Text style={[styles.googleButtonText, isDark && { color: "#FFFFFF" }]}>Continue with Google</Text>
               </TouchableOpacity>
 
               {/* Circular Face ID Button */}
               {biometricAvailable ? (
                 <View style={styles.faceIdSection}>
                   <TouchableOpacity
-                    style={styles.faceIdCircleButton}
+                    style={[
+                      styles.faceIdCircleButton,
+                      isDark && {
+                        backgroundColor: "rgba(255, 255, 255, 0.08)",
+                        borderColor: "rgba(255, 255, 255, 0.18)",
+                      },
+                    ]}
                     onPress={handleStandardBiometricLogin}
                     activeOpacity={0.75}
                     disabled={isLoading}
                   >
-                    <AppleFaceIdIcon size={30} color={isDark ? "#F8FAFC" : "#0F172A"} />
+                    <AppleFaceIdIcon size={30} color={isDark ? "#FFFFFF" : "#0F172A"} />
                   </TouchableOpacity>
                 </View>
               ) : null}

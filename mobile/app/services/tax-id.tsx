@@ -483,7 +483,7 @@ export default function TaxIdScreen() {
         confirmText: "Fund Wallet",
         onConfirm: () => {
           setAlertConfig((prev) => ({ ...prev, visible: false }));
-          router.push("/(tabs)/wallet" as any);
+          router.push("/wallet/fund" as any);
         },
       });
       return;

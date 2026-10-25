@@ -127,7 +127,8 @@ export default function ServiceTvTicker({
         return null;
       }
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 15,
+    refetchOnMount: true,
   });
 
   const displayText = tickerData?.tickerText || defaultText;
