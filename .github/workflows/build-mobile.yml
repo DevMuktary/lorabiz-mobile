@@ -205,8 +205,9 @@ jobs:
             done
           fi
 
-  build-android-apk:
-    name: Build Android APK & AAB (Release)
+  build-android-aab:
+    name: Build Android AAB (Google Play Store Release)
+    needs: build-ios-ipa
     runs-on: ubuntu-latest
     env:
       CI: 1
@@ -242,54 +243,36 @@ jobs:
         working-directory: ./mobile/android
         run: chmod +x gradlew
 
-      - name: Build Android Release APK and AAB Bundle
+      - name: Build Android AAB Bundle for Google Play Store
         working-directory: ./mobile/android
         run: |
-          ./gradlew assembleRelease bundleRelease --no-daemon -x lint -x test --stacktrace
+          ./gradlew bundleRelease --no-daemon -x lint -x test --stacktrace
 
-      - name: Locate and Package Release Binaries
+      - name: Locate and Verify Google Play AAB Bundle
         working-directory: ./mobile/android
         run: |
           set -e
-          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          if [ -z "$APK_PATH" ]; then
-            APK_PATH=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
-          fi
-          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
-            echo "Error: Could not locate compiled .apk in app/build/outputs/apk/"
-            find app/build/outputs/ -type f || true
-            exit 1
-          fi
-
           AAB_PATH=$(find app/build/outputs/bundle/release -name "*.aab" | head -n 1)
           if [ -z "$AAB_PATH" ]; then
             AAB_PATH=$(find app/build/outputs/bundle -name "*.aab" | head -n 1)
           fi
-
-          echo "Found APK at: $APK_PATH"
-          cp "$APK_PATH" Lorabiz.apk
-          ls -lh Lorabiz.apk
-
-          if [ -n "$AAB_PATH" ] && [ -f "$AAB_PATH" ]; then
-            echo "Found AAB at: $AAB_PATH"
-            cp "$AAB_PATH" Lorabiz.aab
-            ls -lh Lorabiz.aab
-          fi
-
-          FILESIZE=$(wc -c < "Lorabiz.apk")
-          echo "Generated APK size: $FILESIZE bytes"
-          if [ "$FILESIZE" -lt 5000000 ]; then
-            echo "Error: Lorabiz.apk is too small ($FILESIZE bytes). APK does not contain complete bundle."
+          if [ -z "$AAB_PATH" ] || [ ! -f "$AAB_PATH" ]; then
+            echo "Error: Could not locate compiled .aab in app/build/outputs/bundle/"
+            find app/build/outputs/ -type f || true
             exit 1
           fi
-          echo "SUCCESS: Lorabiz.apk and Lorabiz.aab created and verified."
 
-      - name: Upload Android APK Artifact (For Sideloading & Testing)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lorabiz-Android-APK
-          path: mobile/android/Lorabiz.apk
-          retention-days: 14
+          echo "Found Google Play AAB at: $AAB_PATH"
+          cp "$AAB_PATH" Lorabiz.aab
+          ls -lh Lorabiz.aab
+
+          FILESIZE=$(wc -c < "Lorabiz.aab")
+          echo "Generated AAB size: $FILESIZE bytes"
+          if [ "$FILESIZE" -lt 5000000 ]; then
+            echo "Error: Lorabiz.aab is too small ($FILESIZE bytes). AAB does not contain complete bundle."
+            exit 1
+          fi
+          echo "SUCCESS: Lorabiz.aab created and verified for Google Play Store."
 
       - name: Upload Android AAB Artifact (For Google Play Console)
         uses: actions/upload-artifact@v4
