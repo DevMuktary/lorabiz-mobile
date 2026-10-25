@@ -134,8 +134,8 @@ export default function ServiceTvTicker({
   const badgeLabel = tickerData?.badgeText || initialBadge;
   const durationSeconds = tickerData?.speed || 24;
 
-  // Marquee translation animation
-  const animatedTranslate = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  // Marquee translation animation: Start at 0 so text is IMMEDIATELY visible at the edge
+  const animatedTranslate = useRef(new Animated.Value(0)).current;
   const loopAnimRef = useRef<Animated.CompositeAnimation | null>(null);
 
   // Infinite marquee sliding animation
@@ -145,8 +145,6 @@ export default function ServiceTvTicker({
     const spacerWidth = Math.max(120, Math.round(SCREEN_WIDTH * 0.35));
     const cycleDistance = textWidth + spacerWidth;
     const pps = Math.max(30, Math.min(65, cycleDistance / Math.max(8, durationSeconds)));
-    const firstRunDistance = SCREEN_WIDTH + cycleDistance;
-    const firstRunDuration = (firstRunDistance / pps) * 1000;
     const loopDuration = (cycleDistance / pps) * 1000;
 
     if (loopAnimRef.current) {
@@ -154,14 +152,18 @@ export default function ServiceTvTicker({
       loopAnimRef.current = null;
     }
 
-    animatedTranslate.setValue(SCREEN_WIDTH);
+    animatedTranslate.setValue(0);
 
-    const firstRunAnim = Animated.timing(animatedTranslate, {
-      toValue: -cycleDistance,
-      duration: Math.max(7000, firstRunDuration),
-      easing: Easing.linear,
-      useNativeDriver: true,
-    });
+    // Initial run: Give user 1.2s to easily read the beginning upon landing on the page, then scroll
+    const firstRunAnim = Animated.sequence([
+      Animated.delay(1200),
+      Animated.timing(animatedTranslate, {
+        toValue: -cycleDistance,
+        duration: Math.max(6000, loopDuration),
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    ]);
 
     firstRunAnim.start(({ finished }) => {
       if (!finished) return;

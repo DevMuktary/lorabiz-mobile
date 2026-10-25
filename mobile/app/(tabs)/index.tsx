@@ -208,6 +208,9 @@ export default function HomeScreen() {
       try {
         const res = await api.get("/api/banners?target=POPUP");
         if (res?.banners && Array.isArray(res.banners) && res.banners.length > 0) {
+          // Prioritize the custom uploaded graphic flyer (with imageUrl) over default text placeholder
+          const withFlyer = res.banners.find((b: any) => b.isActive && b.imageUrl);
+          if (withFlyer) return withFlyer as PromoPopupData;
           return res.banners[0] as PromoPopupData;
         }
         return null;
@@ -215,7 +218,7 @@ export default function HomeScreen() {
         return null;
       }
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 30,
   });
 
   // Prefetch popup flyer image

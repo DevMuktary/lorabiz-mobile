@@ -79,34 +79,35 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
     }
 
     const checkAndShow = async () => {
-      // Check session dismissal
-      if (sessionDismissedPromoIds.has(banner.id)) {
-        setIsVisible(false);
-        return;
-      }
+      const frequency = banner.frequency || "ALWAYS";
 
-      // Check persistent dismissal
-      try {
-        const dismissedId = await getLastDismissedPromoId();
-        if (dismissedId === banner.id) {
+      // Check session dismissal (only if configured for ONCE_PER_SESSION)
+      if (frequency === "ONCE_PER_SESSION") {
+        if (sessionDismissedPromoIds.has(banner.id)) {
           setIsVisible(false);
           return;
         }
-      } catch {}
+      } else if (frequency === "ONCE_UNTIL_DISMISSED") {
+        // Check persistent dismissal (only if configured for ONCE_UNTIL_DISMISSED)
+        try {
+          const dismissedId = await getLastDismissedPromoId();
+          if (dismissedId === banner.id) {
+            setIsVisible(false);
+            return;
+          }
+        } catch {}
+      }
+      // If frequency is ALWAYS, it is never blocked and shows as requested
 
-      // If graphic flyer mode (has imageUrl), ensure image is cached & fully preloaded before showing
+      // If graphic flyer mode (has imageUrl), prefetch image
       if (banner.imageUrl) {
         try {
           const prefetchPromise = ExpoImage.prefetch(banner.imageUrl, "memory-disk");
-          const timeoutPromise = new Promise<boolean>((_, reject) =>
-            setTimeout(() => reject(new Error("Flyer preload timeout")), 6000)
+          const timeoutPromise = new Promise<boolean>((resolve) =>
+            setTimeout(() => resolve(false), 3000)
           );
-          const isPrefetched = await Promise.race([prefetchPromise, timeoutPromise]);
-          if (!isPrefetched || isCancelled) return;
-        } catch {
-          // If the flyer fails to prefetch (e.g. offline or slow network), do NOT present an unloaded, broken popup
-          return;
-        }
+          await Promise.race([prefetchPromise, timeoutPromise]);
+        } catch {}
       }
 
       if (!isCancelled) {
@@ -123,10 +124,14 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
 
   const handleDismiss = async () => {
     if (banner) {
-      sessionDismissedPromoIds.add(banner.id);
-      try {
-        await setLastDismissedPromoId(banner.id);
-      } catch {}
+      const frequency = banner.frequency || "ALWAYS";
+      if (frequency === "ONCE_PER_SESSION") {
+        sessionDismissedPromoIds.add(banner.id);
+      } else if (frequency === "ONCE_UNTIL_DISMISSED") {
+        try {
+          await setLastDismissedPromoId(banner.id);
+        } catch {}
+      }
     }
 
     Animated.parallel([
