@@ -3,7 +3,7 @@
     "name": "LoraBiz",
     "slug": "lorabiz",
     "scheme": "lorabiz",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -21,6 +21,7 @@
       "userInterfaceStyle": "automatic",
       "supportsTablet": true,
       "bundleIdentifier": "com.lorabiz.com",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "LoraBiz requires camera access to capture registration documents and passport photographs.",
         "NSFaceIDUsageDescription": "LoraBiz uses Face ID for fast and secure authentication into your wallet and account.",
@@ -29,6 +30,7 @@
     },
     "android": {
       "package": "com.lorabiz.com",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#C82D75",
         "foregroundImage": "./assets/android-icon-foreground.png"

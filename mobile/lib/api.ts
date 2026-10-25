@@ -1,7 +1,7 @@
 import { getAuthToken, clearAllAuth } from "./storage";
 
-// Configurable via EXPO_PUBLIC_API_URL env variable (defaults to active dev environment)
-export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://lora.quadrox.dev";
+// Configurable via EXPO_PUBLIC_API_URL env variable (defaults to production environment)
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://lorabiz.com";
 
 interface FetchOptions extends RequestInit {
   requiresAuth?: boolean;

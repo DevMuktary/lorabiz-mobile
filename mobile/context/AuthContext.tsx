@@ -71,6 +71,8 @@ interface AuthContextType {
   hideBalance: boolean;
   setHideBalancePreference: (hide: boolean) => Promise<void>;
   login: (email: string, password: string, otpCode?: string, isBackupCode?: boolean) => Promise<LoginResult>;
+  verifyLoginOtp: (email: string, otpCode: string, isBackupCode?: boolean) => Promise<LoginResult>;
+  resendLoginOtp: (email: string) => Promise<{ success: boolean; message?: string; remainingSeconds?: number; isLocked?: boolean }>;
   logout: () => Promise<void>;
   clearSavedProfile: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -124,6 +126,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const lastActiveRef = useRef<number>(Date.now());
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const isAuthenticatingBiometricsRef = useRef<boolean>(false);
+  const pending2faSessionRef = useRef<{
+    sessionToken: string;
+    userProfile: UserProfile;
+    email: string;
+  } | null>(null);
 
   useEffect(() => {
     setSessionExpiredHandler(() => {
@@ -353,6 +360,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<LoginResult> {
     const trimmedEmail = email.trim().toLowerCase();
 
+    // If an OTP code was provided, route directly to verifyLoginOtp
+    if (otpCode && otpCode.trim().length > 0) {
+      return await verifyLoginOtp(trimmedEmail, otpCode, isBackupCode);
+    }
+
     async function executeNextAuthLogin(attempt = 1): Promise<LoginResult> {
       try {
         // Fetch CSRF token and prime native cookie jar
@@ -379,7 +391,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             csrfToken: csrfData.csrfToken || "",
             email: trimmedEmail,
             password,
-            ...(otpCode ? { otpCode: otpCode.trim() } : {}),
             json: "true",
           }),
         });
@@ -422,6 +433,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return {
             success: false,
             requireOtp: true,
+            twoFactorMethod: "EMAIL",
             message: "Please enter the 6-digit verification code to complete sign in.",
           };
         }
@@ -460,9 +472,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               phoneChangedAt: sessionData.user.phoneChangedAt || null,
               role: sessionData.user.role || "USER",
               image: sessionData.user.image || null,
+              twoFactorEnabled: sessionData.user.twoFactorEnabled,
+              twoFactorMethod: sessionData.user.twoFactorMethod,
             };
             if (!sessionToken && sessionData.user.id) {
               sessionToken = `session_${sessionData.user.id}`;
+            }
+
+            // CRITICAL 2FA CHECK: If user has 2FA enabled and not yet verified
+            const isMfaPending =
+              (sessionData.user.twoFactorEnabled ||
+                sessionData.user.role === "ADMIN" ||
+                sessionData.user.role === "STAFF") &&
+              !sessionData.user.mfaVerified;
+
+            if (isMfaPending) {
+              pending2faSessionRef.current = {
+                sessionToken: sessionToken || "",
+                userProfile,
+                email: trimmedEmail,
+              };
+              return {
+                success: false,
+                requireOtp: true,
+                twoFactorMethod: sessionData.user.twoFactorMethod || "EMAIL",
+                message: "Please enter the 6-digit verification code to complete sign in.",
+              };
             }
           }
         } catch {
@@ -577,8 +612,179 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await executeNextAuthLogin(1);
   }
 
+  async function verifyLoginOtp(
+    email: string,
+    otpCode: string,
+    isBackupCode: boolean = false
+  ): Promise<LoginResult> {
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanCode = otpCode.trim();
+      const pending = pending2faSessionRef.current;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+
+      if (pending?.sessionToken) {
+        headers["Cookie"] = `next-auth.session-token=${pending.sessionToken}; __Secure-next-auth.session-token=${pending.sessionToken}`;
+        headers["Authorization"] = `Bearer ${pending.sessionToken}`;
+      }
+
+      const res = await fetch(`${BASE_URL}/api/auth/verify-login-otp`, {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({
+          email: cleanEmail,
+          otpCode: cleanCode,
+          isBackupCode: Boolean(isBackupCode),
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        return {
+          success: false,
+          requireOtp: true,
+          message: data?.message || "Invalid or expired verification code.",
+        };
+      }
+
+      // Verification successful! Finalize session & tokens
+      const activeToken = pending?.sessionToken || `session_${Date.now()}`;
+      let finalProfile: UserProfile = pending?.userProfile || {
+        id: `user_${Date.now()}`,
+        email: cleanEmail,
+        name: cleanEmail.split("@")[0],
+        firstName: cleanEmail.split("@")[0],
+        role: "USER",
+      };
+
+      finalProfile = {
+        ...finalProfile,
+        twoFactorEnabled: true,
+      };
+
+      await saveAuthToken(activeToken);
+      await saveAuthUser(finalProfile);
+      setToken(activeToken);
+      setUser(finalProfile);
+      pending2faSessionRef.current = null;
+
+      const now = Date.now();
+      lastActiveRef.current = now;
+      setIsAppLocked(false);
+      await setLastActiveTime(now);
+
+      // Save persistent profile for returning user quick-unlock
+      const profileToSave: SavedProfile = {
+        id: finalProfile.id,
+        name: finalProfile.name,
+        firstName: finalProfile.firstName || finalProfile.name.split(" ")[0] || "User",
+        email: finalProfile.email,
+        maskedEmail: maskEmail(finalProfile.email),
+        image: finalProfile.image,
+        authProvider: "credentials",
+      };
+      await saveSavedProfile(profileToSave);
+      setSavedProfile(profileToSave);
+
+      if (biometricEnabled) {
+        await saveBiometricAuth(finalProfile.id, activeToken, finalProfile.email);
+      }
+
+      // Fetch fresh wallet
+      api
+        .get("/api/user/wallet")
+        .then((walletRes) => {
+          const bal = Number(walletRes?.balance ?? walletRes?.wallet?.balance ?? 0);
+          const wObj = { id: walletRes?.wallet?.id || "wallet", balance: bal };
+          setWallet(wObj);
+          saveCachedWallet(bal);
+          setUser((prev) => (prev ? { ...prev, wallet: wObj } : null));
+        })
+        .catch(() => {});
+
+      // Fetch fresh profile
+      api
+        .get("/api/user/profile")
+        .then((profileRes) => {
+          if (profileRes?.user) {
+            const p = profileRes.user;
+            setUser((prev) => {
+              const current = prev || finalProfile;
+              const updatedUser: UserProfile = {
+                ...current,
+                id: p.id || current.id,
+                email: p.email || current.email,
+                name: p.name || `${p.firstName || ""} ${p.lastName || ""}`.trim() || current.name,
+                firstName: p.firstName || current.firstName,
+                lastName: p.lastName || current.lastName,
+                phone: p.phone || current.phone,
+                phoneChangedAt: p.phoneChangedAt || current.phoneChangedAt || null,
+                role: p.role || current.role,
+                image: p.image || current.image,
+                twoFactorEnabled: p.twoFactorEnabled ?? current.twoFactorEnabled,
+                twoFactorMethod: p.twoFactorMethod || current.twoFactorMethod,
+                emailLoginAlerts: p.emailLoginAlerts ?? current.emailLoginAlerts,
+              };
+              saveAuthUser(updatedUser);
+              return updatedUser;
+            });
+          }
+        })
+        .catch(() => {});
+
+      return { success: true };
+    } catch (err: any) {
+      console.error("verifyLoginOtp error:", err);
+      return {
+        success: false,
+        requireOtp: true,
+        message: err?.message || "Failed to verify code. Please check your connection.",
+      };
+    }
+  }
+
+  async function resendLoginOtp(
+    email: string
+  ): Promise<{ success: boolean; message?: string; remainingSeconds?: number; isLocked?: boolean }> {
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const res = await fetch(`${BASE_URL}/api/auth/resend-login-otp`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        return {
+          success: true,
+          message: "A new verification code has been sent.",
+          remainingSeconds: data?.remainingSeconds || 30,
+        };
+      }
+      return {
+        success: false,
+        message: data?.message || "Could not resend code.",
+        remainingSeconds: data?.remainingSeconds,
+        isLocked: data?.isLocked,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || "Network error. Please try again.",
+      };
+    }
+  }
+
   async function logout() {
     try {
+      pending2faSessionRef.current = null;
       // 1. Tell NextAuth to sign out and clear native cookies
       try {
         const csrfRes = await fetch(`${BASE_URL}/api/auth/csrf`, { credentials: "include" });
@@ -1032,6 +1238,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hideBalance,
         setHideBalancePreference,
         login,
+        verifyLoginOtp,
+        resendLoginOtp,
         logout,
         clearSavedProfile,
         refreshProfile,

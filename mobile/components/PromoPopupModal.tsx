@@ -73,7 +73,7 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
   useEffect(() => {
     let isCancelled = false;
 
-    if (!banner || !banner.isActive) {
+    if (!banner || !banner.isActive || !banner.imageUrl) {
       setIsVisible(false);
       return;
     }
@@ -158,7 +158,7 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
     }
   };
 
-  if (!isVisible || !banner) return null;
+  if (!isVisible || !banner || !banner.imageUrl) return null;
 
   const cardBgColor = banner.color || "#4C1D95";
   const btnAccent = banner.accent || "#FBBF24";

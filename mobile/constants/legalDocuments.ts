@@ -37,7 +37,7 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
     text: "LoraBiz operates strictly as a technological conduit and B2B SaaS platform. If you submit, query, or process any National Identification Number (NIN), Bank Verification Number (BVN), or personal identity data belonging to a third party, you warrant under penalty of perjury and criminal law that you possess explicit, lawful, documented authorization and consent from that individual in strict compliance with the Nigeria Data Protection Act (NDPA) 2023 and the Cybercrimes Act 2015. LoraBiz maintains permanent audit trails and cooperates fully with law enforcement.",
   },
   intro:
-    'These Terms of Service ("Terms") constitute a legally binding agreement between you (the "User", "You", or "Your", whether acting in an individual capacity, as a business entity, or as a registration agent/proxy) and Quadrox Technologies Limited ("LoraBiz", "Company", "We", "Us", or "Our"), governing your access to and use of the LoraBiz website, digital applications, APIs, wallets, and processing services (collectively, the "Platform" or "Services").',
+    'These Terms of Service ("Terms") constitute a legally binding agreement between you (the "User", "You", or "Your", whether acting in an individual capacity, as a business entity, or as a registration agent/proxy) and LoraBiz ("LoraBiz", "Company", "We", "Us", or "Our"), governing your access to and use of the LoraBiz website, digital applications, APIs, wallets, and processing services (collectively, the "Platform" or "Services").',
   sections: [
     {
       id: "acceptance",
@@ -63,7 +63,7 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
       subsections: [
         {
           subtitle: "2.1. Technological Conduit:",
-          text: "LoraBiz operates as an independent, private Business-to-Business (B2B) and Business-to-Consumer (B2C) software infrastructure provider. Quadrox Technologies Limited is NOT a government ministry, department, or statutory agency. We are not the National Identity Management Commission (NIMC), the Corporate Affairs Commission (CAC), the Federal Inland Revenue Service (FIRS), the Special Control Unit Against Money Laundering (SCUML/EFCC), or the Nigeria Inter-Bank Settlement System (NIBSS).",
+          text: "LoraBiz operates as an independent, private Business-to-Business (B2B) and Business-to-Consumer (B2C) software infrastructure provider. LoraBiz is NOT a government ministry, department, or statutory agency. We are not the National Identity Management Commission (NIMC), the Corporate Affairs Commission (CAC), the Federal Inland Revenue Service (FIRS), the Special Control Unit Against Money Laundering (SCUML/EFCC), or the Nigeria Inter-Bank Settlement System (NIBSS).",
         },
         {
           subtitle: "2.2. Passive Data Processor Status:",
@@ -107,7 +107,7 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
         },
         {
           subtitle: "4.3. Wallet Balances & Non-Withdrawal Policy:",
-          text: "Funds credited to your LoraBiz wallet are dedicated for service consumption on the platform and are non-withdrawable, except in cases of verified platform errors approved at the sole administrative discretion of Quadrox Technologies Limited.",
+          text: "Funds credited to your LoraBiz wallet are dedicated for service consumption on the platform and are non-withdrawable, except in cases of verified platform errors approved at the sole administrative discretion of LoraBiz.",
         },
       ],
     },
@@ -126,7 +126,7 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
         "You are the sole, lawful owner of the submitted identity credentials; OR",
         "You are an accredited agent, corporate consultant, legal practitioner, or authorized representative who has obtained express, documented, and verifiable consent from the legitimate data subject pursuant to the Nigeria Data Protection Act (NDPA) 2023 (Sections 24, 25 & 29) to process their details for a specific, lawful transaction (such as CAC company incorporation, Tax ID generation, or slip retrieval).",
       ],
-      body: "5.2. Prohibition of Unauthorized Lookups & Harassment: You are strictly forbidden from inputting the NIN, BVN, or personal data of any individual without their prior written consent for surveillance, stalking, unlawful background checks, loan shark recoveries, SIM-swap attacks, or any unauthorized profiling. Any such query constitutes a direct criminal breach of the Cybercrimes (Prohibition, Prevention, etc.) Act 2015 and the NDPA 2023.\n\n5.3. Assumption of Sole Liability: You acknowledge and agree that you bear 100% sole civil, criminal, regulatory, and financial liability for any data query, document generation, or business filing initiated under your account. Quadrox Technologies Limited is completely absolved of any responsibility for unauthorized queries conducted by users.",
+      body: "5.2. Prohibition of Unauthorized Lookups & Harassment: You are strictly forbidden from inputting the NIN, BVN, or personal data of any individual without their prior written consent for surveillance, stalking, unlawful background checks, loan shark recoveries, SIM-swap attacks, or any unauthorized profiling. Any such query constitutes a direct criminal breach of the Cybercrimes (Prohibition, Prevention, etc.) Act 2015 and the NDPA 2023.\n\n5.3. Assumption of Sole Liability: You acknowledge and agree that you bear 100% sole civil, criminal, regulatory, and financial liability for any data query, document generation, or business filing initiated under your account. LoraBiz is completely absolved of any responsibility for unauthorized queries conducted by users.",
     },
     {
       id: "fraud-cooperation",
@@ -169,7 +169,7 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
       subsections: [
         {
           subtitle: "8.1. Ownership:",
-          text: "All software, user interfaces, visual designs, database architectures, graphics, algorithms, brand names, and documentation comprising the LoraBiz platform are the exclusive intellectual property of Quadrox Technologies Limited and are protected under Nigerian copyright, trademark, and intellectual property laws.",
+          text: "All software, user interfaces, visual designs, database architectures, graphics, algorithms, brand names, and documentation comprising the LoraBiz platform are the exclusive intellectual property of LoraBiz and are protected under Nigerian copyright, trademark, and intellectual property laws.",
         },
         {
           subtitle: "8.2. Limited License:",
@@ -198,11 +198,11 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
         },
         {
           subtitle: "10.2. Cap on Liability:",
-          text: "To the maximum extent permitted under applicable Nigerian law, under no circumstances shall Quadrox Technologies Limited, its directors, officers, employees, affiliates, or technical partners be liable for any indirect, punitive, special, incidental, or consequential damages (including loss of profits, business interruption, or loss of data).",
+          text: "To the maximum extent permitted under applicable Nigerian law, under no circumstances shall LoraBiz, its directors, officers, employees, affiliates, or technical partners be liable for any indirect, punitive, special, incidental, or consequential damages (including loss of profits, business interruption, or loss of data).",
         },
         {
           subtitle: "10.3. Monetary Limit:",
-          text: "In all events, the aggregate liability of Quadrox Technologies Limited arising out of or related to your use of the platform shall be strictly limited to the total service fee actually paid by you to LoraBiz for the specific disputed transaction giving rise to the claim.",
+          text: "In all events, the aggregate liability of LoraBiz arising out of or related to your use of the platform shall be strictly limited to the total service fee actually paid by you to LoraBiz for the specific disputed transaction giving rise to the claim.",
         },
       ],
     },
@@ -212,7 +212,7 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
       subsections: [
         {
           subtitle: "11.1. Scope of Indemnity:",
-          text: "You agree to defend, indemnify, and hold completely harmless Quadrox Technologies Limited, its parent, subsidiaries, affiliates, directors, officers, agents, employees, and licensors from and against any and all claims, liabilities, damages, losses, regulatory penalties, sanctions, fines (including statutory administrative fines levied by the NDPC, NIMC, or CAC), legal fees, and court costs arising out of or relating to:",
+          text: "You agree to defend, indemnify, and hold completely harmless LoraBiz, its parent, subsidiaries, affiliates, directors, officers, agents, employees, and licensors from and against any and all claims, liabilities, damages, losses, regulatory penalties, sanctions, fines (including statutory administrative fines levied by the NDPC, NIMC, or CAC), legal fees, and court costs arising out of or relating to:",
         },
       ],
       bullets: [
@@ -272,7 +272,7 @@ export const TERMS_OF_SERVICE_DOC: LegalDocument = {
     },
   ],
   footer: {
-    company: "Quadrox Technologies Limited (RC Registered in Nigeria)",
+    company: "LoraBiz (RC Registered in Nigeria)",
     items: [
       { label: "Legal & Regulatory Affairs", value: "legal@lorabiz.com" },
       { label: "Data Protection Officer", value: "dpo@lorabiz.com" },
@@ -286,7 +286,7 @@ export const PRIVACY_POLICY_DOC: LegalDocument = {
   effectiveDate: "July 30, 2026",
   regulatoryStandard: "Nigeria Data Protection Act (NDPA) 2023 / NDPC",
   intro:
-    'Quadrox Technologies Limited ("LoraBiz", "Company", "we", "us", or "our") is dedicated to protecting the fundamental privacy rights and personal data of our users and data subjects in strict compliance with the Nigeria Data Protection Act (NDPA) 2023, General Application and Implementation Directives of the Nigeria Data Protection Commission (NDPC), and applicable international privacy frameworks.',
+    'LoraBiz ("LoraBiz", "Company", "we", "us", or "our") is dedicated to protecting the fundamental privacy rights and personal data of our users and data subjects in strict compliance with the Nigeria Data Protection Act (NDPA) 2023, General Application and Implementation Directives of the Nigeria Data Protection Commission (NDPC), and applicable international privacy frameworks.',
   sections: [
     {
       id: "overview",
@@ -403,9 +403,9 @@ export const PRIVACY_POLICY_DOC: LegalDocument = {
     {
       id: "dpo",
       title: "10. Data Protection Officer (DPO) Contact",
-      body: "Quadrox Technologies Limited has appointed a designated Data Protection Officer (DPO) responsible for overseeing compliance with the NDPA 2023, coordinating with licensed Data Protection Compliance Organizations (DPCO), and serving as the primary point of contact for regulatory authorities and data subjects:",
+      body: "LoraBiz has appointed a designated Data Protection Officer (DPO) responsible for overseeing compliance with the NDPA 2023, coordinating with licensed Data Protection Compliance Organizations (DPCO), and serving as the primary point of contact for regulatory authorities and data subjects:",
       callout:
-        "Office of the Data Protection Officer\nQuadrox Technologies Limited\nAddress: Lagos State, Nigeria\nDPO Contact Email: dpo@lorabiz.com\nPrivacy Desk: privacy@lorabiz.com",
+        "Office of the Data Protection Officer\nLoraBiz\nAddress: Lagos State, Nigeria\nDPO Contact Email: dpo@lorabiz.com\nPrivacy Desk: privacy@lorabiz.com",
     },
     {
       id: "cookies",
@@ -419,7 +419,7 @@ export const PRIVACY_POLICY_DOC: LegalDocument = {
     },
   ],
   footer: {
-    company: "Quadrox Technologies Limited (RC Registered in Nigeria)",
+    company: "LoraBiz (RC Registered in Nigeria)",
     items: [
       { label: "DPO Email", value: "dpo@lorabiz.com" },
       { label: "Privacy Desk", value: "privacy@lorabiz.com" },
