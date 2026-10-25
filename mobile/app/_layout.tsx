@@ -26,7 +26,7 @@ function RootLayoutContent() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
-          animation: "none",
+          animation: "slide_from_right",
         }}
       >
         <Stack.Screen
@@ -37,8 +37,8 @@ function RootLayoutContent() {
             contentStyle: { backgroundColor: "#C82D75" },
           }}
         />
-        <Stack.Screen name="(auth)" options={{ headerShown: false, animation: "none" }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false, animation: "slide_from_right" }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: "slide_from_right" }} />
         <Stack.Screen
           name="notifications"
           options={{

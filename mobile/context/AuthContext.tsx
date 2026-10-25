@@ -649,7 +649,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return {
           success: false,
           requireOtp: true,
-          message: data?.message || "Invalid or expired verification code.",
+          message: data?.message || data?.error || "Invalid verification code. Please check and try again.",
         };
       }
 
@@ -1109,57 +1109,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const sessionHeaders: Record<string, string> = {
-        Authorization: `Bearer ${bioToken}`,
-        Cookie: `next-auth.session-token=${bioToken}; __Secure-next-auth.session-token=${bioToken}`,
-      };
+      // 0. Build initial user profile immediately from saved profile & cached wallet for 0ms transition
+      const cached = await getCachedWallet();
+      const initialWallet =
+        cached && typeof cached.balance === "number"
+          ? { id: "wallet", balance: cached.balance }
+          : undefined;
 
-      const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
-        credentials: "include",
-        headers: sessionHeaders,
-      });
-      const sessionData = await sessionRes.json().catch(() => ({}));
-
-      let hydratedUser: UserProfile = {
-        id: sessionData?.user?.id || savedProfile?.id || `user_${Date.now()}`,
-        email: sessionData?.user?.email || savedProfile?.email || "",
-        name: sessionData?.user?.name || savedProfile?.name || "User",
+      const hydratedUser: UserProfile = {
+        id: savedProfile?.id || `user_${Date.now()}`,
+        email: savedProfile?.email || "",
+        name: savedProfile?.name || "User",
         firstName:
-          sessionData?.user?.name?.split(" ")[0] ||
           savedProfile?.firstName ||
+          savedProfile?.name?.split(" ")[0] ||
           "User",
-        lastName: sessionData?.user?.name?.split(" ").slice(1).join(" ") || "",
-        role: sessionData?.user?.role || "USER",
-        image: sessionData?.user?.image || savedProfile?.image || null,
-        isProfileComplete: sessionData?.user?.isProfileComplete ?? true,
+        lastName: savedProfile?.name?.split(" ").slice(1).join(" ") || "",
+        role: "USER",
+        image: savedProfile?.image || null,
+        isProfileComplete: true,
+        wallet: initialWallet,
       };
 
-      try {
-        const walletRes = await fetch(`${BASE_URL}/api/user/wallet`, {
-          credentials: "include",
-          headers: sessionHeaders,
-        }).then((r) => r.json());
-
-        if (walletRes?.success || typeof walletRes?.balance === "number") {
-          const bal = Number(walletRes.balance ?? walletRes.wallet?.balance ?? 0);
-          const wObj = { id: walletRes.wallet?.id || "wallet", balance: bal };
-          hydratedUser.wallet = wObj;
-          setWallet(wObj);
-          saveCachedWallet(bal);
-        }
-      } catch {
-        // Fallback to cached wallet if offline
-      }
-
+      // Set auth state synchronously so UI navigates to dashboard with 0ms freeze/flash
       await saveAuthToken(bioToken);
       await saveAuthUser(hydratedUser);
       setToken(bioToken);
       setUser(hydratedUser);
+      if (initialWallet) {
+        setWallet(initialWallet);
+      }
 
       const now = Date.now();
       lastActiveRef.current = now;
       setIsAppLocked(false);
       await setLastActiveTime(now);
+
+      // Background SWR revalidation: Refresh session, profile, and wallet quietly
+      const sessionHeaders: Record<string, string> = {
+        Authorization: `Bearer ${bioToken}`,
+        Cookie: `next-auth.session-token=${bioToken}; __Secure-next-auth.session-token=${bioToken}`,
+      };
+
+      fetch(`${BASE_URL}/api/auth/session`, {
+        credentials: "include",
+        headers: sessionHeaders,
+      })
+        .then((r) => r.json())
+        .then((sessionData) => {
+          if (sessionData?.user) {
+            setUser((prev) => {
+              const updated = {
+                ...(prev || hydratedUser),
+                ...sessionData.user,
+                wallet: prev?.wallet || initialWallet,
+              };
+              saveAuthUser(updated);
+              return updated;
+            });
+          }
+        })
+        .catch(() => {});
+
+      fetch(`${BASE_URL}/api/user/wallet`, {
+        credentials: "include",
+        headers: sessionHeaders,
+      })
+        .then((r) => r.json())
+        .then((walletRes) => {
+          if (walletRes?.success || typeof walletRes?.balance === "number") {
+            const bal = Number(walletRes.balance ?? walletRes.wallet?.balance ?? 0);
+            const wObj = { id: walletRes.wallet?.id || "wallet", balance: bal };
+            setWallet(wObj);
+            saveCachedWallet(bal);
+            setUser((prev) => (prev ? { ...prev, wallet: wObj } : null));
+          }
+        })
+        .catch(() => {});
 
       return { success: true };
     } catch (err: any) {

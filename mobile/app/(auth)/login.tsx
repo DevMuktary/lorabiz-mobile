@@ -362,10 +362,10 @@ export default function LoginScreen() {
       if (result.success) {
         router.replace("/(tabs)");
       } else {
-        setErrorMsg(result.message || "Invalid or expired code.");
+        setErrorMsg(result.message || "Invalid verification code. Please check and try again.");
       }
     } catch (err: any) {
-      setErrorMsg(err?.message || "Verification failed. Please try again.");
+      setErrorMsg(err?.message || "Invalid verification code. Please check and try again.");
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -569,7 +569,10 @@ export default function LoginScreen() {
                 placeholder={useBackupCode ? "XXXXXXXX" : "123456"}
                 placeholderTextColor="#94A3B8"
                 value={otpCode}
-                onChangeText={setOtpCode}
+                onChangeText={(t) => {
+                  setOtpCode(t);
+                  if (errorMsg) setErrorMsg(null);
+                }}
                 keyboardType={useBackupCode ? "default" : "number-pad"}
                 maxLength={useBackupCode ? 16 : 8}
                 autoCapitalize={useBackupCode ? "characters" : "none"}

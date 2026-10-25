@@ -99,7 +99,7 @@ export default function AppLockModal() {
   return (
     <Modal
       visible={isAppLocked}
-      transparent={false}
+      transparent={true}
       animationType="fade"
       statusBarTranslucent={true}
       onRequestClose={() => {}}

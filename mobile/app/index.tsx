@@ -10,27 +10,20 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
 import { getSavedProfile } from "../lib/storage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-// Compact circle that fits snugly right around the logo (~148px)
-const CIRCLE_SIZE = 148;
-const LOGO_WIDTH = 112;
-const LOGO_HEIGHT = 100;
+const LOGO_WIDTH = Math.min(Math.round(SCREEN_WIDTH * 0.44), 180);
+const LOGO_HEIGHT = Math.round(LOGO_WIDTH * 0.95);
 
 export default function IndexScreen() {
   const { token, user, isLoading } = useAuth();
-  const { colors, isDark } = useTheme();
   const router = useRouter();
 
-  // Animation values (GPU native driver for 60/120fps)
-  // Starts snugly around the logo on the brand pink background, then expands outwards
-  const circleScale = useRef(new Animated.Value(1)).current;
-  const circleOpacity = useRef(new Animated.Value(1)).current;
-  const logoScale = useRef(new Animated.Value(1)).current;
-  const logoOpacity = useRef(new Animated.Value(1)).current;
+  // Smooth entrance animation values (0 to 450ms)
+  const logoScale = useRef(new Animated.Value(0.9)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const containerOpacity = useRef(new Animated.Value(1)).current;
 
   // State refs to prevent stale closure bugs
   const tokenRef = useRef(token);
@@ -40,108 +33,96 @@ export default function IndexScreen() {
   const isLoadingRef = useRef(isLoading);
   isLoadingRef.current = isLoading;
 
-  const animationDone = useRef(false);
+  const minTimerFinished = useRef(false);
   const hasNavigated = useRef(false);
 
   const triggerNavigation = async () => {
     if (hasNavigated.current) return;
     hasNavigated.current = true;
 
-    if (tokenRef.current) {
-      if (userRef.current && userRef.current.isProfileComplete === false) {
-        router.replace({
-          pathname: "/(auth)/register",
-          params: {
-            fromGoogle: "true",
-            googleFirstName: userRef.current.firstName || "",
-            googleLastName: userRef.current.lastName || "",
-            googleEmail: userRef.current.email || "",
-          },
-        });
-      } else {
-        router.replace("/(tabs)");
-      }
-    } else {
-      try {
-        const saved = await getSavedProfile();
-        if (saved) {
-          router.replace("/(auth)/login");
+    // Smooth subtle dissolve before screen handoff
+    Animated.timing(containerOpacity, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(async () => {
+      if (tokenRef.current) {
+        if (userRef.current && userRef.current.isProfileComplete === false) {
+          router.replace({
+            pathname: "/(auth)/register",
+            params: {
+              fromGoogle: "true",
+              googleFirstName: userRef.current.firstName || "",
+              googleLastName: userRef.current.lastName || "",
+              googleEmail: userRef.current.email || "",
+            },
+          });
         } else {
+          router.replace("/(tabs)");
+        }
+      } else {
+        try {
+          const saved = await getSavedProfile();
+          if (saved) {
+            router.replace("/(auth)/login");
+          } else {
+            router.replace("/(auth)/welcome");
+          }
+        } catch {
           router.replace("/(auth)/welcome");
         }
-      } catch {
-        router.replace("/(auth)/welcome");
       }
-    }
+    });
   };
 
   useEffect(() => {
-    // Circle starts tightly around the logo and expands outwards smoothly across the viewport
+    // Quick, elegant brand mark reveal
     Animated.parallel([
-      Animated.timing(circleScale, {
-        toValue: 16,
-        duration: 1500,
-        delay: 250,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 350,
+        easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
       Animated.timing(logoScale, {
-        toValue: 1.15,
-        duration: 1500,
-        delay: 250,
-        easing: Easing.out(Easing.cubic),
+        toValue: 1,
+        duration: 450,
+        easing: Easing.out(Easing.back(1.1)),
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      animationDone.current = true;
-      if (!isLoadingRef.current) {
-        triggerNavigation();
-      }
-    });
+    ]).start();
 
-    // Seamless navigation handoff right as circle envelops screen
-    const handoffTimer = setTimeout(() => {
-      animationDone.current = true;
+    // Fast responsive presentation: 400ms (zero wait, zero white screen)
+    const timer = setTimeout(() => {
+      minTimerFinished.current = true;
       if (!isLoadingRef.current) {
         triggerNavigation();
       }
-    }, 1800);
+    }, 400);
 
     // Failsafe timer: App never hangs on splash
-    const failsafeTimeout = setTimeout(() => {
+    const failsafe = setTimeout(() => {
       triggerNavigation();
-    }, 3000);
+    }, 1500);
 
     return () => {
-      clearTimeout(handoffTimer);
-      clearTimeout(failsafeTimeout);
+      clearTimeout(timer);
+      clearTimeout(failsafe);
     };
   }, []);
 
-  // When auth finishes initializing after animation completes
+  // When auth check completes
   useEffect(() => {
-    if (!isLoading && animationDone.current) {
+    if (!isLoading && minTimerFinished.current) {
       triggerNavigation();
     }
   }, [isLoading]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#C82D75" />
+    <Animated.View style={[styles.container, { opacity: containerOpacity }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#C82D75" translucent />
 
-      {/* The Expanding White Circle Mask (ALAT by Wema Style) */}
-      <Animated.View
-        style={[
-          styles.whiteCircle,
-          {
-            backgroundColor: colors.background,
-            opacity: circleOpacity,
-            transform: [{ scale: circleScale }],
-          },
-        ]}
-      />
-
-      {/* Centered Brand Mark inside the circle (NEVER dissolves to blank white void) */}
+      {/* Centered Brand Mark on Signature Pink */}
       <Animated.View
         style={[
           styles.logoContainer,
@@ -152,12 +133,12 @@ export default function IndexScreen() {
         ]}
       >
         <Image
-          source={require("../assets/logo-pink.png")}
+          source={require("../assets/logo-white.png")}
           style={styles.logoImage}
           resizeMode="contain"
         />
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -168,24 +149,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  whiteCircle: {
-    position: "absolute",
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 24,
-    elevation: 10,
-  },
   logoContainer: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
+    width: LOGO_WIDTH + 40,
+    height: LOGO_HEIGHT + 40,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 10,
   },
   logoImage: {
     width: LOGO_WIDTH,
