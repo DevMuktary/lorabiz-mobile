@@ -4,7 +4,7 @@
     "slug": "lorabiz",
     "scheme": "lorabiz",
     "version": "1.0.1",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "platforms": [
@@ -59,7 +59,17 @@
           "photosPermission": "LoraBiz needs access to your gallery to upload document slips and certificates."
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.facebook.react.** { *; }\n-keep class com.facebook.hermes.** { *; }\n-keepattributes Signature\n-keepattributes *Annotation*"
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},
