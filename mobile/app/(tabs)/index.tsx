@@ -45,6 +45,8 @@ import {
   getCachedWallet,
   saveCachedWallet,
   CachedWalletData,
+  getLastShownPopupIndex,
+  setLastShownPopupIndex,
 } from "../../lib/storage";
 import { updateAppIconBadge, requestBadgePermissions } from "../../lib/badge";
 
@@ -201,17 +203,24 @@ export default function HomeScreen() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // 6. Dynamic Promotional Popup Modal Query
+  // 6. Dynamic Promotional Popup Modal Query (Rotates sequentially through all active popup flyers across sessions)
   const { data: popupBannerData, refetch: refetchPopup } = useQuery({
     queryKey: ["mobilePromoPopupModal"],
     queryFn: async () => {
       try {
         const res = await api.get("/api/banners?target=POPUP");
         if (res?.banners && Array.isArray(res.banners) && res.banners.length > 0) {
-          // Prioritize the custom uploaded graphic flyer (with imageUrl) over default text placeholder
-          const withFlyer = res.banners.find((b: any) => b.isActive && b.imageUrl);
-          if (withFlyer) return withFlyer as PromoPopupData;
-          return res.banners[0] as PromoPopupData;
+          const activePopups = res.banners.filter((b: any) => b.isActive && b.imageUrl);
+          if (activePopups.length === 0) {
+            const fallback = res.banners.filter((b: any) => b.isActive);
+            return (fallback[0] || res.banners[0]) as PromoPopupData;
+          }
+          // Sort by order asc
+          activePopups.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+          // Rotate sequentially across sessions/visits
+          const lastIdx = await getLastShownPopupIndex();
+          const targetIndex = lastIdx % activePopups.length;
+          return activePopups[targetIndex] as PromoPopupData;
         }
         return null;
       } catch {
@@ -220,6 +229,13 @@ export default function HomeScreen() {
     },
     staleTime: 1000 * 30,
   });
+
+  const handlePopupDismiss = useCallback(async () => {
+    try {
+      const lastIdx = await getLastShownPopupIndex();
+      await setLastShownPopupIndex(lastIdx + 1);
+    } catch {}
+  }, []);
 
   // Prefetch popup flyer image
   useEffect(() => {
@@ -803,7 +819,16 @@ export default function HomeScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Services</Text>
         </View>
 
-        <View style={[styles.quickServicesGrid, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+        <View
+          style={[
+            styles.quickServicesCard,
+            {
+              backgroundColor: isDark ? colors.surface : "#FFFFFF",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+            },
+          ]}
+        >
+          <View style={styles.quickServicesGrid}>
           {QUICK_SERVICES.map((svc) => {
             const IconComp = (svc as any).icon;
             return (
@@ -860,6 +885,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             );
           })}
+          </View>
         </View>
 
         {/* =================================================================== */}
@@ -943,6 +969,7 @@ export default function HomeScreen() {
       <PromoPopupModal
         key={`${popupBannerData?.id || "popup"}-${focusCounter}`}
         banner={popupBannerData || null}
+        onDismiss={handlePopupDismiss}
       />
 
       {/* Reusable Custom Alert Modal */}
@@ -1263,21 +1290,33 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
 
-  /* Quick Services Grid: Strictly 4x2 = 8 Total Items */
+  /* Quick Services Grid: Strictly 4x2 = 8 Total Items inside rounded card */
+  quickServicesCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 8,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 2,
+  },
   quickServicesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     rowGap: 14,
-    marginBottom: 20,
   },
   gridItem: {
     width: "23%",
     alignItems: "center",
   },
   gridIconBox: {
-    width: 54,
-    height: 54,
+    width: 52,
+    height: 52,
     borderRadius: 16,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
@@ -1286,8 +1325,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.06)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
     elevation: 2,
     overflow: "hidden",
   },

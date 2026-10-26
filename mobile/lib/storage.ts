@@ -324,5 +324,22 @@ export async function getLastDismissedPromoId(): Promise<string | null> {
   }
 }
 
+const ROTATING_POPUP_INDEX_KEY = "lorabiz_rotating_popup_index";
+
+export async function getLastShownPopupIndex(): Promise<number> {
+  try {
+    const val = await getItem(ROTATING_POPUP_INDEX_KEY);
+    return val !== null ? parseInt(val, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function setLastShownPopupIndex(index: number): Promise<void> {
+  try {
+    await setItem(ROTATING_POPUP_INDEX_KEY, index.toString());
+  } catch {}
+}
+
 
 
