@@ -36,6 +36,7 @@ import { api } from "../../lib/api";
 import { useQuery } from "@tanstack/react-query";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { uploadFileToServer } from "../../lib/upload";
+import Constants from "expo-constants";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -637,7 +638,7 @@ export default function ProfileScreen() {
       {/* App Version Stamp */}
       <View style={styles.versionContainer}>
         <Text style={[styles.versionText, { color: colors.textMuted }]}>
-          Lorabiz Mobile • v1.0
+          Lorabiz Mobile • v{Constants.expoConfig?.version || "1.0.3"}
         </Text>
       </View>
 

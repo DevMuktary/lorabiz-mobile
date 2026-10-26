@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ShieldCheck } from "lucide-react-native";
 import { colors } from "../../constants/theme";
+import Constants from "expo-constants";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -82,7 +83,7 @@ export default function WelcomeScreen() {
                 Business & Identity Infrastructure
               </Text>
             </View>
-            <Text style={styles.versionText}>v1.0.0</Text>
+            <Text style={styles.versionText}>v{Constants.expoConfig?.version || "1.0.3"}</Text>
           </View>
         </View>
       </View>
