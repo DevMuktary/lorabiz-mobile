@@ -115,7 +115,7 @@ export default function ServiceTvTicker({
   const [textWidth, setTextWidth] = useState<number>(defaultText.length * 8);
 
   // Fetch ticker config from API
-  const { data: tickerData } = useQuery({
+  const { data: tickerData, isLoading } = useQuery({
     queryKey: ["serviceTicker", serviceKey],
     queryFn: async () => {
       try {
@@ -127,8 +127,8 @@ export default function ServiceTvTicker({
         return null;
       }
     },
-    staleTime: 1000 * 15,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnMount: false,
   });
 
   const displayText = tickerData?.tickerText || defaultText;
@@ -190,7 +190,9 @@ export default function ServiceTvTicker({
     };
   }, [visible, displayText, textWidth, durationSeconds, animatedTranslate]);
 
-  if (!visible || (tickerData && tickerData.isActive === false)) {
+  // Only render when ticker is explicitly loaded and confirmed active by the backend.
+  // Never flash default placeholder while loading or when disabled by admin.
+  if (!visible || isLoading || !tickerData || tickerData.isActive === false) {
     return null;
   }
 

@@ -111,6 +111,9 @@ export default function PromoPopupModal({ banner, onDismiss }: PromoPopupModalPr
       }
 
       if (!isCancelled) {
+        if (frequency === "ONCE_PER_SESSION") {
+          sessionDismissedPromoIds.add(banner.id);
+        }
         showModal();
       }
     };
