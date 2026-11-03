@@ -83,7 +83,7 @@ export default function WelcomeScreen() {
                 Business & Identity Infrastructure
               </Text>
             </View>
-            <Text style={styles.versionText}>v{Constants.expoConfig?.version || "1.0.3"}</Text>
+            <Text style={styles.versionText}>v{Constants.expoConfig?.version || "1.0.4"}</Text>
           </View>
         </View>
       </View>

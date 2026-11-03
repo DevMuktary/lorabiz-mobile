@@ -638,7 +638,7 @@ export default function ProfileScreen() {
       {/* App Version Stamp */}
       <View style={styles.versionContainer}>
         <Text style={[styles.versionText, { color: colors.textMuted }]}>
-          Lorabiz Mobile • v{Constants.expoConfig?.version || "1.0.3"}
+          Lorabiz Mobile • v{Constants.expoConfig?.version || "1.0.4"}
         </Text>
       </View>
 
