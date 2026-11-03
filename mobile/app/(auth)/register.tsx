@@ -537,6 +537,8 @@ export default function RegisterScreen() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "x-client-platform": Platform.OS,
+            "x-client-source": "mobile-app",
             ...(token
               ? {
                   Authorization: `Bearer ${token}`,
@@ -598,7 +600,11 @@ export default function RegisterScreen() {
 
         const res = await fetch(`${BASE_URL}/api/auth/register`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-client-platform": Platform.OS,
+            "x-client-source": "mobile-app",
+          },
           body: JSON.stringify(payload),
         });
 

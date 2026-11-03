@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { getAuthToken, clearAllAuth } from "./storage";
 
 // Configurable via EXPO_PUBLIC_API_URL env variable (defaults to production environment)
@@ -37,6 +38,8 @@ export async function apiClient<T = any>(
     Accept: "application/json",
     "Cache-Control": "no-cache, no-store, must-revalidate",
     Pragma: "no-cache",
+    "x-client-platform": Platform.OS,
+    "x-client-source": "mobile-app",
     ...(customHeaders as Record<string, string>),
   };
 

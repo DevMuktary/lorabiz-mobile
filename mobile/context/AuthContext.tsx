@@ -385,6 +385,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             Accept: "application/json",
+            "x-client-platform": Platform.OS,
+            "x-client-source": "mobile-app",
             ...(cleanCookie ? { Cookie: cleanCookie } : {}),
           },
           body: new URLSearchParams({
