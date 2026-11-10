@@ -178,6 +178,7 @@ export default function BvnSlipScreen() {
     !isStatusLoading;
 
   const handleGenerate = async () => {
+    if (isGenerating) return;
     setErrorMessage(null);
 
     if (!isInputValid) {

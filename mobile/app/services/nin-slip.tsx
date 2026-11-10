@@ -250,6 +250,7 @@ export default function NinSlipScreen() {
     currentPrice > 0;
 
   const handleGenerate = async () => {
+    if (isGenerating) return;
     Keyboard.dismiss();
     setErrorMessage(null);
 
