@@ -6,6 +6,7 @@ export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://lorabiz.com"
 
 interface FetchOptions extends RequestInit {
   requiresAuth?: boolean;
+  timeoutMs?: number;
 }
 
 export class ApiError extends Error {
@@ -53,8 +54,16 @@ export async function apiClient<T = any>(
   }
 
   let response: Response;
+  const isVerificationRoute =
+    endpoint.includes("/nin/") ||
+    endpoint.includes("/bvn/") ||
+    endpoint.includes("/cac/") ||
+    endpoint.includes("/scuml/") ||
+    endpoint.includes("/tax-id/");
+
+  const effectiveTimeout = options.timeoutMs ?? (isVerificationRoute ? 45000 : 15000);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  const timeoutId = setTimeout(() => controller.abort(), effectiveTimeout);
 
   try {
     response = await fetch(url, {
@@ -64,16 +73,17 @@ export async function apiClient<T = any>(
     });
   } catch (err: any) {
     clearTimeout(timeoutId);
+    const isTimeout = err.name === "AbortError" || err.message?.includes("aborted");
     const isOffline =
       !err ||
       err.message?.includes("Network request failed") ||
       err.message?.includes("fetch failed") ||
       err.message?.includes("Failed to fetch") ||
-      err.message?.includes("NetworkError") ||
-      err.name === "AbortError" ||
-      err.message?.includes("aborted");
+      err.message?.includes("NetworkError");
 
-    const msg = isOffline
+    const msg = isTimeout
+      ? "The verification gateway is taking longer than expected. Please wait a moment or check your history before retrying."
+      : isOffline
       ? "Unable to connect to server. Please check your internet connection and try again."
       : err.message || "Network request failed";
     throw new ApiError(msg, 0);
