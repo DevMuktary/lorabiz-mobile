@@ -11,10 +11,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Clipboard,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ShieldCheck, X, CheckCircle2 } from "lucide-react-native";
+import { ShieldCheck, X, CheckCircle2, Copy, Check, ArrowRight } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -51,6 +54,83 @@ export default function FundWalletScreen() {
   // Verified Payment State (Strictly shown ONLY after backend server confirmation)
   const [verifiedPayment, setVerifiedPayment] = useState<VerifiedPayment | null>(null);
 
+  // Dedicated Moniepoint Virtual Account State
+  const [virtualAccount, setVirtualAccount] = useState<{
+    accountNumber: string;
+    accountName: string;
+    bankName: string;
+    bankCode: string;
+  } | null>(null);
+  const [isVaLoading, setIsVaLoading] = useState(true);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
+  const [vaFullName, setVaFullName] = useState("");
+  const [vaBvn, setVaBvn] = useState("");
+  const [vaSubmitting, setVaSubmitting] = useState(false);
+  const [vaError, setVaError] = useState<string | null>(null);
+
+  const fetchVirtualAccount = useCallback(async () => {
+    try {
+      const res = await api.get("/api/user/virtual-account");
+      if (res?.success && res.hasAccount && res.account) {
+        setVirtualAccount(res.account);
+      } else {
+        setVirtualAccount(null);
+        if (res?.userName && !vaFullName) {
+          setVaFullName(res.userName);
+        }
+      }
+    } catch {
+      // silent
+    } finally {
+      setIsVaLoading(false);
+    }
+  }, [vaFullName]);
+
+  function handleCopyAccountNo() {
+    if (!virtualAccount?.accountNumber) return;
+    Clipboard.setString(virtualAccount.accountNumber);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  }
+
+  async function handleActivateAccount() {
+    Keyboard.dismiss();
+    setVaError(null);
+
+    const cleanBvn = vaBvn.trim().replace(/\D/g, "");
+    if (!cleanBvn || cleanBvn.length !== 11) {
+      setVaError("Please enter a valid 11-digit BVN.");
+      return;
+    }
+
+    const cleanName = vaFullName.trim();
+    if (cleanName.split(/\s+/).length < 2) {
+      setVaError("Please enter your first and last name as registered on your BVN.");
+      return;
+    }
+
+    setVaSubmitting(true);
+    try {
+      const res = await api.post("/api/user/virtual-account", {
+        fullName: cleanName,
+        bvn: cleanBvn,
+      });
+
+      if (res?.success && res.account) {
+        setVirtualAccount(res.account);
+        setIsActivateModalOpen(false);
+        setVaBvn("");
+      } else {
+        setVaError(res?.message || "Failed to generate account. Please verify your details.");
+      }
+    } catch (err: any) {
+      setVaError(err?.message || "Network error. Please try again.");
+    } finally {
+      setVaSubmitting(false);
+    }
+  }
+
   // Custom Alert Modal State
   const [alertModal, setAlertModal] = useState<{
     visible: boolean;
@@ -71,7 +151,8 @@ export default function FundWalletScreen() {
   useFocusEffect(
     useCallback(() => {
       refreshWallet().catch(() => {});
-    }, [refreshWallet])
+      fetchVirtualAccount().catch(() => {});
+    }, [refreshWallet, fetchVirtualAccount])
   );
 
   const currentBalance = wallet?.balance ?? user?.wallet?.balance ?? 0;
@@ -406,6 +487,81 @@ export default function FundWalletScreen() {
               </Text>
             </View>
 
+            {/* Moniepoint Dedicated Virtual Account */}
+            {virtualAccount ? (
+              <View style={styles.vaCard}>
+                <View style={styles.vaHeaderRow}>
+                  <Image
+                    source={require("../../assets/moniepoint.png")}
+                    style={{ width: 95, height: 26, resizeMode: "contain" }}
+                  />
+                  <Text style={styles.vaBankName}>Bank Transfer</Text>
+                </View>
+
+                <View style={styles.vaAccRow}>
+                  <Text style={styles.vaAccNumber}>{virtualAccount.accountNumber}</Text>
+                  <TouchableOpacity
+                    style={[styles.copyBtn, isCopied && styles.copyBtnDone]}
+                    onPress={handleCopyAccountNo}
+                    activeOpacity={0.8}
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check size={14} color="#FFFFFF" />
+                        <Text style={styles.copyBtnText}>Copied</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} color="#FFFFFF" />
+                        <Text style={styles.copyBtnText}>Copy</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.vaAccName}>
+                  Account Name: <Text style={styles.vaAccNameBold}>{virtualAccount.accountName}</Text>
+                </Text>
+
+                <Text style={styles.vaHelpText}>
+                  Transfer from any bank app to fund your wallet.
+                </Text>
+              </View>
+            ) : (
+              <View style={[styles.vaInactiveCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+                <View style={styles.vaInactiveHeader}>
+                  <Image
+                    source={require("../../assets/moniepoint.png")}
+                    style={{ width: 95, height: 26, resizeMode: "contain" }}
+                  />
+                </View>
+                <Text style={[styles.vaInactiveTitle, { color: colors.text }]}>
+                  Dedicated Bank Transfer Account
+                </Text>
+                <Text style={[styles.vaInactiveSub, { color: colors.textSecondary }]}>
+                  Generate a personal Moniepoint account number to fund your wallet via bank transfer.
+                </Text>
+                <TouchableOpacity
+                  style={styles.vaActivateBtn}
+                  onPress={() => {
+                    setVaError(null);
+                    setIsActivateModalOpen(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.vaActivateBtnText}>Activate Account</Text>
+                  <ArrowRight size={15} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Section Divider */}
+            <View style={styles.dividerRow}>
+              <View style={[styles.dividerLine, { backgroundColor: colors.surfaceBorder }]} />
+              <Text style={[styles.dividerText, { color: colors.textMuted }]}>OR PAY ONLINE</Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.surfaceBorder }]} />
+            </View>
+
             {/* Amount Input */}
             <View style={[styles.inputCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.cardLabelRow}>
@@ -510,6 +666,118 @@ export default function FundWalletScreen() {
           onConfirm={alertModal.onConfirm}
           onCancel={alertModal.onCancel}
         />
+
+        {/* Moniepoint Account Activation Modal */}
+        <Modal
+          visible={isActivateModalOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            if (!vaSubmitting) setIsActivateModalOpen(false);
+          }}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.modalOverlay}
+          >
+            <View style={[styles.modalBox, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
+              <View style={styles.modalHeaderRow}>
+                <View style={styles.modalTitleWrap}>
+                  <Image
+                    source={require("../../assets/moniepoint.png")}
+                    style={{ width: 85, height: 24, resizeMode: "contain", marginBottom: 6 }}
+                  />
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Activate Dedicated Account</Text>
+                  <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                    Enter your name and BVN as registered with your bank.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!vaSubmitting) setIsActivateModalOpen(false);
+                  }}
+                  style={[styles.modalCloseBtn, { backgroundColor: colors.surfaceBorder }]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <X size={18} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              {vaError && (
+                <View style={styles.vaErrorBox}>
+                  <Text style={styles.vaErrorText}>{vaError}</Text>
+                </View>
+              )}
+
+              <View style={styles.fieldWrap}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                  FULL LEGAL NAME (AS ON BVN)
+                </Text>
+                <TextInput
+                  style={[
+                    styles.fieldInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.surfaceBorder,
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+                    },
+                  ]}
+                  value={vaFullName}
+                  onChangeText={setVaFullName}
+                  placeholder="First and Last Name"
+                  placeholderTextColor={colors.textMuted}
+                  editable={!vaSubmitting}
+                />
+              </View>
+
+              <View style={styles.fieldWrap}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                  BANK VERIFICATION NUMBER (BVN)
+                </Text>
+                <TextInput
+                  style={[
+                    styles.fieldInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.surfaceBorder,
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+                    },
+                  ]}
+                  value={vaBvn}
+                  onChangeText={(t) => setVaBvn(t.replace(/\D/g, ""))}
+                  placeholder="11-digit BVN"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={11}
+                  editable={!vaSubmitting}
+                />
+              </View>
+
+              <Text style={[styles.bvnNotice, { color: colors.textMuted }]}>
+                Your BVN is required strictly to verify your identity with the banking network.
+              </Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.vaSubmitBtn,
+                  (vaSubmitting || vaBvn.replace(/\D/g, "").length !== 11 || !vaFullName.trim()) && styles.btnDisabled,
+                ]}
+                onPress={handleActivateAccount}
+                disabled={vaSubmitting || vaBvn.replace(/\D/g, "").length !== 11 || !vaFullName.trim()}
+                activeOpacity={0.8}
+              >
+                {vaSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.vaSubmitBtnText}>Generate Account Number</Text>
+                    <ArrowRight size={16} color="#FFFFFF" />
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -849,5 +1117,229 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  // Dedicated Moniepoint Account Card Styles
+  vaCard: {
+    backgroundColor: "#003399",
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#003399",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  vaHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  vaBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  vaBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  vaBankName: {
+    color: "#93C5FD",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  vaAccRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  vaAccNumber: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "900",
+    letterSpacing: 2,
+    fontVariant: ["tabular-nums"],
+  },
+  copyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.22)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  copyBtnDone: {
+    backgroundColor: "#10B981",
+  },
+  copyBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  vaAccName: {
+    color: "#E2E8F0",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  vaAccNameBold: {
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  vaHelpText: {
+    color: "#BFDBFE",
+    fontSize: 11,
+    marginTop: 4,
+  },
+  vaInactiveCard: {
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    padding: 16,
+    marginBottom: 16,
+  },
+  vaInactiveHeader: {
+    marginBottom: 8,
+  },
+  vaInactiveTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  vaInactiveSub: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 12,
+  },
+  vaActivateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#003399",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+  vaActivateBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalBox: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  modalTitleWrap: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 2,
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  modalCloseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  vaErrorBox: {
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  vaErrorText: {
+    color: "#EF4444",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  fieldWrap: {
+    marginBottom: 12,
+  },
+  fieldLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  fieldInput: {
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  bvnNotice: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginBottom: 14,
+  },
+  vaSubmitBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#003399",
+    height: 46,
+    borderRadius: 12,
+  },
+  vaSubmitBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  btnDisabled: {
+    opacity: 0.5,
   },
 });
