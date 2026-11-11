@@ -11,6 +11,7 @@ import {
   Linking,
   Dimensions,
   ActivityIndicator,
+  Clipboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -32,6 +33,9 @@ import {
   CheckCircle2,
   X,
   Wifi,
+  Landmark,
+  Copy,
+  Check,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -151,6 +155,78 @@ export default function HomeScreen() {
       setIsOffline(false);
     }
   }, [walletData]);
+
+  // 2b. Dedicated Virtual Account Query & 1-Click Activation
+  const [vaCopied, setVaCopied] = useState(false);
+  const [isActivatingVa, setIsActivatingVa] = useState(false);
+
+  const {
+    data: virtualAccountData,
+    refetch: refetchVirtualAccount,
+    isLoading: isVaLoading,
+  } = useQuery({
+    queryKey: ["mobileVirtualAccount"],
+    queryFn: async () => {
+      try {
+        return await api.get("/api/user/virtual-account");
+      } catch {
+        return null;
+      }
+    },
+  });
+
+  const virtualAccount =
+    virtualAccountData?.hasAccount && virtualAccountData?.account
+      ? virtualAccountData.account
+      : null;
+
+  const handleCopyHomeVa = () => {
+    if (!virtualAccount?.accountNumber) return;
+    Clipboard.setString(virtualAccount.accountNumber);
+    setVaCopied(true);
+    setTimeout(() => setVaCopied(false), 2000);
+  };
+
+  const handleActivateHomeVa = async () => {
+    if (isActivatingVa) return;
+    setIsActivatingVa(true);
+    try {
+      const res = await api.post("/api/user/virtual-account", {});
+      if (res?.success && res.account) {
+        queryClient.setQueryData(["mobileVirtualAccount"], {
+          success: true,
+          hasAccount: true,
+          account: res.account,
+        });
+        return;
+      }
+      if (res?.needsProfileFields) {
+        router.push("/wallet/fund?activate=1" as any);
+        return;
+      }
+      setAlertConfig({
+        visible: true,
+        type: "error",
+        title: "Activation Failed",
+        message: res?.message || "Could not generate dedicated bank account.",
+        confirmText: "OK",
+      });
+    } catch (err: any) {
+      if (err?.data?.needsProfileFields) {
+        router.push("/wallet/fund?activate=1" as any);
+        return;
+      }
+      setAlertConfig({
+        visible: true,
+        type: "error",
+        title: "Activation Failed",
+        message: err?.message || "Could not generate dedicated bank account.",
+        confirmText: "OK",
+      });
+    } finally {
+      setIsActivatingVa(false);
+    }
+  };
 
   // 3. Transactions Query
   const { data: txData, refetch: refetchTx } = useQuery({
@@ -300,6 +376,7 @@ export default function HomeScreen() {
         refetchBanners(),
         refetchNotifications(),
         refetchPopup(),
+        refetchVirtualAccount(),
       ]);
       setIsOffline(false);
       const freshBalance = (walletRes as any)?.data?.balance ?? (walletRes as any)?.data?.wallet?.balance;
@@ -314,7 +391,7 @@ export default function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [queryClient, refreshProfile, refetchProfile, refetchWallet, refetchTx, refetchLoyalty, refetchBanners]);
+  }, [queryClient, refreshProfile, refetchProfile, refetchWallet, refetchTx, refetchLoyalty, refetchBanners, refetchVirtualAccount]);
 
   // Focus effect: auto-refetch whenever user navigates back to dashboard
   useFocusEffect(
@@ -322,7 +399,8 @@ export default function HomeScreen() {
       refetchWallet();
       refetchProfile();
       refetchTx();
-    }, [refetchWallet, refetchProfile, refetchTx])
+      refetchVirtualAccount();
+    }, [refetchWallet, refetchProfile, refetchTx, refetchVirtualAccount])
   );
 
   // Derived Values - resilient to offline by falling back to cached balance
@@ -732,6 +810,69 @@ export default function HomeScreen() {
               <Text style={styles.historyBtnText}>History</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Integrated Dedicated Bank Transfer Account Bar */}
+          {virtualAccount ? (
+            <View style={styles.vaHomeStrip}>
+              <TouchableOpacity
+                style={styles.vaHomeLeft}
+                onPress={() => router.push("/wallet/fund" as any)}
+                activeOpacity={0.75}
+              >
+                <View style={styles.vaHomeIconBox}>
+                  <Landmark size={14} color="#38BDF8" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.vaHomeBankLabel} numberOfLines={1}>
+                    {virtualAccount.bankName || "Dedicated Bank"}
+                  </Text>
+                  <Text style={styles.vaHomeAccNumber}>{virtualAccount.accountNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.vaHomeCopyBtn, vaCopied && styles.vaHomeCopyBtnDone]}
+                onPress={handleCopyHomeVa}
+                activeOpacity={0.8}
+              >
+                {vaCopied ? (
+                  <>
+                    <Check size={13} color="#FFFFFF" />
+                    <Text style={styles.vaHomeCopyText}>Copied</Text>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={13} color="#FFFFFF" />
+                    <Text style={styles.vaHomeCopyText}>Copy</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : !isVaLoading ? (
+            <View style={styles.vaHomeStrip}>
+              <View style={styles.vaHomeLeft}>
+                <View style={styles.vaHomeIconBox}>
+                  <Landmark size={14} color="#F472B6" />
+                </View>
+                <Text style={styles.vaHomePromptText} numberOfLines={1}>
+                  Bank Transfer Account
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.vaHomeActivateBtn, isActivatingVa && { opacity: 0.65 }]}
+                onPress={handleActivateHomeVa}
+                disabled={isActivatingVa}
+                activeOpacity={0.8}
+              >
+                {isActivatingVa ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.vaHomeActivateText}>Activate</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
 
         {/* =================================================================== */}
@@ -1192,6 +1333,80 @@ const styles = StyleSheet.create({
     color: "#E2E8F0",
     fontWeight: "700",
     fontSize: 13,
+  },
+  vaHomeStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.09)",
+    gap: 10,
+  },
+  vaHomeLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  vaHomeIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  vaHomeBankLabel: {
+    color: "#94A3B8",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    marginBottom: 1,
+  },
+  vaHomeAccNumber: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    fontVariant: ["tabular-nums"],
+  },
+  vaHomePromptText: {
+    color: "#E2E8F0",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  vaHomeCopyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.14)",
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 9,
+  },
+  vaHomeCopyBtnDone: {
+    backgroundColor: "#10B981",
+  },
+  vaHomeCopyText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  vaHomeActivateBtn: {
+    backgroundColor: "rgba(200, 45, 117, 0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9,
+    minWidth: 74,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  vaHomeActivateText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
   },
 
   /* Touch-Draggable Promotional Banner */

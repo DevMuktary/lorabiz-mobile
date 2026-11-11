@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -15,9 +15,9 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ShieldCheck, X, CheckCircle2, Copy, Check, ArrowRight } from "lucide-react-native";
+import { ShieldCheck, X, CheckCircle2, Copy, Check, ArrowRight, Landmark } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -37,6 +37,7 @@ interface VerifiedPayment {
 
 export default function FundWalletScreen() {
   const router = useRouter();
+  const { activate } = useLocalSearchParams<{ activate?: string }>();
   const insets = useSafeAreaInsets();
   const { user, wallet, updateWalletBalance, refreshWallet, refreshProfile } = useAuth();
   const { colors, isDark } = useTheme();
@@ -46,7 +47,7 @@ export default function FundWalletScreen() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Paystack WebView State
+  // Online Checkout WebView State
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [isWebViewOpen, setIsWebViewOpen] = useState(false);
@@ -54,7 +55,8 @@ export default function FundWalletScreen() {
   // Verified Payment State (Strictly shown ONLY after backend server confirmation)
   const [verifiedPayment, setVerifiedPayment] = useState<VerifiedPayment | null>(null);
 
-  // Dedicated Paystack-Titan Virtual Account State
+  // Dedicated Virtual Account State
+  const didAutoActivateRef = useRef(false);
   const [virtualAccount, setVirtualAccount] = useState<{
     accountNumber: string;
     accountName: string;
@@ -175,9 +177,22 @@ export default function FundWalletScreen() {
     }, [refreshWallet, fetchVirtualAccount])
   );
 
+  // Support direct activation deep-link from Home screen if profile confirmation is needed
+  useEffect(() => {
+    if (
+      activate === "1" &&
+      !isVaLoading &&
+      !virtualAccount &&
+      !didAutoActivateRef.current
+    ) {
+      didAutoActivateRef.current = true;
+      handleActivateAccount(false);
+    }
+  }, [activate, isVaLoading, virtualAccount]);
+
   const currentBalance = wallet?.balance ?? user?.wallet?.balance ?? 0;
 
-  async function handleInitializePaystack() {
+  async function handleInitializeCheckout() {
     Keyboard.dismiss();
     setErrorMsg(null);
     const numAmount = Number(amount);
@@ -193,7 +208,6 @@ export default function FundWalletScreen() {
         service: "wallet_funding",
         amount: numAmount,
         paymentMethod: "ONLINE",
-        gateway: "PAYSTACK",
       });
 
       if (res?.success && res.authorizationUrl) {
@@ -278,9 +292,12 @@ export default function FundWalletScreen() {
     const { url } = navState;
     if (!url || typeof url !== "string") return;
 
-    const isPaystackHost = url.includes("checkout.paystack.com");
+    const isExternalCheckoutPage =
+      url.includes("checkout.paystack.com") ||
+      url.includes("korapay.com") ||
+      url.includes("checkout.");
 
-    // Detect if Paystack is redirecting back to the return/callback URL
+    // Detect if the gateway is redirecting back to the app callback URL
     const isCancelled =
       url.includes("status=failed") ||
       url.includes("status=cancelled") ||
@@ -288,7 +305,7 @@ export default function FundWalletScreen() {
       url.includes("cancelled=true");
 
     const isCompleted =
-      !isPaystackHost &&
+      !isExternalCheckoutPage &&
       !isCancelled &&
       (url.includes("funded=true") ||
         url.includes("/dashboard") ||
@@ -323,7 +340,7 @@ export default function FundWalletScreen() {
         visible: true,
         type: "confirm",
         title: "Close Checkout?",
-        message: "Have you already completed the payment on Paystack?",
+        message: "Have you already completed the payment?",
         confirmText: "Yes, Verify Payment",
         cancelText: "No, Cancel",
         onConfirm: () => {
@@ -345,13 +362,13 @@ export default function FundWalletScreen() {
   }
 
   // =========================================================================
-  // VIEW 1: Paystack Inline WebView
+  // VIEW 1: Online Checkout Inline WebView
   // =========================================================================
   if (isWebViewOpen && checkoutUrl) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={[styles.webViewHeader, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
-          <Text style={styles.webViewTitle}>Paystack Secure Checkout</Text>
+          <Text style={styles.webViewTitle}>Secure Checkout</Text>
           <TouchableOpacity
             onPress={handleCloseWebView}
             style={styles.closeWebViewBtn}
@@ -515,7 +532,7 @@ export default function FundWalletScreen() {
               </Text>
             </View>
 
-            {/* Paystack-Titan Dedicated Virtual Account */}
+            {/* Dedicated Virtual Account */}
             {isVaLoading && !virtualAccount ? (
               <View style={[styles.vaInactiveCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder, flexDirection: "row", alignItems: "center", gap: 10 }]}>
                 <ActivityIndicator size="small" color="#0B63CE" />
@@ -526,11 +543,11 @@ export default function FundWalletScreen() {
             ) : virtualAccount ? (
               <View style={styles.vaCard}>
                 <View style={styles.vaHeaderRow}>
-                  <Image
-                    source={require("../../assets/paystack.png")}
-                    style={{ width: 92, height: 26, resizeMode: "contain", borderRadius: 6 }}
-                  />
-                  <Text style={styles.vaBankName}>{virtualAccount.bankName || "Paystack-Titan"}</Text>
+                  <View style={[styles.vaBadge, { flexDirection: "row", alignItems: "center", gap: 5 }]}>
+                    <Landmark size={12} color="#FFFFFF" />
+                    <Text style={styles.vaBadgeText}>BANK TRANSFER</Text>
+                  </View>
+                  <Text style={styles.vaBankName}>{virtualAccount.bankName || "Dedicated Bank"}</Text>
                 </View>
 
                 <View style={styles.vaAccRow}>
@@ -564,15 +581,12 @@ export default function FundWalletScreen() {
               </View>
             ) : (
               <View style={[styles.vaInactiveCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
-                <View style={styles.vaInactiveHeader}>
-                  <Image
-                    source={require("../../assets/paystack.png")}
-                    style={{ width: 92, height: 26, resizeMode: "contain", borderRadius: 6 }}
-                  />
+                <View style={[styles.vaInactiveHeader, { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }]}>
+                  <Landmark size={18} color={colors.primary} />
+                  <Text style={[styles.vaInactiveTitle, { color: colors.text, marginBottom: 0 }]}>
+                    Bank Transfer Account
+                  </Text>
                 </View>
-                <Text style={[styles.vaInactiveTitle, { color: colors.text, marginBottom: 10 }]}>
-                  Bank Transfer Account
-                </Text>
                 {vaError && !isActivateModalOpen ? (
                   <View style={styles.vaErrorBox}>
                     <Text style={styles.vaErrorText}>{vaError}</Text>
@@ -674,7 +688,7 @@ export default function FundWalletScreen() {
             <View style={[styles.securityBadge, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <ShieldCheck size={18} color={colors.success} style={{ marginRight: 8 }} />
               <Text style={[styles.securityText, { color: colors.textSecondary }]}>
-                Processed securely via Paystack Gateway.
+                Processed securely via our payment gateway.
               </Text>
             </View>
 
@@ -688,7 +702,7 @@ export default function FundWalletScreen() {
             {/* Submit Button */}
             <TouchableOpacity
               style={[styles.payBtn, (isLoading || isVerifying) && styles.payBtnDisabled]}
-              onPress={handleInitializePaystack}
+              onPress={handleInitializeCheckout}
               disabled={isLoading || isVerifying}
               activeOpacity={0.88}
             >
@@ -711,7 +725,7 @@ export default function FundWalletScreen() {
           onCancel={alertModal.onCancel}
         />
 
-        {/* Paystack-Titan Account Activation Modal */}
+        {/* Dedicated Account Activation Modal */}
         <Modal
           visible={isActivateModalOpen}
           transparent
@@ -727,11 +741,10 @@ export default function FundWalletScreen() {
             <View style={[styles.modalBox, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <View style={styles.modalHeaderRow}>
                 <View style={styles.modalTitleWrap}>
-                  <Image
-                    source={require("../../assets/paystack.png")}
-                    style={{ width: 85, height: 24, resizeMode: "contain", borderRadius: 6, marginBottom: 6 }}
-                  />
-                  <Text style={[styles.modalTitle, { color: colors.text }]}>Activate Dedicated Account</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <Landmark size={18} color={colors.primary} />
+                    <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 0 }]}>Activate Dedicated Account</Text>
+                  </View>
                   <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
                     Confirm your name and phone number to generate your deposit account.
                   </Text>
@@ -797,7 +810,7 @@ export default function FundWalletScreen() {
               </View>
 
               <Text style={[styles.bvnNotice, { color: colors.textMuted }]}>
-                Transfers to your Paystack-Titan account credit your wallet automatically.
+                Transfers to your dedicated bank account credit your wallet automatically.
               </Text>
 
               <TouchableOpacity
@@ -1168,7 +1181,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  // Dedicated Paystack-Titan Account Card Styles
+  // Dedicated Virtual Account Card Styles
   vaCard: {
     backgroundColor: "#09223B",
     borderRadius: 18,

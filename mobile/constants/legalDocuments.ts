@@ -310,7 +310,7 @@ export const PRIVACY_POLICY_DOC: LegalDocument = {
         "Account & Identity Data: Full legal name, gender, residential address, state, LGA, email address, verifiable phone number, WhatsApp number, encrypted password hash, and profile image.",
         "Statutory Registration Records: National Identification Number (NIN), Bank Verification Number (BVN), Tax Identification Number (TIN), passport photographs, digital specimen signatures, dates of birth, and identity documentation required by statutory bodies (CAC, NIMC, FIRS, EFCC).",
         "Corporate Filing Data: Proposed business names, LLC articles of association, objects of business, director, shareholder, secretary, and Persons with Significant Control (PSC) details.",
-        "Financial & Transactional Logs: Wallet transaction ledgers, Paystack payment references, timestamped debit/credit logs, bank account numbers submitted for payouts, and promo code redemptions. (Raw payment card credentials are tokenized and processed exclusively by PCI-DSS certified payment gateways).",
+        "Financial & Transactional Logs: Wallet transaction ledgers, online payment gateway references, timestamped debit/credit logs, bank account numbers submitted for payouts, and promo code redemptions. (Raw payment card credentials are tokenized and processed exclusively by PCI-DSS certified payment gateways).",
         "Technical & Non-Repudiation Telemetry: Real client IP addresses, browser user-agent signatures, device fingerprints, login timestamps, and statutory consent acceptance timestamps.",
       ],
     },
@@ -343,7 +343,7 @@ export const PRIVACY_POLICY_DOC: LegalDocument = {
       body: "LoraBiz maintains a strict NO DATA SALE POLICY. We never sell, monetize, or rent personal data to advertisers or commercial brokers. Personal data is transmitted only to:",
       bullets: [
         "Statutory & Regulatory Bodies: CAC, NIMC, FIRS, and SCUML/EFCC solely for fulfilling user-requested corporate filings and certifications.",
-        "Licensed Identity & Payment Partners: PCI-DSS certified payment processors (Paystack) and accredited technical identity routing nodes under strict confidentiality and NDPA-compliant data processing addenda.",
+        "Licensed Identity & Payment Partners: PCI-DSS certified payment gateway partners and accredited technical identity routing nodes under strict confidentiality and NDPA-compliant data processing addenda.",
         "Law Enforcement & Judicial Authorities: In accordance with Section 6 of our Terms of Service, where a formal statutory request, court order, or subpoena is received from the EFCC, Nigeria Police Force, DSS, or NDPC in connection with criminal identity theft investigations.",
       ],
     },
