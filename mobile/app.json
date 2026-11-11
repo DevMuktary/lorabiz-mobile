@@ -2,8 +2,21 @@
   "expo": {
     "name": "LoraBiz",
     "slug": "lorabiz",
+    "owner": "quadrox-technology",
     "scheme": "lorabiz",
-    "version": "1.0.4",
+    "version": "1.0.5",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/db448fd2-384d-4ce0-bb91-ce44a008f681",
+      "checkOnLaunch": "ALWAYS",
+      "fallbackToCacheTimeout": 0,
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    },
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -21,7 +34,7 @@
       "userInterfaceStyle": "automatic",
       "supportsTablet": true,
       "bundleIdentifier": "com.lorabiz.com",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "NSCameraUsageDescription": "LoraBiz requires camera access to capture registration documents and passport photographs.",
         "NSFaceIDUsageDescription": "LoraBiz uses Face ID for fast and secure authentication into your wallet and account.",
@@ -30,7 +43,7 @@
     },
     "android": {
       "package": "com.lorabiz.com",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#C82D75",
         "foregroundImage": "./assets/android-icon-foreground.png"
@@ -60,6 +73,7 @@
         }
       ],
       "expo-image",
+      "expo-updates",
       [
         "expo-build-properties",
         {
@@ -74,7 +88,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "9f476dfa-0dbc-442c-bf85-0067d3b8e4d8"
+        "projectId": "db448fd2-384d-4ce0-bb91-ce44a008f681"
       }
     }
   }
