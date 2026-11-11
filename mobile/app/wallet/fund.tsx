@@ -46,7 +46,7 @@ export default function FundWalletScreen() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // KoraPay WebView State
+  // Paystack WebView State
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [isWebViewOpen, setIsWebViewOpen] = useState(false);
@@ -54,7 +54,7 @@ export default function FundWalletScreen() {
   // Verified Payment State (Strictly shown ONLY after backend server confirmation)
   const [verifiedPayment, setVerifiedPayment] = useState<VerifiedPayment | null>(null);
 
-  // Dedicated Moniepoint Virtual Account State
+  // Dedicated Paystack-Titan Virtual Account State
   const [virtualAccount, setVirtualAccount] = useState<{
     accountNumber: string;
     accountName: string;
@@ -65,7 +65,7 @@ export default function FundWalletScreen() {
   const [isCopied, setIsCopied] = useState(false);
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
   const [vaFullName, setVaFullName] = useState("");
-  const [vaBvn, setVaBvn] = useState("");
+  const [vaPhone, setVaPhone] = useState("");
   const [vaSubmitting, setVaSubmitting] = useState(false);
   const [vaError, setVaError] = useState<string | null>(null);
 
@@ -79,13 +79,16 @@ export default function FundWalletScreen() {
         if (res?.userName && !vaFullName) {
           setVaFullName(res.userName);
         }
+        if ((res?.userPhone || user?.phone) && !vaPhone) {
+          setVaPhone(res?.userPhone || user?.phone || "");
+        }
       }
     } catch {
       // silent
     } finally {
       setIsVaLoading(false);
     }
-  }, [vaFullName]);
+  }, [vaFullName, vaPhone, user?.phone]);
 
   function handleCopyAccountNo() {
     if (!virtualAccount?.accountNumber) return;
@@ -98,15 +101,15 @@ export default function FundWalletScreen() {
     Keyboard.dismiss();
     setVaError(null);
 
-    const cleanBvn = vaBvn.trim().replace(/\D/g, "");
-    if (!cleanBvn || cleanBvn.length !== 11) {
-      setVaError("Please enter a valid 11-digit BVN.");
+    const cleanName = vaFullName.trim().replace(/\s+/g, " ");
+    if (cleanName.split(" ").filter(Boolean).length < 2) {
+      setVaError("Please enter your first and last name.");
       return;
     }
 
-    const cleanName = vaFullName.trim();
-    if (cleanName.split(/\s+/).length < 2) {
-      setVaError("Please enter your first and last name as registered on your BVN.");
+    const phoneDigits = vaPhone.trim().replace(/\D/g, "");
+    if (!phoneDigits || phoneDigits.length < 10) {
+      setVaError("Please enter a valid 11-digit Nigerian phone number.");
       return;
     }
 
@@ -114,13 +117,12 @@ export default function FundWalletScreen() {
     try {
       const res = await api.post("/api/user/virtual-account", {
         fullName: cleanName,
-        bvn: cleanBvn,
+        phone: vaPhone.trim(),
       });
 
       if (res?.success && res.account) {
         setVirtualAccount(res.account);
         setIsActivateModalOpen(false);
-        setVaBvn("");
       } else {
         setVaError(res?.message || "Failed to generate account. Please verify your details.");
       }
@@ -157,7 +159,7 @@ export default function FundWalletScreen() {
 
   const currentBalance = wallet?.balance ?? user?.wallet?.balance ?? 0;
 
-  async function handleInitializeKoraPay() {
+  async function handleInitializePaystack() {
     Keyboard.dismiss();
     setErrorMsg(null);
     const numAmount = Number(amount);
@@ -173,6 +175,7 @@ export default function FundWalletScreen() {
         service: "wallet_funding",
         amount: numAmount,
         paymentMethod: "ONLINE",
+        gateway: "PAYSTACK",
       });
 
       if (res?.success && res.authorizationUrl) {
@@ -255,18 +258,25 @@ export default function FundWalletScreen() {
 
   function handleNavigationStateChange(navState: any) {
     const { url } = navState;
+    if (!url || typeof url !== "string") return;
 
-    // Detect if KoraPay is redirecting to the return/callback URL
-    const isCompleted =
-      url.includes("funded=true") ||
-      url.includes("/dashboard") ||
-      url.includes("status=success") ||
-      url.includes("success=true");
+    const isPaystackHost = url.includes("checkout.paystack.com");
 
+    // Detect if Paystack is redirecting back to the return/callback URL
     const isCancelled =
       url.includes("status=failed") ||
       url.includes("status=cancelled") ||
-      url.includes("cancel=true");
+      url.includes("cancel=true") ||
+      url.includes("cancelled=true");
+
+    const isCompleted =
+      !isPaystackHost &&
+      !isCancelled &&
+      (url.includes("funded=true") ||
+        url.includes("/dashboard") ||
+        url.includes("trxref=") ||
+        url.includes("status=success") ||
+        url.includes("success=true"));
 
     if (isCancelled) {
       setIsWebViewOpen(false);
@@ -295,7 +305,7 @@ export default function FundWalletScreen() {
         visible: true,
         type: "confirm",
         title: "Close Checkout?",
-        message: "Have you already completed the payment on the KoraPay gateway?",
+        message: "Have you already completed the payment on Paystack?",
         confirmText: "Yes, Verify Payment",
         cancelText: "No, Cancel",
         onConfirm: () => {
@@ -317,13 +327,13 @@ export default function FundWalletScreen() {
   }
 
   // =========================================================================
-  // VIEW 1: KoraPay Inline WebView
+  // VIEW 1: Paystack Inline WebView
   // =========================================================================
   if (isWebViewOpen && checkoutUrl) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={[styles.webViewHeader, { paddingTop: Math.max(insets.top, 16) + 4 }]}>
-          <Text style={styles.webViewTitle}>KoraPay Secure Checkout</Text>
+          <Text style={styles.webViewTitle}>Paystack Secure Checkout</Text>
           <TouchableOpacity
             onPress={handleCloseWebView}
             style={styles.closeWebViewBtn}
@@ -487,15 +497,15 @@ export default function FundWalletScreen() {
               </Text>
             </View>
 
-            {/* Moniepoint Dedicated Virtual Account */}
+            {/* Paystack-Titan Dedicated Virtual Account */}
             {virtualAccount ? (
               <View style={styles.vaCard}>
                 <View style={styles.vaHeaderRow}>
                   <Image
-                    source={require("../../assets/moniepoint.png")}
-                    style={{ width: 95, height: 26, resizeMode: "contain" }}
+                    source={require("../../assets/paystack.png")}
+                    style={{ width: 92, height: 26, resizeMode: "contain", borderRadius: 6 }}
                   />
-                  <Text style={styles.vaBankName}>Bank Transfer</Text>
+                  <Text style={styles.vaBankName}>{virtualAccount.bankName || "Paystack-Titan"}</Text>
                 </View>
 
                 <View style={styles.vaAccRow}>
@@ -531,15 +541,15 @@ export default function FundWalletScreen() {
               <View style={[styles.vaInactiveCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
                 <View style={styles.vaInactiveHeader}>
                   <Image
-                    source={require("../../assets/moniepoint.png")}
-                    style={{ width: 95, height: 26, resizeMode: "contain" }}
+                    source={require("../../assets/paystack.png")}
+                    style={{ width: 92, height: 26, resizeMode: "contain", borderRadius: 6 }}
                   />
                 </View>
                 <Text style={[styles.vaInactiveTitle, { color: colors.text }]}>
                   Dedicated Bank Transfer Account
                 </Text>
                 <Text style={[styles.vaInactiveSub, { color: colors.textSecondary }]}>
-                  Generate a personal Moniepoint account number to fund your wallet via bank transfer.
+                  Generate a personal Paystack-Titan account number to fund your wallet via bank transfer.
                 </Text>
                 <TouchableOpacity
                   style={styles.vaActivateBtn}
@@ -630,7 +640,7 @@ export default function FundWalletScreen() {
             <View style={[styles.securityBadge, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder }]}>
               <ShieldCheck size={18} color={colors.success} style={{ marginRight: 8 }} />
               <Text style={[styles.securityText, { color: colors.textSecondary }]}>
-                Processed securely via KoraPay Gateway.
+                Processed securely via Paystack Gateway.
               </Text>
             </View>
 
@@ -644,7 +654,7 @@ export default function FundWalletScreen() {
             {/* Submit Button */}
             <TouchableOpacity
               style={[styles.payBtn, (isLoading || isVerifying) && styles.payBtnDisabled]}
-              onPress={handleInitializeKoraPay}
+              onPress={handleInitializePaystack}
               disabled={isLoading || isVerifying}
               activeOpacity={0.88}
             >
@@ -667,7 +677,7 @@ export default function FundWalletScreen() {
           onCancel={alertModal.onCancel}
         />
 
-        {/* Moniepoint Account Activation Modal */}
+        {/* Paystack-Titan Account Activation Modal */}
         <Modal
           visible={isActivateModalOpen}
           transparent
@@ -684,12 +694,12 @@ export default function FundWalletScreen() {
               <View style={styles.modalHeaderRow}>
                 <View style={styles.modalTitleWrap}>
                   <Image
-                    source={require("../../assets/moniepoint.png")}
-                    style={{ width: 85, height: 24, resizeMode: "contain", marginBottom: 6 }}
+                    source={require("../../assets/paystack.png")}
+                    style={{ width: 85, height: 24, resizeMode: "contain", borderRadius: 6, marginBottom: 6 }}
                   />
                   <Text style={[styles.modalTitle, { color: colors.text }]}>Activate Dedicated Account</Text>
                   <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                    Enter your name and BVN as registered with your bank.
+                    Confirm your name and phone number to generate your deposit account.
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -711,7 +721,7 @@ export default function FundWalletScreen() {
 
               <View style={styles.fieldWrap}>
                 <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-                  FULL LEGAL NAME (AS ON BVN)
+                  FULL NAME (FIRST & LAST NAME)
                 </Text>
                 <TextInput
                   style={[
@@ -732,7 +742,7 @@ export default function FundWalletScreen() {
 
               <View style={styles.fieldWrap}>
                 <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-                  BANK VERIFICATION NUMBER (BVN)
+                  PHONE NUMBER
                 </Text>
                 <TextInput
                   style={[
@@ -743,27 +753,33 @@ export default function FundWalletScreen() {
                       backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
                     },
                   ]}
-                  value={vaBvn}
-                  onChangeText={(t) => setVaBvn(t.replace(/\D/g, ""))}
-                  placeholder="11-digit BVN"
+                  value={vaPhone}
+                  onChangeText={setVaPhone}
+                  placeholder="e.g. 08012345678"
                   placeholderTextColor={colors.textMuted}
-                  keyboardType="number-pad"
-                  maxLength={11}
+                  keyboardType="phone-pad"
                   editable={!vaSubmitting}
                 />
               </View>
 
               <Text style={[styles.bvnNotice, { color: colors.textMuted }]}>
-                Your BVN is required strictly to verify your identity with the banking network.
+                Transfers to your Paystack-Titan account credit your wallet automatically.
               </Text>
 
               <TouchableOpacity
                 style={[
                   styles.vaSubmitBtn,
-                  (vaSubmitting || vaBvn.replace(/\D/g, "").length !== 11 || !vaFullName.trim()) && styles.btnDisabled,
+                  (vaSubmitting ||
+                    vaPhone.replace(/\D/g, "").length < 10 ||
+                    vaFullName.trim().split(/\s+/).filter(Boolean).length < 2) &&
+                    styles.btnDisabled,
                 ]}
                 onPress={handleActivateAccount}
-                disabled={vaSubmitting || vaBvn.replace(/\D/g, "").length !== 11 || !vaFullName.trim()}
+                disabled={
+                  vaSubmitting ||
+                  vaPhone.replace(/\D/g, "").length < 10 ||
+                  vaFullName.trim().split(/\s+/).filter(Boolean).length < 2
+                }
                 activeOpacity={0.8}
               >
                 {vaSubmitting ? (
@@ -1118,13 +1134,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  // Dedicated Moniepoint Account Card Styles
+  // Dedicated Paystack-Titan Account Card Styles
   vaCard: {
-    backgroundColor: "#003399",
+    backgroundColor: "#09223B",
     borderRadius: 18,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#003399",
+    shadowColor: "#09223B",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -1149,7 +1165,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   vaBankName: {
-    color: "#93C5FD",
+    color: "#38BDF8",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -1222,7 +1238,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#003399",
+    backgroundColor: "#09223B",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -1330,7 +1346,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#003399",
+    backgroundColor: "#09223B",
     height: 46,
     borderRadius: 12,
   },

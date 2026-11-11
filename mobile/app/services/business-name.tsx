@@ -756,6 +756,7 @@ export default function BusinessNameScreen() {
         registrationId: draftId,
         paymentMethod: method,
         service: "business",
+        ...(method === "ONLINE" ? { gateway: "PAYSTACK" } : {}),
       });
 
       if (!checkoutRes?.success) {
