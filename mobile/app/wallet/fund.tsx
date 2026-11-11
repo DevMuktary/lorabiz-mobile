@@ -76,11 +76,12 @@ export default function FundWalletScreen() {
         setVirtualAccount(res.account);
       } else {
         setVirtualAccount(null);
-        if (res?.userName && !vaFullName) {
-          setVaFullName(res.userName);
+        if (res?.userName) {
+          setVaFullName((prev) => prev || res.userName);
         }
-        if ((res?.userPhone || user?.phone) && !vaPhone) {
-          setVaPhone(res?.userPhone || user?.phone || "");
+        const fallbackPhone = res?.userPhone || user?.phone || "";
+        if (fallbackPhone) {
+          setVaPhone((prev) => prev || fallbackPhone);
         }
       }
     } catch {
@@ -88,7 +89,7 @@ export default function FundWalletScreen() {
     } finally {
       setIsVaLoading(false);
     }
-  }, [vaFullName, vaPhone, user?.phone]);
+  }, [user?.phone]);
 
   function handleCopyAccountNo() {
     if (!virtualAccount?.accountNumber) return;
@@ -97,36 +98,53 @@ export default function FundWalletScreen() {
     setTimeout(() => setIsCopied(false), 2000);
   }
 
-  async function handleActivateAccount() {
+  async function handleActivateAccount(useModalFields = false) {
     Keyboard.dismiss();
     setVaError(null);
 
-    const cleanName = vaFullName.trim().replace(/\s+/g, " ");
-    if (cleanName.split(" ").filter(Boolean).length < 2) {
-      setVaError("Please enter your first and last name.");
-      return;
-    }
+    let payload: Record<string, string> = {};
+    if (useModalFields) {
+      const cleanName = vaFullName.trim().replace(/\s+/g, " ");
+      if (cleanName.split(" ").filter(Boolean).length < 2) {
+        setVaError("Please enter your first and last name.");
+        return;
+      }
 
-    const phoneDigits = vaPhone.trim().replace(/\D/g, "");
-    if (!phoneDigits || phoneDigits.length < 10) {
-      setVaError("Please enter a valid 11-digit Nigerian phone number.");
-      return;
+      const phoneDigits = vaPhone.trim().replace(/\D/g, "");
+      if (!phoneDigits || phoneDigits.length < 10) {
+        setVaError("Please enter a valid 11-digit Nigerian phone number.");
+        return;
+      }
+
+      payload = {
+        fullName: cleanName,
+        phone: vaPhone.trim(),
+      };
     }
 
     setVaSubmitting(true);
     try {
-      const res = await api.post("/api/user/virtual-account", {
-        fullName: cleanName,
-        phone: vaPhone.trim(),
-      });
+      const res = await api.post("/api/user/virtual-account", payload);
 
       if (res?.success && res.account) {
         setVirtualAccount(res.account);
         setIsActivateModalOpen(false);
-      } else {
-        setVaError(res?.message || "Failed to generate account. Please verify your details.");
+        return;
       }
+
+      if (res?.needsProfileFields) {
+        setVaError(res?.message || null);
+        setIsActivateModalOpen(true);
+        return;
+      }
+
+      setVaError(res?.message || "Failed to generate account. Please try again.");
     } catch (err: any) {
+      if (err?.data?.needsProfileFields) {
+        setVaError(err?.data?.message || err?.message || null);
+        setIsActivateModalOpen(true);
+        return;
+      }
       setVaError(err?.message || "Network error. Please try again.");
     } finally {
       setVaSubmitting(false);
@@ -498,7 +516,14 @@ export default function FundWalletScreen() {
             </View>
 
             {/* Paystack-Titan Dedicated Virtual Account */}
-            {virtualAccount ? (
+            {isVaLoading && !virtualAccount ? (
+              <View style={[styles.vaInactiveCard, { backgroundColor: colors.surface, borderColor: colors.surfaceBorder, flexDirection: "row", alignItems: "center", gap: 10 }]}>
+                <ActivityIndicator size="small" color="#0B63CE" />
+                <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: "600" }}>
+                  Loading bank transfer account...
+                </Text>
+              </View>
+            ) : virtualAccount ? (
               <View style={styles.vaCard}>
                 <View style={styles.vaHeaderRow}>
                   <Image
@@ -545,22 +570,31 @@ export default function FundWalletScreen() {
                     style={{ width: 92, height: 26, resizeMode: "contain", borderRadius: 6 }}
                   />
                 </View>
-                <Text style={[styles.vaInactiveTitle, { color: colors.text }]}>
-                  Dedicated Bank Transfer Account
+                <Text style={[styles.vaInactiveTitle, { color: colors.text, marginBottom: 10 }]}>
+                  Bank Transfer Account
                 </Text>
-                <Text style={[styles.vaInactiveSub, { color: colors.textSecondary }]}>
-                  Generate a personal Paystack-Titan account number to fund your wallet via bank transfer.
-                </Text>
+                {vaError && !isActivateModalOpen ? (
+                  <View style={styles.vaErrorBox}>
+                    <Text style={styles.vaErrorText}>{vaError}</Text>
+                  </View>
+                ) : null}
                 <TouchableOpacity
-                  style={styles.vaActivateBtn}
-                  onPress={() => {
-                    setVaError(null);
-                    setIsActivateModalOpen(true);
-                  }}
+                  style={[styles.vaActivateBtn, vaSubmitting && styles.btnDisabled]}
+                  onPress={() => handleActivateAccount(false)}
+                  disabled={vaSubmitting}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.vaActivateBtnText}>Activate Account</Text>
-                  <ArrowRight size={15} color="#FFFFFF" />
+                  {vaSubmitting ? (
+                    <>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text style={styles.vaActivateBtnText}>Activating...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.vaActivateBtnText}>Activate Account</Text>
+                      <ArrowRight size={15} color="#FFFFFF" />
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
             )}
@@ -774,7 +808,7 @@ export default function FundWalletScreen() {
                     vaFullName.trim().split(/\s+/).filter(Boolean).length < 2) &&
                     styles.btnDisabled,
                 ]}
-                onPress={handleActivateAccount}
+                onPress={() => handleActivateAccount(true)}
                 disabled={
                   vaSubmitting ||
                   vaPhone.replace(/\D/g, "").length < 10 ||
