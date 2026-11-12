@@ -61,7 +61,7 @@ export async function apiClient<T = any>(
     endpoint.includes("/scuml/") ||
     endpoint.includes("/tax-id/");
 
-  const effectiveTimeout = options.timeoutMs ?? (isVerificationRoute ? 55000 : 15000);
+  const effectiveTimeout = options.timeoutMs ?? (isVerificationRoute ? 60000 : 15000);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), effectiveTimeout);
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -87,6 +87,8 @@ export default function BvnSlipScreen() {
   const [ndpaConsent, setNdpaConsent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isSubmittingRef = useRef(false);
+  const attemptKeyRef = useRef<{ signature: string; key: string } | null>(null);
 
   // Specimen Preview Lightbox
   const [lightbox, setLightbox] = useState<{
@@ -178,25 +180,30 @@ export default function BvnSlipScreen() {
     !isStatusLoading;
 
   const handleGenerate = async () => {
-    if (isGenerating) return;
+    if (isSubmittingRef.current || isGenerating) return;
+    isSubmittingRef.current = true;
     setErrorMessage(null);
 
     if (!isInputValid) {
+      isSubmittingRef.current = false;
       setErrorMessage("Please enter a valid 11-digit Bank Verification Number (BVN).");
       return;
     }
 
     if (!ndpaConsent) {
+      isSubmittingRef.current = false;
       setErrorMessage("Please accept the NDPA 2023 statutory consent to proceed.");
       return;
     }
 
     if (!isAvailable || typeof currentPrice !== "number" || currentPrice <= 0) {
+      isSubmittingRef.current = false;
       setErrorMessage(`${selectedOption.label} is temporarily unavailable.`);
       return;
     }
 
     if (walletBalance < currentPrice) {
+      isSubmittingRef.current = false;
       Keyboard.dismiss();
       setAlertConfig({
         visible: true,
@@ -217,22 +224,32 @@ export default function BvnSlipScreen() {
     Keyboard.dismiss();
     setIsGenerating(true);
 
+    const attemptSignature = `${cleanBvn}:${selectedFormatId}`;
+    if (!attemptKeyRef.current || attemptKeyRef.current.signature !== attemptSignature) {
+      attemptKeyRef.current = {
+        signature: attemptSignature,
+        key: `bvn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+      };
+    }
+    const idempotencyKey = attemptKeyRef.current.key;
+
     try {
       const res = await api.post("/api/bvn/verify", {
         bvn: cleanBvn,
         slipType: selectedFormatId,
+        idempotencyKey,
         attestationsAccepted: true,
         attestationAccepted: true,
         consentAccepted: true,
       });
 
-      setIsGenerating(false);
-
       if (!res?.success || (!res?.pdfBase64 && !res?.pdfUrl)) {
+        attemptKeyRef.current = null;
         setErrorMessage(res?.message || "Failed to generate BVN slip. Please verify the BVN and try again.");
         return;
       }
 
+      attemptKeyRef.current = null;
       const parsedDemo = parseDemographics(res.userData || res, res.fullName);
 
       setResultModal({
@@ -249,8 +266,13 @@ export default function BvnSlipScreen() {
       refreshProfile();
       refetchHistory();
     } catch (err: any) {
-      setIsGenerating(false);
+      if (err?.status && err.status >= 400 && err.status < 500 && err.status !== 408 && err.status !== 429) {
+        attemptKeyRef.current = null;
+      }
       setErrorMessage(err.message || "Unable to complete request. Please check your network connection.");
+    } finally {
+      isSubmittingRef.current = false;
+      setIsGenerating(false);
     }
   };
 

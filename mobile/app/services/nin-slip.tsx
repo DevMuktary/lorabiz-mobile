@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -130,6 +130,8 @@ export default function NinSlipScreen() {
   const [ndpaConsent, setNdpaConsent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isSubmittingRef = useRef(false);
+  const attemptKeyRef = useRef<{ signature: string; key: string } | null>(null);
 
   // Specimen Lightbox Modal State
   const [lightbox, setLightbox] = useState<{
@@ -250,11 +252,13 @@ export default function NinSlipScreen() {
     currentPrice > 0;
 
   const handleGenerate = async () => {
-    if (isGenerating) return;
+    if (isSubmittingRef.current || isGenerating) return;
+    isSubmittingRef.current = true;
     Keyboard.dismiss();
     setErrorMessage(null);
 
     if (!isInputValid) {
+      isSubmittingRef.current = false;
       setErrorMessage(
         searchMode === "NIN"
           ? "Please enter a valid 11-digit NIN."
@@ -264,17 +268,20 @@ export default function NinSlipScreen() {
     }
 
     if (!ndpaConsent) {
+      isSubmittingRef.current = false;
       setErrorMessage("Please accept the statutory NDPA compliance attestation.");
       return;
     }
 
     if (!isSelectedAvailable || typeof currentPrice !== "number" || currentPrice <= 0) {
+      isSubmittingRef.current = false;
       setErrorMessage(`${selectedOption.label} is temporarily unavailable.`);
       return;
     }
 
     const walletBalance = wallet?.balance ?? user?.wallet?.balance ?? 0;
     if (walletBalance < currentPrice) {
+      isSubmittingRef.current = false;
       setAlertConfig({
         visible: true,
         type: "warning",
@@ -294,19 +301,29 @@ export default function NinSlipScreen() {
     }
 
     setIsGenerating(true);
+
+    const attemptSignature = `${searchMode}:${cleanInput}:${selectedOption.id}`;
+    if (!attemptKeyRef.current || attemptKeyRef.current.signature !== attemptSignature) {
+      attemptKeyRef.current = {
+        signature: attemptSignature,
+        key: `nin_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+      };
+    }
+    const idempotencyKey = attemptKeyRef.current.key;
+
     try {
       const res = await api.post("/api/nin/slips", {
         identifier: cleanInput,
         searchType: searchMode,
         slipType: selectedOption.id,
+        idempotencyKey,
         attestationsAccepted: true,
         attestationAccepted: true,
         consentAccepted: true,
       });
 
-      setIsGenerating(false);
-
       if (!res?.success || (!res?.pdfBase64 && !res?.pdfUrl)) {
+        attemptKeyRef.current = null;
         setErrorMessage(
           res?.message ||
             "Failed to generate NIN slip. Please check your details and try again."
@@ -314,6 +331,7 @@ export default function NinSlipScreen() {
         return;
       }
 
+      attemptKeyRef.current = null;
       const demo = parseDemographics(res.userData || res, res.fullName);
       const fullName = demo.fullName || res.fullName || "Verified Citizen";
       const dob = demo.dob || res.dob || "N/A";
@@ -338,10 +356,15 @@ export default function NinSlipScreen() {
       refreshProfile();
       refetchHistory();
     } catch (err: any) {
-      setIsGenerating(false);
+      if (err?.status && err.status >= 400 && err.status < 500 && err.status !== 408 && err.status !== 429) {
+        attemptKeyRef.current = null;
+      }
       setErrorMessage(
         err.message || "Network error. Please check your internet connection."
       );
+    } finally {
+      isSubmittingRef.current = false;
+      setIsGenerating(false);
     }
   };
 
