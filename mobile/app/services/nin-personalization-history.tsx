@@ -44,12 +44,13 @@ import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
+import { sanitizeMobileMessage } from "../../lib/sanitizer";
 
 export interface PersonalizationTicket {
   id: string;
   trackingId: string;
   reference: string;
-  provider: string;
+  provider?: string;
   externalTxId?: string | null;
   status: "PROCESSING" | "COMPLETED" | "FAILED";
   resolvedNin?: string | null;
@@ -207,7 +208,10 @@ export default function NinPersonalizationHistoryScreen() {
             visible: true,
             type: "error",
             title: "Request Failed",
-            message: updated.failureReason || "NIMC identity gateway could not personalize this record.",
+            message: sanitizeMobileMessage(
+              updated.failureReason,
+              "NIMC identity gateway could not personalize this record."
+            ),
             confirmText: "OK",
             onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
           });
@@ -374,7 +378,7 @@ export default function NinPersonalizationHistoryScreen() {
         {isFailed && item.failureReason ? (
           <View style={styles.failureSnippetBox}>
             <Text style={styles.failureSnippetText} numberOfLines={2}>
-              {item.failureReason}
+              {sanitizeMobileMessage(item.failureReason, "Request could not be completed.")}
             </Text>
           </View>
         ) : null}
@@ -744,7 +748,10 @@ export default function NinPersonalizationHistoryScreen() {
                       <Text style={styles.failureDetailTitle}>Personalization Unsuccessful</Text>
                     </View>
                     <Text style={styles.failureDetailReason}>
-                      {activeModalTicket.failureReason || "The NIMC gateway rejected this tracking ID."}
+                      {sanitizeMobileMessage(
+                        activeModalTicket.failureReason,
+                        "The NIMC gateway rejected this tracking ID."
+                      )}
                     </Text>
                     <Text style={styles.failureDetailNotice}>
                       Fulfillment fees for rejected requests are non-refundable. Please contact support if you need further clarification.

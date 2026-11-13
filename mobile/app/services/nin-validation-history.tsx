@@ -33,6 +33,7 @@ import { api } from "../../lib/api";
 import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import { sanitizeMobileMessage, sanitizeMobileNote } from "../../lib/sanitizer";
 
 export interface ValidationTicket {
   id: string;
@@ -172,8 +173,10 @@ export default function NinValidationHistoryScreen() {
           status: res.ticket.status,
           amountCharged: Number(res.ticket.amountCharged),
           transactionRef: res.ticket.transactionRef,
-          failureReason: res.ticket.failureReason,
-          adminNotes: res.ticket.adminNotes,
+          failureReason: res.ticket.failureReason
+            ? sanitizeMobileMessage(res.ticket.failureReason, "Validation failed.")
+            : res.ticket.failureReason,
+          adminNotes: sanitizeMobileNote(res.ticket.adminNotes),
           completedAt: res.ticket.completedAt,
           createdAt: res.ticket.createdAt,
         };
@@ -404,7 +407,7 @@ export default function NinValidationHistoryScreen() {
           <View style={styles.cardFailureBox}>
             <AlertCircle size={13} color="#DC2626" style={{ marginRight: 6, marginTop: 1 }} />
             <Text style={styles.cardFailureText} numberOfLines={2}>
-              {item.failureReason}
+              {sanitizeMobileMessage(item.failureReason, "Validation failed.")}
             </Text>
           </View>
         )}
@@ -770,18 +773,22 @@ export default function NinValidationHistoryScreen() {
                       <AlertCircle size={15} color="#DC2626" style={{ marginRight: 6 }} />
                       <Text style={styles.modalFailureTitle}>Rejection Reason</Text>
                     </View>
-                    <Text style={styles.modalFailureBody}>{selectedTicket.failureReason}</Text>
+                    <Text style={styles.modalFailureBody}>
+                      {sanitizeMobileMessage(selectedTicket.failureReason, "Validation failed.")}
+                    </Text>
                   </View>
                 )}
 
-                {/* Admin / Provider Notes if present */}
-                {selectedTicket.adminNotes && (
+                {/* Processing Notes if present */}
+                {sanitizeMobileNote(selectedTicket.adminNotes) && (
                   <View style={styles.modalNotesCard}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
                       <ShieldCheck size={15} color="#0284C7" style={{ marginRight: 6 }} />
-                      <Text style={styles.modalNotesTitle}>Verification Provider Notes</Text>
+                      <Text style={styles.modalNotesTitle}>Processing Notes</Text>
                     </View>
-                    <Text style={styles.modalNotesBody}>{selectedTicket.adminNotes}</Text>
+                    <Text style={styles.modalNotesBody}>
+                      {sanitizeMobileNote(selectedTicket.adminNotes)}
+                    </Text>
                   </View>
                 )}
 

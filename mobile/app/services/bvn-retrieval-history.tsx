@@ -39,6 +39,7 @@ import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
+import { sanitizeMobileNote } from "../../lib/sanitizer";
 
 export interface BvnRetrievalRecord {
   id: string;
@@ -630,11 +631,13 @@ export default function BvnRetrievalHistoryScreen() {
                   </View>
                 </View>
 
-                {/* Admin Notes if any */}
-                {activeModalRecord.adminNotes ? (
+                {/* Processing Notes if any */}
+                {sanitizeMobileNote(activeModalRecord.adminNotes) ? (
                   <View style={styles.adminNotesBox}>
-                    <Text style={styles.adminNotesLabel}>OPERATOR NOTES</Text>
-                    <Text style={styles.adminNotesText}>{activeModalRecord.adminNotes}</Text>
+                    <Text style={styles.adminNotesLabel}>PROCESSING NOTES</Text>
+                    <Text style={styles.adminNotesText}>
+                      {sanitizeMobileNote(activeModalRecord.adminNotes)}
+                    </Text>
                   </View>
                 ) : null}
               </ScrollView>

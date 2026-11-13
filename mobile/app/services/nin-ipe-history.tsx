@@ -39,12 +39,13 @@ import {
 import { api } from "../../lib/api";
 import { useTheme } from "../../context/ThemeContext";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
+import { sanitizeMobileMessage, sanitizeMobileNote } from "../../lib/sanitizer";
 
 export interface IpeTicket {
   id: string;
   trackingId: string;
   reference: string;
-  provider: string;
+  provider?: string;
   externalReqId?: string | null;
   status: "PROCESSING" | "COMPLETED" | "FAILED";
   resolvedNin?: string | null;
@@ -178,7 +179,7 @@ export default function NinIpeHistoryScreen() {
             visible: true,
             type: "error",
             title: "Clearance Failed",
-            message: `${updated.failureReason || updated.apiMessage || "NIMC clearance could not be completed."}\n\nA full refund has been credited to your wallet.`,
+            message: `${sanitizeMobileMessage(updated.failureReason || updated.apiMessage, "NIMC clearance could not be completed.")}\n\nA full refund has been credited to your wallet.`,
             confirmText: "OK",
             onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
           });
@@ -354,7 +355,10 @@ export default function NinIpeHistoryScreen() {
           {isFailed && (
             <View style={styles.failedRow}>
               <Text style={styles.failedSnippet} numberOfLines={1}>
-                {item.failureReason || item.apiMessage || "Clearance rejected by NIMC."}
+                {sanitizeMobileMessage(
+                  item.failureReason || item.apiMessage,
+                  "Clearance rejected by NIMC."
+                )}
               </Text>
               <View style={styles.refundPill}>
                 <Sparkles size={10} color="#059669" style={{ marginRight: 3 }} />
@@ -534,12 +538,12 @@ export default function NinIpeHistoryScreen() {
           activeModalTicket.apiResponse?.newTrackingId ||
           null;
 
-        const modalMessage =
-          activeModalTicket.apiMessage ||
-          activeModalTicket.apiResponse?.message ||
-          (activeModalTicket.status === "COMPLETED"
+        const modalMessage = sanitizeMobileMessage(
+          activeModalTicket.apiMessage || activeModalTicket.apiResponse?.message,
+          activeModalTicket.status === "COMPLETED"
             ? "IPE Clearance completed successfully. Your NIN has been released."
-            : null);
+            : ""
+        ) || null;
 
         return (
           <Modal
@@ -763,9 +767,10 @@ export default function NinIpeHistoryScreen() {
                         <Text style={styles.failureDetailTitle}>Clearance Rejected</Text>
                       </View>
                       <Text style={styles.failureDetailReason}>
-                        {activeModalTicket.failureReason ||
-                          activeModalTicket.apiMessage ||
-                          "Your IPE clearance request has failed. Please contact support for more details."}
+                        {sanitizeMobileMessage(
+                          activeModalTicket.failureReason || activeModalTicket.apiMessage,
+                          "Your IPE clearance request has failed. Please contact support for more details."
+                        )}
                       </Text>
 
                       {/* Green Refund Reassurance Banner */}
@@ -892,13 +897,13 @@ export default function NinIpeHistoryScreen() {
                         </>
                       )}
 
-                      {activeModalTicket.adminNotes && (
+                      {sanitizeMobileNote(activeModalTicket.adminNotes) && (
                         <>
                           <View style={styles.techDivider} />
                           <View style={styles.techRow}>
-                            <Text style={styles.techLabel}>Operational Remarks:</Text>
+                            <Text style={styles.techLabel}>Processing Notes:</Text>
                             <Text style={[styles.techValue, { color: colors.text, fontWeight: "600" }]}>
-                              {activeModalTicket.adminNotes}
+                              {sanitizeMobileNote(activeModalTicket.adminNotes)}
                             </Text>
                           </View>
                         </>

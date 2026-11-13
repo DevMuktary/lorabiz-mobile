@@ -38,6 +38,7 @@ import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
+import { sanitizeMobileNote } from "../../lib/sanitizer";
 
 export interface ModificationRecord {
   id: string;
@@ -446,11 +447,11 @@ export default function NinModificationHistoryScreen() {
                       <Text style={styles.detailValue}>{formatDate(item.createdAt)}</Text>
                     </View>
 
-                    {item.adminNotes ? (
+                    {sanitizeMobileNote(item.adminNotes) ? (
                       <View style={styles.notesBox}>
                         <Text style={styles.notesLabel}>NIMC Officer Note:</Text>
                         <Text style={styles.notesText} numberOfLines={2}>
-                          {item.adminNotes}
+                          {sanitizeMobileNote(item.adminNotes)}
                         </Text>
                       </View>
                     ) : null}
@@ -631,10 +632,12 @@ export default function NinModificationHistoryScreen() {
                   </View>
                 </View>
 
-                {selectedRecord.adminNotes ? (
+                {sanitizeMobileNote(selectedRecord.adminNotes) ? (
                   <View style={styles.modalNoteCard}>
-                    <Text style={styles.modalNoteCardTitle}>Admin Review Notes</Text>
-                    <Text style={styles.modalNoteCardText}>{selectedRecord.adminNotes}</Text>
+                    <Text style={styles.modalNoteCardTitle}>Processing Notes</Text>
+                    <Text style={styles.modalNoteCardText}>
+                      {sanitizeMobileNote(selectedRecord.adminNotes)}
+                    </Text>
                   </View>
                 ) : null}
 

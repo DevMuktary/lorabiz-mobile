@@ -44,6 +44,7 @@ import { useTheme } from "../../context/ThemeContext";
 import BrandLoader from "../../components/BrandLoader";
 import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import { downloadAndSharePdf } from "../../lib/pdf";
+import { sanitizeMobileNote } from "../../lib/sanitizer";
 
 export interface BvnModificationRecord {
   id: string;
@@ -557,11 +558,11 @@ export default function BvnModificationHistoryScreen() {
                       </Text>
                     </View>
 
-                    {item.adminNotes ? (
+                    {sanitizeMobileNote(item.adminNotes) ? (
                       <View style={styles.notesBox}>
                         <Text style={styles.notesLabel}>Verification Note:</Text>
                         <Text style={styles.notesText} numberOfLines={2}>
-                          {item.adminNotes}
+                          {sanitizeMobileNote(item.adminNotes)}
                         </Text>
                       </View>
                     ) : null}
@@ -901,11 +902,13 @@ export default function BvnModificationHistoryScreen() {
                   )}
                 </View>
 
-                {/* Admin Notes */}
-                {selectedRecord.adminNotes ? (
+                {/* Processing Notes */}
+                {sanitizeMobileNote(selectedRecord.adminNotes) ? (
                   <View style={styles.modalNoteCard}>
-                    <Text style={styles.modalNoteCardTitle}>Admin Review Notes</Text>
-                    <Text style={styles.modalNoteCardText}>{selectedRecord.adminNotes}</Text>
+                    <Text style={styles.modalNoteCardTitle}>Processing Notes</Text>
+                    <Text style={styles.modalNoteCardText}>
+                      {sanitizeMobileNote(selectedRecord.adminNotes)}
+                    </Text>
                   </View>
                 ) : null}
 
