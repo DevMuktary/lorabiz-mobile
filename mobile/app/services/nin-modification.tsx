@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Image,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -33,6 +34,10 @@ import {
   Wallet,
   X,
   Info,
+  Camera,
+  Image as ImageIcon,
+  Trash2,
+  Upload,
 } from "lucide-react-native";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -44,6 +49,8 @@ import CustomAlertModal, { AlertType } from "../../components/CustomAlertModal";
 import SearchablePickerModal from "../../components/SearchablePickerModal";
 import ServiceTvTicker from "../../components/ServiceTvTicker";
 import { NIGERIAN_STATES, getLgasForState } from "../../constants/nigeria-data";
+import * as ImagePicker from "expo-image-picker";
+import { uploadFileToServer } from "../../lib/upload";
 
 export type ModificationType =
   | "CHANGE_OF_NAME"
@@ -127,6 +134,12 @@ export default function NinModificationScreen() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [legalFullName, setLegalFullName] = useState("");
   const [isConsentSubmitting, setIsConsentSubmitting] = useState(false);
+
+  // Applicant Photograph State
+  const [passportUrl, setPassportUrl] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isPhotoPickerOpen, setIsPhotoPickerOpen] = useState(false);
 
   // Review & Confirmation Modal
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -215,6 +228,10 @@ export default function NinModificationScreen() {
       return false;
     }
 
+    if (!passportUrl || isUploadingPhoto) {
+      return false;
+    }
+
     if (selectedType === "CHANGE_OF_NAME") {
       return (
         isValidCurrentPhone &&
@@ -246,6 +263,8 @@ export default function NinModificationScreen() {
     isValidNin,
     isTypeActive,
     currentPrice,
+    passportUrl,
+    isUploadingPhoto,
     isValidCurrentPhone,
     newFirstName,
     newLastName,
@@ -257,6 +276,94 @@ export default function NinModificationScreen() {
   ]);
 
   const canProceed = isFormValid && !isSubmitting && !isStatusLoading;
+
+  const handlePickApplicantPhoto = async (source: "camera" | "library") => {
+    setIsPhotoPickerOpen(false);
+    setPhotoError(null);
+    setErrorMessage(null);
+
+    try {
+      let result: ImagePicker.ImagePickerResult;
+
+      if (source === "camera") {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) {
+          setAlertConfig({
+            visible: true,
+            type: "warning",
+            title: "Camera Permission Required",
+            message: "Please allow camera access in your device settings to take the applicant photograph.",
+            confirmText: "OK",
+            onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+          });
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          quality: 0.85,
+        });
+      } else {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          setAlertConfig({
+            visible: true,
+            type: "warning",
+            title: "Photo Access Required",
+            message: "Please allow photo library access to choose the applicant photograph.",
+            confirmText: "OK",
+            onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+          });
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.85,
+        });
+      }
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
+        setPhotoError("Photograph exceeds the 5MB limit. Please choose a smaller image.");
+        return;
+      }
+
+      setIsUploadingPhoto(true);
+      const isPng = asset.mimeType === "image/png";
+      const uploadedUrl = await uploadFileToServer({
+        uri: asset.uri,
+        name: asset.fileName || (isPng ? "applicant-photo.png" : "applicant-photo.jpg"),
+        mimeType: isPng ? "image/png" : "image/jpeg",
+      });
+
+      if (!uploadedUrl) {
+        throw new Error("Upload completed without a valid file URL.");
+      }
+
+      setPassportUrl(uploadedUrl);
+      setPhotoError(null);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to upload applicant photograph. Please try again.";
+      setPhotoError(msg);
+      setAlertConfig({
+        visible: true,
+        type: "error",
+        title: "Photo Upload Failed",
+        message: msg,
+        confirmText: "OK",
+        onConfirm: () => setAlertConfig((prev) => ({ ...prev, visible: false })),
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Handle Terms Consent Submission
   const handleAgreeTerms = async () => {
@@ -324,6 +431,17 @@ export default function NinModificationScreen() {
       return;
     }
 
+    if (isUploadingPhoto) {
+      setErrorMessage("Please wait for the applicant photograph to finish uploading.");
+      return;
+    }
+
+    if (!passportUrl) {
+      setPhotoError("Please upload the applicant photograph / picture.");
+      setErrorMessage("Please upload the applicant photograph / picture.");
+      return;
+    }
+
     if (!isFormValid) {
       setErrorMessage("Please complete all required fields correctly.");
       return;
@@ -373,6 +491,8 @@ export default function NinModificationScreen() {
       const payload: any = {
         type: selectedType,
         nin: cleanNin,
+        passportUrl,
+        documentUrls: [],
       };
 
       if (selectedType === "CHANGE_OF_NAME") {
@@ -435,6 +555,10 @@ export default function NinModificationScreen() {
     setSelectedLga("");
     setSelectedType(null);
     setIsCategoryExpanded(false);
+    setPassportUrl(null);
+    setPhotoError(null);
+    setIsUploadingPhoto(false);
+    setIsPhotoPickerOpen(false);
     setErrorMessage(null);
   };
 
@@ -1042,6 +1166,105 @@ export default function NinModificationScreen() {
                     </View>
                   ) : null}
 
+                  {/* Step 4: Applicant Photograph / Picture */}
+                  {selectedType ? (
+                    <View style={styles.sectionWrap}>
+                      <View style={styles.fieldLabelRow}>
+                        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>
+                          4. Applicant Photograph / Picture *
+                        </Text>
+                        {passportUrl ? (
+                          <View style={styles.photoUploadedBadge}>
+                            <Check size={11} color={isDark ? "#34D399" : "#059669"} style={{ marginRight: 4 }} />
+                            <Text style={styles.photoUploadedBadgeText}>Uploaded</Text>
+                          </View>
+                        ) : null}
+                      </View>
+
+                      {passportUrl ? (
+                        <View style={styles.photoCard}>
+                          <View style={styles.photoPreviewRow}>
+                            <Image
+                              source={{ uri: passportUrl }}
+                              style={styles.photoThumb}
+                              resizeMode="cover"
+                            />
+                            <View style={styles.photoPreviewMeta}>
+                              <Text style={styles.photoUploadTitle}>Applicant Photograph Uploaded</Text>
+                              <Text style={styles.photoUploadHint}>
+                                Clear picture of the applicant attached to this request.
+                              </Text>
+                              <View style={styles.photoActionsRow}>
+                                <TouchableOpacity
+                                  style={styles.photoActionBtn}
+                                  onPress={() => setIsPhotoPickerOpen(true)}
+                                  disabled={isUploadingPhoto}
+                                  activeOpacity={0.8}
+                                >
+                                  {isUploadingPhoto ? (
+                                    <ActivityIndicator size="small" color={colors.primary} />
+                                  ) : (
+                                    <>
+                                      <Upload size={13} color={colors.primary} style={{ marginRight: 5 }} />
+                                      <Text style={styles.photoActionBtnText}>Change</Text>
+                                    </>
+                                  )}
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                  style={styles.photoRemoveBtn}
+                                  onPress={() => {
+                                    setPassportUrl(null);
+                                    setPhotoError(null);
+                                  }}
+                                  disabled={isUploadingPhoto}
+                                  activeOpacity={0.8}
+                                >
+                                  <Trash2 size={13} color={isDark ? "#F87171" : "#DC2626"} style={{ marginRight: 4 }} />
+                                  <Text style={styles.photoRemoveBtnText}>Remove</Text>
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.photoUploadBox,
+                            photoError ? styles.photoUploadBoxError : null,
+                          ]}
+                          onPress={() => setIsPhotoPickerOpen(true)}
+                          disabled={isUploadingPhoto}
+                          activeOpacity={0.8}
+                        >
+                          <View style={styles.photoUploadIconWrap}>
+                            {isUploadingPhoto ? (
+                              <ActivityIndicator size="small" color={colors.primary} />
+                            ) : (
+                              <Camera size={22} color={colors.primary} />
+                            )}
+                          </View>
+                          <Text style={styles.photoUploadTitle}>
+                            {isUploadingPhoto
+                              ? "Uploading applicant photograph..."
+                              : "Tap to upload applicant photograph"}
+                          </Text>
+                          <Text style={[styles.photoUploadHint, { textAlign: "center", marginTop: 4 }]}>
+                            Upload a clear picture of the applicant (JPG or PNG)
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {photoError ? (
+                        <Text style={styles.photoErrorText}>{photoError}</Text>
+                      ) : !passportUrl ? (
+                        <Text style={styles.helperText}>
+                          Required — upload a clear picture of the applicant (max 5MB).
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+
                   {/* Proceed / Review Button */}
                   <TouchableOpacity
                     style={[styles.submitBtn, !canProceed && styles.submitBtnDisabled]}
@@ -1214,6 +1437,13 @@ export default function NinModificationScreen() {
                   </Text>
                 </View>
 
+                {passportUrl ? (
+                  <View style={styles.confirmPhotoRow}>
+                    <Text style={styles.modalLabel}>Applicant Photograph:</Text>
+                    <Image source={{ uri: passportUrl }} style={styles.confirmPhotoThumb} resizeMode="cover" />
+                  </View>
+                ) : null}
+
                 {/* Consent Checkbox */}
                 <TouchableOpacity
                   style={styles.reviewConsentRow}
@@ -1309,6 +1539,61 @@ export default function NinModificationScreen() {
               >
                 <Text style={styles.primaryActionText}>I Understand</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Photo Source Picker Modal */}
+        <Modal
+          visible={isPhotoPickerOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsPhotoPickerOpen(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.modalCard, { paddingBottom: Math.max(insets.bottom, 20) + 8 }]}>
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Applicant Photograph</Text>
+                  <Text style={styles.modalSub}>Upload a clear picture of the applicant (JPG or PNG)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setIsPhotoPickerOpen(false)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <X size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ gap: 10 }}>
+                <TouchableOpacity
+                  style={styles.photoOptionBtn}
+                  onPress={() => handlePickApplicantPhoto("camera")}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.photoOptionIconWrap}>
+                    <Camera size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.photoOptionTitle}>Take Photo</Text>
+                    <Text style={styles.photoOptionSub}>Capture a clear picture using your camera</Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.photoOptionBtn}
+                  onPress={() => handlePickApplicantPhoto("library")}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.photoOptionIconWrap}>
+                    <ImageIcon size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.photoOptionTitle}>Choose from Gallery</Text>
+                    <Text style={styles.photoOptionSub}>Select an existing JPG or PNG photo from device</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -2142,6 +2427,160 @@ const getStyles = (colors: any, isDark: boolean) =>
       color: colors.textSecondary,
       lineHeight: 16,
       marginBottom: 6,
+    },
+    photoCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+      padding: 12,
+      marginTop: 8,
+    },
+    photoUploadBox: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderStyle: "dashed",
+      borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "rgba(0, 0, 0, 0.16)",
+      paddingVertical: 20,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    photoUploadBoxError: {
+      borderColor: isDark ? "#F87171" : "#DC2626",
+    },
+    photoUploadIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.14)" : "rgba(200, 45, 117, 0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 10,
+    },
+    photoUploadTitle: {
+      fontSize: 13.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    photoUploadHint: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 16,
+    },
+    photoPreviewRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    photoThumb: {
+      width: 68,
+      height: 68,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#E2E8F0",
+    },
+    photoPreviewMeta: {
+      flex: 1,
+    },
+    photoUploadedBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.14)" : "#ECFDF5",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
+    },
+    photoUploadedBadgeText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: isDark ? "#34D399" : "#059669",
+    },
+    photoActionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 8,
+    },
+    photoActionBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.15)" : "rgba(200, 45, 117, 0.08)",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    photoActionBtnText: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    photoRemoveBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.14)" : "#FEF2F2",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    photoRemoveBtnText: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: isDark ? "#F87171" : "#DC2626",
+    },
+    photoErrorText: {
+      fontSize: 11.5,
+      fontWeight: "600",
+      color: isDark ? "#F87171" : "#DC2626",
+      marginTop: 6,
+    },
+    confirmPhotoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+      paddingTop: 4,
+    },
+    confirmPhotoThumb: {
+      width: 44,
+      height: 44,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#E2E8F0",
+    },
+    photoOptionBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 14,
+      borderRadius: 14,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
+    },
+    photoOptionIconWrap: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(200, 45, 117, 0.14)" : "rgba(200, 45, 117, 0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    photoOptionTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    photoOptionSub: {
+      fontSize: 11.5,
+      color: colors.textSecondary,
+      marginTop: 2,
     },
     fontMono: {
       fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",

@@ -12,6 +12,7 @@ import {
   Platform,
   Dimensions,
   StatusBar,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -58,6 +59,7 @@ export interface ModificationRecord {
   newLga?: string | null;
   adminNotes?: string | null;
   rejectionReason?: string | null;
+  passportUrl?: string | null;
   slipUrl?: string | null;
   amountPaid: number;
   refundAmount?: number | null;
@@ -632,6 +634,17 @@ export default function NinModificationHistoryScreen() {
                   </View>
                 </View>
 
+                {selectedRecord.passportUrl ? (
+                  <View style={styles.modalPhotoCard}>
+                    <Text style={styles.modalPhotoLabel}>Applicant Photograph</Text>
+                    <Image
+                      source={{ uri: selectedRecord.passportUrl }}
+                      style={styles.modalPhotoThumb}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ) : null}
+
                 {sanitizeMobileNote(selectedRecord.adminNotes) ? (
                   <View style={styles.modalNoteCard}>
                     <Text style={styles.modalNoteCardTitle}>Processing Notes</Text>
@@ -1123,6 +1136,30 @@ const getStyles = (colors: any, isDark: boolean) =>
       color: "#FFFFFF",
     },
 
+    modalPhotoCard: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    modalPhotoLabel: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    modalPhotoThumb: {
+      width: 56,
+      height: 56,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#CBD5E1",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#E2E8F0",
+    },
     fontMono: {
       fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
     },
