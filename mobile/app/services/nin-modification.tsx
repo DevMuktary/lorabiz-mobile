@@ -926,10 +926,107 @@ export default function NinModificationScreen() {
                     )}
                   </View>
 
-                  {/* Step 3: Record Details & Changes */}
+                  {/* Step 3: Applicant Photograph / Picture (Always visible so users never miss it) */}
+                  <View style={styles.sectionWrap}>
+                    <View style={styles.fieldLabelRow}>
+                      <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>
+                        3. Applicant Photograph / Picture *
+                      </Text>
+                      {passportUrl ? (
+                        <View style={styles.photoUploadedBadge}>
+                          <Check size={11} color={isDark ? "#34D399" : "#059669"} style={{ marginRight: 4 }} />
+                          <Text style={styles.photoUploadedBadgeText}>Uploaded</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {passportUrl ? (
+                      <View style={styles.photoCard}>
+                        <View style={styles.photoPreviewRow}>
+                          <Image
+                            source={{ uri: passportUrl }}
+                            style={styles.photoThumb}
+                            resizeMode="cover"
+                          />
+                          <View style={styles.photoPreviewMeta}>
+                            <Text style={styles.photoUploadTitle}>Applicant Photograph Uploaded</Text>
+                            <Text style={styles.photoUploadHint}>
+                              Clear picture of the applicant attached to this request.
+                            </Text>
+                            <View style={styles.photoActionsRow}>
+                              <TouchableOpacity
+                                style={styles.photoActionBtn}
+                                onPress={() => setIsPhotoPickerOpen(true)}
+                                disabled={isUploadingPhoto}
+                                activeOpacity={0.8}
+                              >
+                                {isUploadingPhoto ? (
+                                  <ActivityIndicator size="small" color={colors.primary} />
+                                ) : (
+                                  <>
+                                    <Upload size={13} color={colors.primary} style={{ marginRight: 5 }} />
+                                    <Text style={styles.photoActionBtnText}>Change</Text>
+                                  </>
+                                )}
+                              </TouchableOpacity>
+
+                              <TouchableOpacity
+                                style={styles.photoRemoveBtn}
+                                onPress={() => {
+                                  setPassportUrl(null);
+                                  setPhotoError(null);
+                                }}
+                                disabled={isUploadingPhoto}
+                                activeOpacity={0.8}
+                              >
+                                <Trash2 size={13} color={isDark ? "#F87171" : "#DC2626"} style={{ marginRight: 4 }} />
+                                <Text style={styles.photoRemoveBtnText}>Remove</Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={[
+                          styles.photoUploadBox,
+                          photoError ? styles.photoUploadBoxError : null,
+                        ]}
+                        onPress={() => setIsPhotoPickerOpen(true)}
+                        disabled={isUploadingPhoto}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.photoUploadIconWrap}>
+                          {isUploadingPhoto ? (
+                            <ActivityIndicator size="small" color={colors.primary} />
+                          ) : (
+                            <Camera size={22} color={colors.primary} />
+                          )}
+                        </View>
+                        <Text style={styles.photoUploadTitle}>
+                          {isUploadingPhoto
+                            ? "Uploading applicant photograph..."
+                            : "Tap to upload applicant photograph"}
+                        </Text>
+                        <Text style={[styles.photoUploadHint, { textAlign: "center", marginTop: 4 }]}>
+                          Upload a clear picture of the applicant (JPG or PNG)
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {photoError ? (
+                      <Text style={styles.photoErrorText}>{photoError}</Text>
+                    ) : !passportUrl ? (
+                      <Text style={styles.helperText}>
+                        Required — upload a clear picture of the applicant (max 5MB).
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {/* Step 4: Record Details & Changes */}
                   {selectedType ? (
                     <View style={styles.sectionWrap}>
-                      <Text style={styles.sectionTitle}>3. Record Details & Changes</Text>
+                      <Text style={styles.sectionTitle}>4. Record Details & Changes</Text>
 
                       {/* Fields for CHANGE_OF_NAME */}
                       {selectedType === "CHANGE_OF_NAME" ? (
@@ -1162,105 +1259,6 @@ export default function NinModificationScreen() {
                             </TouchableOpacity>
                           </View>
                         </>
-                      ) : null}
-                    </View>
-                  ) : null}
-
-                  {/* Step 4: Applicant Photograph / Picture */}
-                  {selectedType ? (
-                    <View style={styles.sectionWrap}>
-                      <View style={styles.fieldLabelRow}>
-                        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>
-                          4. Applicant Photograph / Picture *
-                        </Text>
-                        {passportUrl ? (
-                          <View style={styles.photoUploadedBadge}>
-                            <Check size={11} color={isDark ? "#34D399" : "#059669"} style={{ marginRight: 4 }} />
-                            <Text style={styles.photoUploadedBadgeText}>Uploaded</Text>
-                          </View>
-                        ) : null}
-                      </View>
-
-                      {passportUrl ? (
-                        <View style={styles.photoCard}>
-                          <View style={styles.photoPreviewRow}>
-                            <Image
-                              source={{ uri: passportUrl }}
-                              style={styles.photoThumb}
-                              resizeMode="cover"
-                            />
-                            <View style={styles.photoPreviewMeta}>
-                              <Text style={styles.photoUploadTitle}>Applicant Photograph Uploaded</Text>
-                              <Text style={styles.photoUploadHint}>
-                                Clear picture of the applicant attached to this request.
-                              </Text>
-                              <View style={styles.photoActionsRow}>
-                                <TouchableOpacity
-                                  style={styles.photoActionBtn}
-                                  onPress={() => setIsPhotoPickerOpen(true)}
-                                  disabled={isUploadingPhoto}
-                                  activeOpacity={0.8}
-                                >
-                                  {isUploadingPhoto ? (
-                                    <ActivityIndicator size="small" color={colors.primary} />
-                                  ) : (
-                                    <>
-                                      <Upload size={13} color={colors.primary} style={{ marginRight: 5 }} />
-                                      <Text style={styles.photoActionBtnText}>Change</Text>
-                                    </>
-                                  )}
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                  style={styles.photoRemoveBtn}
-                                  onPress={() => {
-                                    setPassportUrl(null);
-                                    setPhotoError(null);
-                                  }}
-                                  disabled={isUploadingPhoto}
-                                  activeOpacity={0.8}
-                                >
-                                  <Trash2 size={13} color={isDark ? "#F87171" : "#DC2626"} style={{ marginRight: 4 }} />
-                                  <Text style={styles.photoRemoveBtnText}>Remove</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          </View>
-                        </View>
-                      ) : (
-                        <TouchableOpacity
-                          style={[
-                            styles.photoUploadBox,
-                            photoError ? styles.photoUploadBoxError : null,
-                          ]}
-                          onPress={() => setIsPhotoPickerOpen(true)}
-                          disabled={isUploadingPhoto}
-                          activeOpacity={0.8}
-                        >
-                          <View style={styles.photoUploadIconWrap}>
-                            {isUploadingPhoto ? (
-                              <ActivityIndicator size="small" color={colors.primary} />
-                            ) : (
-                              <Camera size={22} color={colors.primary} />
-                            )}
-                          </View>
-                          <Text style={styles.photoUploadTitle}>
-                            {isUploadingPhoto
-                              ? "Uploading applicant photograph..."
-                              : "Tap to upload applicant photograph"}
-                          </Text>
-                          <Text style={[styles.photoUploadHint, { textAlign: "center", marginTop: 4 }]}>
-                            Upload a clear picture of the applicant (JPG or PNG)
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-
-                      {photoError ? (
-                        <Text style={styles.photoErrorText}>{photoError}</Text>
-                      ) : !passportUrl ? (
-                        <Text style={styles.helperText}>
-                          Required — upload a clear picture of the applicant (max 5MB).
-                        </Text>
                       ) : null}
                     </View>
                   ) : null}

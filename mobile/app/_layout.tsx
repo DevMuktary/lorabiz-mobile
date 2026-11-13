@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { Alert, AppState } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Updates from "expo-updates";
 import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import AppLockModal from "../components/AppLockModal";
@@ -18,6 +20,70 @@ const queryClient = new QueryClient({
 
 function RootLayoutContent() {
   const { colors, isDark } = useTheme();
+  const isCheckingUpdateRef = useRef(false);
+  const lastCheckAtRef = useRef(0);
+  const hasPromptedUpdateRef = useRef(false);
+
+  useEffect(() => {
+    if (__DEV__ || !Updates.isEnabled || Updates.isEmergencyLaunch) {
+      return;
+    }
+
+    const checkAndApplyUpdate = async (autoReloadImmediately: boolean) => {
+      const now = Date.now();
+      if (isCheckingUpdateRef.current || now - lastCheckAtRef.current < 60_000) {
+        return;
+      }
+
+      isCheckingUpdateRef.current = true;
+      lastCheckAtRef.current = now;
+
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (!update.isAvailable) {
+          return;
+        }
+
+        const result = await Updates.fetchUpdateAsync();
+        if (!result.isNew) {
+          return;
+        }
+
+        if (autoReloadImmediately) {
+          await Updates.reloadAsync();
+        } else if (!hasPromptedUpdateRef.current) {
+          hasPromptedUpdateRef.current = true;
+          Alert.alert(
+            "Update Available",
+            "A new version of LoraBiz has been downloaded. Restart now to load the latest features.",
+            [
+              { text: "Later", style: "cancel" },
+              {
+                text: "Restart Now",
+                onPress: () => {
+                  Updates.reloadAsync().catch(() => {});
+                },
+              },
+            ]
+          );
+        }
+      } catch {
+        // Ignore transient offline or rate-limit update check errors
+      } finally {
+        isCheckingUpdateRef.current = false;
+      }
+    };
+
+    checkAndApplyUpdate(true);
+
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        checkAndApplyUpdate(false);
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
 
   return (
     <>
